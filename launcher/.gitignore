@@ -1,0 +1,7 @@
+build/
+app/build/
+.gradle/
+local.properties
+app/src/test/resources/
+app/src/test/snapshots/
+review/

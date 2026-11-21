@@ -1,0 +1,21 @@
+<resources>
+    <style name="HomeTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:windowShowWallpaper">false</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+    </style>
+    <style name="GoodnightTheme" parent="@android:style/Theme.DeviceDefault.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+    <color name="bg">#0B0E13</color>
+    <color name="tile">#1A2029</color>
+    <color name="accent">#7FB7FF</color>
+    <color name="text">#ECEFF4</color>
+    <color name="soft">#B7C0CC</color>
+    <color name="muted">#8D97A6</color>
+    <color name="faint">#5E6877</color>
+    <color name="live">#FF4D4F</color>
+    <string name="remote_keys_service_desc">Lets Home remap buttons on your TV remote (Remote buttons).</string>
+</resources>

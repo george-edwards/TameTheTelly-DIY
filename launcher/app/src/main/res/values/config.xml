@@ -1,0 +1,94 @@
+<resources>
+    <!-- Defaults. Everything marked "(TV menu)" can also be changed on the TV without a rebuild: the Grown-ups
+         button in Home's top corner (up from the top row of apps) > the arrow code > Config. What's set there is
+         kept on the TV and wins over this file; Config > "Reset these options to default" forgets it. -->
+    <!-- (TV menu) Home's look: twilight (navy, follows the sun), paper (warm paper and ink), aurora (polar night
+         with ribbons of light), forest (evergreen and gold) or graphite (black and white). See Look.java. -->
+    <string name="theme" translatable="false">twilight</string>
+    <!-- (TV menu) Cameras on Home: on, or off to give the apps the whole screen (the addresses in cameras.xml or
+         Config are kept for when they're turned back on). -->
+    <string name="cameras" translatable="false">on</string>
+    <!-- SET FOR EACH HOUSEHOLD (AGENTS.md, "Make it theirs"): family name, weather place, bin night, timed apps,
+         scene, grown-ups code. Most can also be set later on the TV in Config. -->
+    <!-- (TV menu) Greeting: "Good morning, <family_name>" (blank: just "Good morning"). -->
+    <string name="family_name" translatable="false"></string>
+    <!-- (TV menu: Australian postcode, then suburb, from assets/au_postcodes.tsv) Weather and sun times: the
+         postcode, the suburb's name, its latitude/longitude and IANA time zone, e.g. 2287 / Rankin Park / -32.9252 /
+         151.6805 / Australia/Sydney. Blank place: no weather shown (sun times then use lat/lon 0,0, so do set it). -->
+    <string name="weather_postcode" translatable="false"></string>
+    <string name="weather_place" translatable="false"></string>
+    <string name="weather_lat" translatable="false">0</string>
+    <string name="weather_lon" translatable="false">0</string>
+    <string name="weather_tz" translatable="false"></string>
+    <!-- TCL TVs only (TvBacklight, TvBlueLight reach TCL's com.tcl.tvmanager; elsewhere they quietly do nothing).
+         TV backlight (Picture menu scale 0–100), following the sun at the weather location:
+         day from sunrise, dusk from sunset, night once properly dark (nautical dusk, sun 12° down),
+         and back up through dusk at nautical dawn. Each change fades over ~2.5 s.
+         The TV's Blue Light Filter goes on at sunset and off at sunrise; the app's sky colours follow the
+         same sun times. -->
+    <integer name="backlight_day">100</integer>
+    <integer name="backlight_dusk">60</integer>
+    <integer name="backlight_night">40</integer>
+    <!-- (TV menu) Bin night (Calendar.DAY_OF_WEEK: Sunday=1 … Thursday=5). bins_every_week (green, red or yellow)
+         goes out every week and the other two alternate: green at Lake Macquarie, red in Newcastle.
+         bins_recycling_on = any bin night when the first of the other two went out (yyyy-mm-dd): yellow, or green
+         if yellow goes every week (Bins.pair). bins_day 0 = no bin night shown. -->
+    <integer name="bins_day">0</integer>
+    <string name="bins_every_week" translatable="false">green</string>
+    <string name="bins_recycling_on" translatable="false">2026-11-12</string>
+    <!-- Kids' time: the daily allowance (minutes) shared by all the timed apps, and when the day turns over
+         (hour, local). Grown-ups: hold OK on a timed app's tile > Grown-ups…, then the arrows in parent_code
+         (U D L R) to add time, start today again, run the demo, or take grown-up time in that app (full screen,
+         no counting, no scene, until you come back Home). -->
+    <!-- (TV menu: Kids' time) Daily allowance (minutes) and optional automatic adult-mode schedule
+         (24-hour HH:MM, e.g. 19:30 to 23:00; blank = manual toggle only). -->
+    <integer name="yt_minutes">30</integer>
+    <integer name="yt_reset_hour">4</integer>
+    <string name="adult_start" translatable="false"></string>
+    <string name="adult_end" translatable="false"></string>
+    <!-- (TV menu) The grown-ups code: 2 to 8 arrow presses, U D L R. -->
+    <string name="parent_code" translatable="false">UUDD</string>
+    <!-- (TV menu) The bedtime scene around the timed apps, on the scene tile and on the Goodnight screen:
+         sun = Sunset hills, fairy = Fairy garden (girls), train = Steam train (boys). -->
+    <string name="scene" translatable="false">sun</string>
+    <!-- (TV menu: Timed apps) The apps that count against the allowance and get the scene: package names
+         separated by commas, or "all" for every app on Home except Home itself, the grown-ups-only apps and
+         untimed_packages below. -->
+    <string name="timed_apps" translatable="false">com.google.android.youtube.tv,com.google.android.youtube.tvkids</string>
+    <!-- Never timed (Settings, the Play Store, TV tools), so a grown-up (or the TV) can always get to them. Add this TV's own settings and
+         tool apps once you've looked at its package list (AGENTS.md). -->
+    <string-array name="untimed_packages" translatable="false">
+        <item>com.android.vending</item>
+        <item>com.android.tv.settings</item>
+        <item>com.android.settings</item>
+        <item>com.google.android.tv.settings</item>
+    </string-array>
+    <!-- Apps that can't be timed: timed apps play in a window inside the scene, and these break in one. Never
+         timed (so not limited either); ticking one in Config > Timed apps shows the reason instead. Each item is
+         "package|reason". -->
+    <string-array name="unwindowable_apps" translatable="false">
+        <item>com.spotify.tv.android|Timed apps play in a window inside the scene, and Spotify\'s TV app isn\'t built to run in one. It sizes its screens in raw screen pixels instead of the density-independent units (dp) Android apps are supposed to use, and it measures the whole TV screen instead of the window it\'s actually given. In a window those two disagree, so its menus flick back and forth between two layouts as you scroll. Home can\'t fix that from the outside; Spotify would have to. So Spotify stays untimed.</item>
+    </string-array>
+    <!-- The tile that shows a miniature of the scene (and what WatchActivity opens with no "pkg").
+         Its other timed apps get a minutes-left badge instead. -->
+    <string name="scene_tile_package" translatable="false">com.google.android.youtube.tv</string>
+    <!-- Grown-ups only: the tile asks for parent_code; opened any other way without grown-up time, Home
+         takes over again. Not counted against the allowance. -->
+    <string-array name="grownup_packages" translatable="false">
+        <item>app.smarttube.fdroid</item>
+    </string-array>
+    <!-- Put the timed apps in a window inside the scene by running `am task resize` through the TV's own
+         adb (Home's key must be accepted on the TV once). Off: they stay full screen and the scene crops their
+         edges. An app that won't go into a window also stays full screen. -->
+    <bool name="frame_via_adb">true</bool>
+    <!-- YouTube: the scene tile's play badge is YouTube red for these. -->
+    <string-array name="youtube_packages" translatable="false">
+        <item>com.google.android.youtube.tv</item>
+        <item>com.google.android.youtube.tvkids</item>
+    </string-array>
+    <!-- Config > "Put the TV back" (restore.sh, built into the app): the TV picture settings
+         Home changes through TCL's API, put back first. Record the factory values (tvs/<tv>/picture/) before
+         installing Home on a TCL; -1 leaves that one alone (any other make). -->
+    <integer name="restore_backlight">-1</integer>
+    <integer name="restore_blue_light">-1</integer>
+</resources>

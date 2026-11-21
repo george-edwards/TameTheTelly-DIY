@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="horizontal" android:background="@color/bg">
+
+    <!-- LEFT: greeting + apps -->
+    <FrameLayout android:id="@+id/left"
+        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+        android:clipChildren="false">
+
+        <LinearLayout android:id="@+id/content" android:layout_width="match_parent" android:layout_height="match_parent"
+            android:orientation="vertical" android:paddingTop="26dp" android:clipChildren="true">
+
+            <!-- Header: clock | greeting, date, glance (weather + bins). With no cameras (wide), Look moves the
+                 glance to the right-hand end. -->
+            <LinearLayout android:id="@+id/header" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:paddingStart="30dp" android:paddingEnd="18dp">
+                <au.internal.home.RollingClock android:id="@+id/clock"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                <View android:id="@+id/divider" android:layout_width="1dp" android:layout_height="52dp" android:layout_marginStart="20dp"
+                    android:background="#1FFFFFFF"/>
+                <LinearLayout android:id="@+id/stack" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:paddingStart="18dp">
+                    <!-- Shrinks to fit rather than cutting off "…family" on longer greetings. -->
+                    <au.internal.home.FitText android:id="@+id/greeting" android:layout_width="match_parent" android:layout_height="24dp"
+                        android:textColor="@color/text" android:textSize="18sp" android:fontFamily="@font/inter_medium"
+                        android:gravity="center_vertical"/>
+                    <TextClock android:id="@+id/date" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:paddingTop="2dp"
+                        android:format12Hour="EEEE d MMMM" android:format24Hour="EEEE d MMMM"
+                        android:textColor="@color/soft" android:textSize="13.5sp"/>
+                    <LinearLayout android:id="@+id/glance" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="vertical">
+                        <au.internal.home.FitText android:id="@+id/weather" android:layout_width="wrap_content" android:layout_height="21dp"
+                            android:layout_marginTop="2dp" android:textColor="@color/muted" android:textSize="13sp"
+                            android:drawablePadding="7dp" android:gravity="center_vertical"/>
+                        <!-- Bin night: only shown on the night itself. -->
+                        <LinearLayout android:id="@+id/bins" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:orientation="horizontal" android:gravity="center_vertical" android:paddingTop="4dp"
+                            android:visibility="gone">
+                            <ImageView android:id="@+id/bin1" android:layout_width="16dp" android:layout_height="16dp" android:src="@drawable/bin_green"/>
+                            <ImageView android:id="@+id/bin2" android:layout_width="16dp" android:layout_height="16dp"
+                                android:layout_marginStart="1dp" android:src="@drawable/bin_yellow"/>
+                            <TextView android:id="@+id/binsText" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                                android:paddingStart="8dp" android:textColor="@color/muted" android:textSize="13sp" android:singleLine="true"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView android:id="@+id/status" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="30dp" android:layout_marginTop="12dp"
+                android:background="@drawable/status_bg" android:paddingStart="12dp" android:paddingEnd="12dp"
+                android:paddingTop="5dp" android:paddingBottom="5dp"
+                android:textColor="@color/text" android:textSize="12sp" android:visibility="gone"/>
+
+            <au.internal.home.FadeGrid android:id="@+id/grid"
+                android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                android:layout_marginTop="6dp" android:overScrollMode="never"
+                android:requiresFadingEdge="vertical" android:fadingEdgeLength="36dp"
+                android:paddingStart="22dp" android:paddingEnd="18dp" android:paddingTop="14dp" android:paddingBottom="28dp"
+                android:descendantFocusability="afterDescendants"/>
+        </LinearLayout>
+
+        <!-- Top corner, above the header, up from the top row of apps: Adult/Kids toggle, Kids' time, Remote buttons,
+             and Settings (all behind the arrow code). The shared label to their left shows whichever icon has focus. -->
+        <LinearLayout android:id="@+id/corner" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="top|end" android:layout_marginTop="10dp" android:layout_marginEnd="14dp"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:id="@+id/cornerLabel" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:paddingEnd="10dp" android:textSize="12sp" android:fontFamily="@font/inter_semibold"
+                android:letterSpacing="0.03" android:singleLine="true" android:alpha="0"/>
+            <ImageView android:id="@+id/modeBtn" android:layout_width="30dp" android:layout_height="30dp"
+                android:padding="6dp" android:src="@drawable/ic_child"
+                android:focusable="true" android:clickable="true" android:contentDescription="Switch to adult mode"/>
+            <ImageView android:id="@+id/timeBtn" android:layout_width="30dp" android:layout_height="30dp"
+                android:layout_marginStart="8dp" android:padding="6dp" android:src="@drawable/ic_timer"
+                android:focusable="true" android:clickable="true" android:contentDescription="Kids' time"/>
+            <ImageView android:id="@+id/remoteBtn" android:layout_width="30dp" android:layout_height="30dp"
+                android:layout_marginStart="8dp" android:padding="6dp" android:src="@drawable/ic_remote"
+                android:focusable="true" android:clickable="true" android:contentDescription="Remote buttons"/>
+            <ImageView android:id="@+id/grownups" android:layout_width="30dp" android:layout_height="30dp"
+                android:layout_marginStart="8dp" android:padding="7dp" android:src="@drawable/ic_tune"
+                android:focusable="true" android:clickable="true" android:contentDescription="Settings"/>
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- RIGHT: cameras -->
+    <LinearLayout android:id="@+id/right"
+        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+        android:orientation="vertical" android:gravity="center"
+        android:paddingStart="10dp" android:paddingEnd="12dp">
+        <include android:id="@+id/cam1" layout="@layout/camera"/>
+        <Space android:id="@+id/camGap" android:layout_width="match_parent" android:layout_height="10dp"/>
+        <include android:id="@+id/cam2" layout="@layout/camera"/>
+    </LinearLayout>
+</LinearLayout>

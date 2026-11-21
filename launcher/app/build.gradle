@@ -1,0 +1,65 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'app.cash.paparazzi'
+}
+
+def restoreAssets = file("${rootProject.ext.outDir}/restore-assets")
+def copyRestore = tasks.register('copyRestoreScript', Copy) {
+    from rootProject.file('../restore.sh')
+    into restoreAssets
+}
+tasks.matching { it.name == 'preBuild' }.configureEach { dependsOn copyRestore }
+
+// Signing key + passwords: launcher/keystore.jks, launcher/keystore.properties (committed on purpose; private repo)
+def ks = new Properties()
+def ksFile = rootProject.file('keystore.properties')
+if (ksFile.exists()) ksFile.withInputStream { ks.load(it) }
+
+android {
+    namespace 'au.internal.home'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'au.internal.home'
+        minSdk 26
+        targetSdk 34
+        versionCode 51
+        versionName "2.18.1"
+    }
+    signingConfigs {
+        release {
+            storeFile rootProject.file('keystore.jks')
+            storePassword ks['storePassword']
+            keyAlias ks['keyAlias']
+            keyPassword ks['keyPassword']
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+    // The repo's restore.sh is built in as an asset: Home's "Put the TV back" button runs the very same file.
+    sourceSets { main { assets.srcDir restoreAssets } }
+}
+
+dependencies {
+    def media3 = '1.4.1'
+    implementation "androidx.media3:media3-exoplayer:$media3"
+    implementation "androidx.media3:media3-exoplayer-rtsp:$media3"
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+    implementation 'androidx.dynamicanimation:dynamicanimation:1.0.0'
+    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib:1.9.24'
+}
+
+// Paparazzi records into src/test/snapshots by default; keep its screenshots with the rest of the build output in
+// RAM (see ../build.gradle). Set as the task starts: the plugin sets its own value later in configuration.
+tasks.withType(Test).configureEach {
+    doFirst { systemProperty 'paparazzi.snapshot.dir', "${rootProject.ext.outDir}/snapshots" }
+}

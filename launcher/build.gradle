@@ -1,0 +1,11 @@
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+    // Test-only: Paparazzi renders the real layouts on the JVM (./render.sh); Kotlin is for those tests.
+    id 'org.jetbrains.kotlin.android' version '1.9.24' apply false
+    id 'app.cash.paparazzi' version '1.3.4' apply false
+}
+
+// Everything a build writes (APK, intermediates, test results, Paparazzi screenshots) goes to RAM, not into the
+// repo or onto the SSD: one folder per checkout under /dev/shm, gone after a reboot. build.sh / render.sh print it.
+ext.outDir = '/dev/shm/bubble_boy/out/' + rootDir.absolutePath.replaceAll('[^A-Za-z0-9]+', '_').replaceAll('^_', '')
+allprojects { layout.buildDirectory = file("${rootProject.ext.outDir}/${project.name}") }

@@ -1,0 +1,881 @@
+// SPDX-License-Identifier: GPL-3.0-only
+package au.internal.home;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.Settings;
+import android.animation.ValueAnimator;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.TextureView;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+
+public class MainActivity extends Activity {
+    static final String EXTRA_LOCKED = "au.internal.home.LOCKED";
+    static final String EXTRA_UNLOCK_PKG = "au.internal.home.UNLOCK_PKG";
+    static final long GROWN_UP_MS = 12 * 3_600_000L;   // ends sooner: when you come back Home
+    // Grid is 12 spans wide. Beside the cameras: favourites two per row, other apps three. Across the whole screen
+    // (no cameras): four and six, so the tiles stay the same size.
+    private static final int SPANS = 12;
+    private static final int T_HEADER = 0, T_FAV = 1, T_APP = 2;
+    private static final long TICK_MS = 30_000, WEATHER_MS = 15 * 60_000, LABEL_FADE_MS = 5_000;
+
+    /** This launcher's own Home screen, startable from anywhere. */
+    static Intent home(Context c) {
+        return new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).setPackage(c.getPackageName())
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    }
+
+    private static final class Row {
+        final int type; final String title; final AppStore.App app;
+        Row(int type, String title, AppStore.App app) { this.type = type; this.title = title; this.app = app; }
+    }
+
+    /** Tiles per row for this row's section. */
+    private int cols(Row r) { return r.type == T_FAV ? (wide ? 4 : 2) : (wide ? 6 : 3); }
+
+    private AppStore store;
+    private SharedPreferences prefs;
+    private final List<AppStore.App> all = new ArrayList<>();   // full ordered list
+    private final List<Row> rows = new ArrayList<>();           // what the grid displays
+    private boolean showHidden;
+    private String movingPkg;                                   // non-null while in move mode
+    private int hiddenCount;
+
+    private RecyclerView grid;
+    private TextView status, greeting, weather;
+    private View bins;
+    private Sky sky;
+    private ValueAnimator parallax;
+    private final Adapter adapter = new Adapter();
+    private final Handler h = new Handler(Looper.getMainLooper());
+    private CameraFeed[] feeds;
+    private View[] camViews, camLabels;
+    private View fullscreenCam;
+    private long lastWeather;
+    private int lastSunDay = -1;
+    private double lastSunLat = Double.NaN, lastSunLon = Double.NaN;
+    private String lastTimeSig;
+    private ScreenTime screenTime;
+    private TimedApps timedApps;
+    private java.util.Set<String> locked;
+    private View scrim;
+    private SceneTile sceneTile;
+    private boolean leftDuringPass;
+    private HomeConfig cfg;
+    private boolean[] camOn;
+    private Look look;
+    private boolean wide;           // no cameras: apps across the whole screen
+    private Glow glow;
+    private ImageView modeBtn;
+    private View corner, timeBtn, remoteBtn, grownUps;
+    private TextView cornerLabel;
+    private Boolean modeBtnAdult;
+    /** Open dialogs owned by Home (Config, ParentGate, app menu, etc.): dismissed when Home is pressed. */
+    private static final java.util.List<java.lang.ref.WeakReference<AlertDialog>> OPEN_DIALOGS = new ArrayList<>();
+
+    static void trackDialog(AlertDialog d) {
+        OPEN_DIALOGS.removeIf(ref -> { AlertDialog x = ref.get(); return x == null || !x.isShowing(); });
+        OPEN_DIALOGS.add(new java.lang.ref.WeakReference<>(d));
+    }
+
+    static AlertDialog showDialog(AlertDialog d) {
+        d.show();
+        trackDialog(d);
+        return d;
+    }
+
+    static void dismissDialogs() {
+        List<AlertDialog> open = new ArrayList<>();
+        for (java.lang.ref.WeakReference<AlertDialog> ref : OPEN_DIALOGS) {
+            AlertDialog d = ref.get();
+            if (d != null && d.isShowing()) open.add(d);
+        }
+        OPEN_DIALOGS.clear();
+        for (AlertDialog d : open) {
+            try { d.dismiss(); } catch (RuntimeException ignored) { }
+        }
+    }
+
+    private final BroadcastReceiver pkgReceiver = new BroadcastReceiver() {
+        @Override public void onReceive(Context c, Intent i) { reload(); }
+    };
+
+    @Override protected void onCreate(Bundle b) {
+        super.onCreate(b);
+        setContentView(R.layout.activity_main);
+        store = new AppStore(this);
+        cfg = new HomeConfig(this);
+        screenTime = new ScreenTime(this);
+        timedApps = new TimedApps(this);
+        locked = ScreenTime.pkgs(this, R.array.grownup_packages);
+        // Dims Home while a timed app's window sits on top of it (Home stays visible behind it).
+        scrim = new View(this);
+        scrim.setBackgroundColor(0xFF000000);
+        scrim.setAlpha(0f);
+        ((ViewGroup) getWindow().getDecorView()).addView(scrim, new ViewGroup.LayoutParams(-1, -1));
+        prefs = getSharedPreferences("ui", MODE_PRIVATE);
+        status = findViewById(R.id.status);
+        greeting = findViewById(R.id.greeting);
+        weather = findViewById(R.id.weather);
+        bins = findViewById(R.id.bins);
+        float density = getResources().getDisplayMetrics().density;
+        sky = new Sky();
+        findViewById(R.id.left).setBackground(sky);
+        grid = findViewById(R.id.grid);
+        grid.addItemDecoration(glow = new Glow(density));
+        GridLayoutManager glm = new GridLayoutManager(this, SPANS);
+        glm.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override public int getSpanSize(int pos) {
+                Row r = rows.get(pos);
+                return r.type == T_HEADER ? SPANS : SPANS / cols(r);
+            }
+        });
+        grid.setLayoutManager(glm);
+        grid.setItemAnimator(null);
+        grid.setAdapter(adapter);
+
+        camViews = new View[]{findViewById(R.id.cam1), findViewById(R.id.cam2)};
+        camLabels = new View[2];
+        camOn = new boolean[2];
+        feeds = new CameraFeed[2];
+        for (int i = 0; i < 2; i++) {
+            View v = camViews[i];
+            View label = camLabels[i] = v.findViewById(R.id.label);
+            ((TextView) v.findViewById(R.id.name)).setText(cfg.camName(i));
+            // A camera with no address is hidden; with none (or cameras off in Config), the apps get the whole screen.
+            camOn[i] = cfg.camerasOn() && !cfg.camUrl(i).isEmpty();
+            v.setVisibility(camOn[i] ? View.VISIBLE : View.GONE);
+            final int idx = i;
+            feeds[i] = new CameraFeed(this, cfg.camUrl(i), cfg.camHdUrl(i),
+                    (TextureView) v.findViewById(R.id.surface), v.findViewById(R.id.state),
+                    () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
+            v.setOnClickListener(this::toggleFullscreen);
+            v.setOnFocusChangeListener((x, has) -> {
+                if (has) showLabel(label);
+                else if (feeds[idx].isLive()) fadeLabel(label, 2_000);
+            });
+        }
+        findViewById(R.id.camGap).setVisibility(camOn[0] && camOn[1] ? View.VISIBLE : View.GONE);
+        findViewById(R.id.right).setVisibility(camOn[0] || camOn[1] ? View.VISIBLE : View.GONE);
+        wide = !camOn[0] && !camOn[1];
+        setLook(cfg.look());
+
+        // Top corner, up from the top row of apps: Adult/Kids toggle, Kids' time, Remote buttons, and Settings.
+        corner = findViewById(R.id.corner);
+        cornerLabel = findViewById(R.id.cornerLabel);
+        modeBtn = findViewById(R.id.modeBtn);
+        timeBtn = findViewById(R.id.timeBtn);
+        remoteBtn = findViewById(R.id.remoteBtn);
+        grownUps = findViewById(R.id.grownups);
+        bindCorner(modeBtn, this::toggleMode, null, timeBtn);
+        bindCorner(timeBtn, () -> ParentGate.ask(this, this::kidsTime), modeBtn, remoteBtn);
+        bindCorner(remoteBtn, () -> ParentGate.ask(this, this::remoteButtons), timeBtn, grownUps);
+        bindCorner(grownUps, () -> ParentGate.ask(this, this::settings), remoteBtn, null);
+        updateModeButton(screenTime.adultMode(System.currentTimeMillis()));
+        // The corner buttons exist before the app tiles do, so Android would give them first focus: start on the apps.
+        grid.post(() -> { if (getCurrentFocus() == null || corner.hasFocus()) focus(firstAppPos()); });
+
+        IntentFilter f = new IntentFilter();
+        f.addAction(Intent.ACTION_PACKAGE_ADDED);
+        f.addAction(Intent.ACTION_PACKAGE_REMOVED);
+        f.addAction(Intent.ACTION_PACKAGE_CHANGED);
+        f.addDataScheme("package");
+        registerReceiver(pkgReceiver, f);
+        reload();
+
+        // Parallax: the sky drifts a few dp away from wherever focus goes.
+        View root = findViewById(R.id.root);
+        root.getViewTreeObserver().addOnGlobalFocusChangeListener((was, now) -> driftSky(now));
+
+        // Gentle fade-in when the launcher is first created (i.e. at boot).
+        root.setAlpha(0f);
+        root.animate().alpha(1f).setDuration(700).setStartDelay(150).start();
+
+        if (!prefs.getBoolean("hintShown", false)) {
+            flashStatus("Hold OK on an app to move, favourite or hide it", 8_000);
+            prefs.edit().putBoolean("hintShown", true).apply();
+        }
+        String unlockPkg = getIntent().getStringExtra(EXTRA_UNLOCK_PKG);
+        if (unlockPkg != null) {
+            getIntent().removeExtra(EXTRA_UNLOCK_PKG);
+            h.post(() -> unlockAndOpen(unlockPkg));
+        }
+    }
+
+    private void bindCorner(View btn, Runnable onClick, View left, View right) {
+        btn.setOnClickListener(v -> onClick.run());
+        btn.setOnFocusChangeListener((v, has) -> {
+            v.setPivotX(v.getWidth() / 2f);
+            v.setPivotY(v.getHeight() / 2f);
+            TileFx.animate(v, has ? 1.08f : 1f, 0);
+            if (has) {
+                cornerLabel.setText(v.getContentDescription());
+                cornerLabel.animate().cancel();
+                cornerLabel.animate().alpha(1f).setDuration(140).start();
+            } else {
+                // Moving to another corner button fires its has=true callback synchronously right after, cancelling this fade.
+                cornerLabel.animate().cancel();
+                cornerLabel.animate().alpha(0f).setDuration(140).start();
+            }
+        });
+        btn.setOnKeyListener((v, code, ev) -> {
+            if (ev.getAction() != KeyEvent.ACTION_DOWN) return false;
+            if (code == KeyEvent.KEYCODE_DPAD_DOWN) { focus(firstAppPos()); return true; }
+            if (code == KeyEvent.KEYCODE_DPAD_LEFT) { if (left != null) left.requestFocus(); return true; }
+            if (code == KeyEvent.KEYCODE_DPAD_RIGHT) { if (right != null) right.requestFocus(); return true; }
+            return false;
+        });
+    }
+
+    @Override protected void onDestroy() {
+        dismissDialogs();
+        h.removeCallbacksAndMessages(null);
+        if (parallax != null) parallax.cancel();
+        unregisterReceiver(pkgReceiver);
+        super.onDestroy();
+    }
+
+    @Override protected void onStart() {
+        super.onStart();
+        // Cameras and the app list are (re)started in onTopResumedActivityChanged, which always follows.
+        Bedtime.catchUp(this, null);
+        Bedtime.schedule(this);
+        ScreenTimeService.start(this);
+        tick.run();
+    }
+
+    @Override protected void onStop() {
+        h.removeCallbacks(tick);
+        stopCams();   // free the decoders for whatever app is opened
+        if (movingPkg != null) endMove();
+        super.onStop();
+    }
+
+    /** A timed app's window on top leaves Home visible but not on top: dim it and free the camera decoders. */
+    @Override public void onTopResumedActivityChanged(boolean top) {
+        super.onTopResumedActivityChanged(top);
+        scrim.animate().cancel();
+        scrim.animate().alpha(top ? 0f : 0.88f).setDuration(top ? 250 : 500).start();
+        long now = System.currentTimeMillis();
+        if (top) {
+            // A one-app grown-up pass ends when you come back Home; persistent Adult mode stays on until toggled/scheduled off.
+            if (screenTime.demo()) startService(ScreenTimeService.dev(this, "LIVE"));
+            boolean adult = screenTime.adultMode(now);
+            boolean passEnded = leftDuringPass && screenTime.hasPass(now);
+            if (passEnded) screenTime.setGrownUp(0);
+            leftDuringPass = false;
+            updateModeButton(adult);
+            startCams();
+            if (movingPkg == null) {
+                timedApps = new TimedApps(this);
+                rebuild();
+                lastTimeSig = timeSig(now, adult);
+            }
+            if (passEnded && !adult) flashStatus("Grown-up time over", 4_000);
+        } else {
+            if (screenTime.hasPass(now)) leftDuringPass = true;
+            stopCams();
+        }
+    }
+
+    private void startCams() {
+        for (int i = 0; i < feeds.length; i++) {
+            if (camOn[i] && camViews[i].getVisibility() == View.VISIBLE) { showLabel(camLabels[i]); feeds[i].start(); }
+        }
+    }
+
+    private void stopCams() { for (CameraFeed f : feeds) f.stop(); }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.getBooleanExtra(EXTRA_LOCKED, false)) flashStatus("That one's for grown-ups", 5_000);
+        String unlockPkg = intent.getStringExtra(EXTRA_UNLOCK_PKG);
+        // Home pressed: close any open grown-up/Config/app menu, drop out of any mode, and go to the first tile.
+        dismissDialogs();
+        if (fullscreenCam != null) toggleFullscreen(fullscreenCam);
+        if (movingPkg != null) endMove();
+        if (showHidden) { showHidden = false; rebuild(); }
+        focus(firstAppPos());
+        if (unlockPkg != null) unlockAndOpen(unlockPkg);
+    }
+
+    /** A remote button mapped to a grown-ups-only app: reuse launch() so it asks for the code when needed. */
+    private void unlockAndOpen(String pkg) {
+        String label = "that app";
+        for (AppStore.App a : all) if (a.pkg.equals(pkg)) { label = a.label; break; }
+        launch(pkg, label);
+    }
+
+    @Override public void onBackPressed() {
+        if (fullscreenCam != null) toggleFullscreen(fullscreenCam);
+        else if (movingPkg != null) endMove();
+        else if (showHidden) { showHidden = false; rebuild(); }
+        // otherwise: we're home, nowhere to go back to
+    }
+
+    /** Put a theme on Home: straight away, also while it's only being tried in Config's theme list. */
+    void setLook(Look l) {
+        look = l;
+        l.apply(findViewById(R.id.root), sky, wide);
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(l.bg));
+        glow.setLook(l);
+        adapter.notifyDataSetChanged();
+    }
+
+    // ---------- clock-driven bits: greeting, bedtime, weather ----------
+
+    private final Runnable tick = new Runnable() {
+        @Override public void run() {
+            Calendar cal = Calendar.getInstance();
+            int hour = cal.get(Calendar.HOUR_OF_DAY);
+            int dayKey = cal.get(Calendar.YEAR) * 400 + cal.get(Calendar.DAY_OF_YEAR);
+            double lat = cfg.lat(), lon = cfg.lon();
+            if (dayKey != lastSunDay || lat != lastSunLat || lon != lastSunLon) {
+                lastSunDay = dayKey; lastSunLat = lat; lastSunLon = lon;
+                sky.setSun(lat, lon, cal);
+            }
+            sky.setTime(hour * 60 + cal.get(Calendar.MINUTE));
+            Bins.show(bins, Bins.tonight(cal, cfg.binsDay(), cfg.binsAnchor(), cfg.binsEvery()));
+            greeting.setText(greeting(hour, cfg.familyName()));
+            long now = System.currentTimeMillis();
+            weather.setVisibility(cfg.place().isEmpty() ? View.GONE : View.VISIBLE);
+            if (!cfg.place().isEmpty() && now - lastWeather > WEATHER_MS) {
+                lastWeather = now;
+                Weather.fetch(Double.toString(lat), Double.toString(lon), cfg.tz(), w -> {
+                            if (w == null) { lastWeather = 0; return; }   // retry next tick
+                            weather.setText(w.text);
+                            weather.setCompoundDrawablesRelativeWithIntrinsicBounds(Weather.icon(w.code, w.day), 0, 0, 0);
+                            sky.setMood(Sky.moodFor(w.code));
+                        });
+            }
+            boolean adult = screenTime.adultMode(now);
+            updateModeButton(adult);
+            String sig = timeSig(now, adult);
+            if (!sig.equals(lastTimeSig)) {
+                lastTimeSig = sig;
+                refreshRuledTiles();
+            }
+            h.removeCallbacks(this);
+            h.postDelayed(this, TICK_MS);
+        }
+    };
+
+    private String timeSig(long now, boolean adult) {
+        float p = screenTime.progress(now);
+        boolean grown = adult || screenTime.hasPass(now);
+        return adult + ":" + grown + ":" + (!grown && p >= 1f) + ":" + screenTime.scrubbing()
+                + ":" + screenTime.minutesLeft(now, p) + ":" + Math.round(p * 100);
+    }
+
+    private void refreshRuledTiles() {
+        for (int i = 0; i < rows.size(); i++) {
+            Row r = rows.get(i);
+            if (r.app != null && ruled(r.app.pkg)) adapter.notifyItemChanged(i);
+        }
+    }
+
+    private void driftSky(View focused) {
+        if (focused == null) return;
+        View root = findViewById(R.id.root);
+        // Focus can land (on the Grown-ups button) before the first layout, when there's no size to work from.
+        if (root.getWidth() == 0 || root.getHeight() == 0) return;
+        int[] at = new int[2], r = new int[2];
+        focused.getLocationInWindow(at);
+        root.getLocationInWindow(r);
+        float nx = ((at[0] - r[0] + focused.getWidth() / 2f) / root.getWidth() - 0.5f) * 2f;
+        float ny = ((at[1] - r[1] + focused.getHeight() / 2f) / root.getHeight() - 0.5f) * 2f;
+        float d = getResources().getDisplayMetrics().density;
+        float tx = -nx * Sky.PARALLAX_X_DP * d, ty = -ny * Sky.PARALLAX_Y_DP * d, fx = sky.parallaxX(), fy = sky.parallaxY();
+        if (parallax != null) parallax.cancel();
+        parallax = ValueAnimator.ofFloat(0f, 1f).setDuration(900);
+        parallax.setInterpolator(new DecelerateInterpolator(2f));
+        parallax.addUpdateListener(a -> {
+            float t = (float) a.getAnimatedValue();
+            sky.setParallax(fx + (tx - fx) * t, fy + (ty - fy) * t);
+        });
+        parallax.start();
+    }
+
+    private final Runnable hideStatus = () -> { if (movingPkg == null && !showHidden) status.setVisibility(View.GONE); };
+
+    private void flashStatus(String msg, long ms) {
+        status.setText(msg);
+        status.setVisibility(View.VISIBLE);
+        h.removeCallbacks(hideStatus);
+        h.postDelayed(hideStatus, ms);
+    }
+
+    // ---------- cameras ----------
+
+    private static void showLabel(View label) {
+        label.animate().cancel();
+        label.animate().alpha(1f).setStartDelay(0).setDuration(200).start();
+    }
+
+    private static void fadeLabel(View label, long delay) {
+        label.animate().cancel();
+        label.animate().alpha(0f).setStartDelay(delay).setDuration(600).start();
+    }
+
+    private void toggleFullscreen(View cam) {
+        boolean goFull = fullscreenCam == null;
+        fullscreenCam = goFull ? cam : null;
+        int vis = goFull ? View.GONE : View.VISIBLE;
+        findViewById(R.id.left).setVisibility(vis);
+        findViewById(R.id.camGap).setVisibility(goFull || !(camOn[0] && camOn[1]) ? View.GONE : View.VISIBLE);
+        View right = findViewById(R.id.right);
+        float d = getResources().getDisplayMetrics().density;
+        right.setPadding(goFull ? 0 : (int) (10 * d), 0, goFull ? 0 : (int) (12 * d), 0);
+        cam.setClipToOutline(!goFull);   // square corners when it fills the screen
+        for (int i = 0; i < camViews.length; i++) {
+            if (camViews[i] == cam) {
+                feeds[i].setHd(goFull);                 // 1080p only when it fills the screen
+            } else if (camOn[i]) {
+                camViews[i].setVisibility(vis);
+                if (goFull) feeds[i].stop(); else { showLabel(camLabels[i]); feeds[i].start(); }
+            }
+        }
+        cam.requestFocus();
+    }
+
+    // ---------- apps ----------
+
+    private void reload() {
+        if (movingPkg != null) return; // don't reshuffle under the user's feet
+        all.clear();
+        all.addAll(store.load());
+        timedApps = new TimedApps(this);   // the setting, or the apps on Home, may have changed
+        rebuild();
+    }
+
+    private void rebuild() {
+        rows.clear();
+        hiddenCount = 0;
+        List<Row> favs = new ArrayList<>(), rest = new ArrayList<>();
+        for (AppStore.App a : all) {
+            if (a.hidden) hiddenCount++;
+            if (a.hidden && !showHidden) continue;
+            if (a.fav) favs.add(new Row(T_FAV, null, a)); else rest.add(new Row(T_APP, null, a));
+        }
+        if (!favs.isEmpty()) {
+            rows.add(new Row(T_HEADER, "Favourites", null));
+            rows.addAll(favs);
+            rows.add(new Row(T_HEADER, "All apps", null));
+        }
+        rows.addAll(rest);
+        if (movingPkg != null) { status.setText("Moving: use the arrows, then OK to drop"); status.setVisibility(View.VISIBLE); }
+        else if (showHidden) { status.setText("Showing hidden apps. Hold OK to unhide, Back to finish"); status.setVisibility(View.VISIBLE); }
+        else status.setVisibility(View.GONE);
+        adapter.notifyDataSetChanged();
+    }
+
+    /** The scene tile's picture: a miniature of the chosen scene. */
+    private SceneTile sceneTile() {
+        if (sceneTile == null) {
+            String pkg = getString(R.string.scene_tile_package), label = "YouTube";
+            int badge = 0xFFFF0033;   // YouTube red
+            for (AppStore.App x : all) if (x.pkg.equals(pkg)) { label = x.label; if (!timedApps.youtube(pkg)) badge = x.accent; }
+            sceneTile = new SceneTile(label, getResources().getFont(R.font.inter_semibold), Scene.create(this, Scene.Mode.TILE), badge);
+        }
+        return sceneTile;
+    }
+
+    /** Timed (YouTube, or whatever Config says) or grown-ups-only (SmartTube): an app the allowance rules apply to. */
+    private boolean ruled(String pkg) { return timedApps.timed(pkg) || locked.contains(pkg); }
+
+    private int firstAppPos() {
+        for (int i = 0; i < rows.size(); i++) if (rows.get(i).type != T_HEADER) return i;
+        return 0;
+    }
+
+    private int posOf(AppStore.App a) {
+        for (int i = 0; i < rows.size(); i++) if (rows.get(i).app == a) return i;
+        return -1;
+    }
+
+    private void launch(AppStore.App a) { launch(a.pkg, a.label); }
+
+    private void launch(String pkg, String label) {
+        if (locked.contains(pkg) && !screenTime.grownUp(System.currentTimeMillis())) {
+            ParentGate.ask(this, () -> {
+                screenTime.setGrownUp(System.currentTimeMillis() + GROWN_UP_MS);
+                launch(pkg, label);
+            });
+            return;
+        }
+        if (timedApps.timed(pkg)) {
+            WatchActivity.open(this, pkg);   // framed in the scene, Goodnight if it's used up, or full screen in grown-up time
+            return;
+        }
+        if (!open(pkg)) Toast.makeText(this, "Can't open " + label, Toast.LENGTH_SHORT).show();
+    }
+
+    /** Start an app the normal way; false if it can't be. */
+    private boolean open(String pkg) {
+        Intent i = AppStore.launchIntent(getPackageManager(), pkg);
+        if (i == null) return false;
+        try { startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); return true; }
+        catch (ActivityNotFoundException e) { return false; }
+    }
+
+    private void showMenu(AppStore.App a) {
+        List<String> items = new ArrayList<>();
+        List<Runnable> acts = new ArrayList<>();
+        if (timedApps.timed(a.pkg)) {
+            items.add("Grown-up time: " + a.label);
+            acts.add(() -> ParentGate.ask(this, () -> {
+                screenTime.setGrownUp(System.currentTimeMillis() + GROWN_UP_MS);
+                WatchActivity.openFullScreen(this, a.pkg);
+            }));
+        }
+        items.add("Move"); acts.add(() -> startMove(a));
+        items.add(a.fav ? "Remove from favourites" : "Add to favourites");
+        acts.add(() -> { a.fav = !a.fav; store.setFav(a.pkg, a.fav); rebuild(); focus(posOf(a)); });
+        items.add(a.hidden ? "Show on home" : "Hide");
+        acts.add(() -> { a.hidden = !a.hidden; store.setHidden(a.pkg, a.hidden); rebuild(); });
+        items.add(showHidden ? "Stop showing hidden apps" : "Show hidden apps (" + hiddenCount + ")");
+        acts.add(() -> { showHidden = !showHidden; rebuild(); });
+        items.add("App info");
+        acts.add(() -> startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", a.pkg, null))));
+        showDialog(new AlertDialog.Builder(this)
+                .setTitle(a.label)
+                .setItems(items.toArray(new String[0]), (d, which) -> acts.get(which).run())
+                .create());
+    }
+
+    /** "Good morning" etc. for the hour (0–23), with optional family name. */
+    static String greeting(int hour, String familyName) {
+        String part = hour < 5 ? "Good night" : hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon"
+                : hour < 22 ? "Good evening" : "Good night";
+        return familyName == null || familyName.isEmpty() ? part : part + ", " + familyName;
+    }
+
+    /** Top corner's Adult/Kids mode toggle: Kids -> Adult requires the arrow code; Adult -> Kids is one click. */
+    private void toggleMode() {
+        long now = System.currentTimeMillis();
+        if (screenTime.adultMode(now)) {
+            applyAdultMode(false);
+        } else {
+            ParentGate.ask(this, () -> applyAdultMode(true));
+        }
+    }
+
+    private void applyAdultMode(boolean adult) {
+        long now = System.currentTimeMillis();
+        long until = screenTime.setAdultMode(now, adult);
+        String msg;
+        if (adult) {
+            if (until > 0) {
+                Calendar c = Calendar.getInstance();
+                c.setTimeInMillis(until);
+                int untilMin = c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE);
+                msg = "Adult mode on (back to kids' mode at " + HomeConfig.formatTime12(untilMin) + ")";
+            } else {
+                msg = "Adult mode on — timed apps are full screen";
+            }
+        } else {
+            msg = "Kids' mode on";
+        }
+        timeChanged(msg);
+    }
+
+    private void updateModeButton(boolean adult) {
+        if (modeBtn == null || (modeBtnAdult != null && modeBtnAdult == adult)) return;
+        modeBtnAdult = adult;
+        modeBtn.setImageResource(adult ? R.drawable.ic_adult : R.drawable.ic_child);
+        modeBtn.setActivated(adult);
+        modeBtn.setContentDescription(adult ? "Adult mode on (OK for kids)" : "Switch to adult mode");
+        if (modeBtn.hasFocus()) cornerLabel.setText(modeBtn.getContentDescription());
+    }
+
+    /** Top corner's Settings button, past the arrow code: Home & household settings. */
+    private void settings() {
+        SettingsMenu.showSettings(this, all, this::recreate, this::setLook, this::confirmRestore);
+    }
+
+    /** Top corner's Remote buttons button, past the arrow code: remote button remapping. */
+    private void remoteButtons() {
+        SettingsMenu.showRemoteButtons(this, all, this::recreate, this::setLook, this::confirmRestore);
+    }
+
+    /** Top corner's Kids' time button, past the arrow code: daily limits, top-ups, timed apps & scene. */
+    private void kidsTime() {
+        SettingsMenu.showKidsTime(this, all, this::recreate, this::timeChanged, this::runDemo, this::setLook, this::confirmRestore);
+    }
+
+    private void runDemo() {
+        screenTime.setScrub(0f);   // so the app opens even if today's real time is used up
+        startService(ScreenTimeService.dev(this, "DEMO").putExtra("secs", 10));
+        WatchActivity.open(this, getString(R.string.scene_tile_package));
+    }
+
+    private void timeChanged(String msg) {
+        long now = System.currentTimeMillis();
+        boolean adult = screenTime.adultMode(now);
+        updateModeButton(adult);
+        lastTimeSig = timeSig(now, adult);
+        refreshRuledTiles();
+        flashStatus(msg, 5_000);
+    }
+
+    // ---------- put the TV back ----------
+
+    /** Past the arrow code: say plainly what's about to happen, with Cancel first. */
+    private void confirmRestore() {
+        AlertDialog d = new AlertDialog.Builder(this)
+                .setTitle("Put the TV back how it came?")
+                .setMessage("This undoes everything that was set up on this TV: the TV's own home screen comes back, "
+                        + "the apps that were switched off come back, settings go back to how they were, and this Home "
+                        + "app (with its scenes, kids' time and cameras) removes itself. The TV restarts when it's done.\n\n"
+                        + "Setting it up again needs a computer.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Put it back", (x, w) -> runRestore())
+                .create();
+        d.setOnShowListener(x -> d.getButton(AlertDialog.BUTTON_NEGATIVE).requestFocus());
+        showDialog(d);
+    }
+
+    private void runRestore() {
+        AlertDialog busy = showDialog(new AlertDialog.Builder(this).setTitle("Putting the TV back…")
+                .setMessage("This takes a minute or so. Please don't switch the TV off.").setCancelable(false).create());
+        android.content.Context app = getApplicationContext();
+        new Thread(() -> {
+            String err = null;
+            boolean started = true;
+            try { Restore.run(app); }
+            catch (Restore.NotStarted e) { err = e.getMessage(); started = false; }
+            catch (java.io.IOException | RuntimeException e) { err = e.getMessage(); }
+            final String msg = err;
+            final boolean partly = started;
+            h.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                busy.dismiss();
+                if (msg == null) {
+                    showDialog(new AlertDialog.Builder(this).setTitle("Done")
+                            .setMessage("The TV will restart in a few seconds, with its own home screen.").create());
+                    return;
+                }
+                showDialog(new AlertDialog.Builder(this).setTitle("Couldn't put the TV back")
+                        .setMessage(partly
+                                ? "Something went wrong part way (" + msg + "), so the TV may be only partly put back.\n\n"
+                                        + "From a computer, run ./restore.sh in the repo to finish."
+                                : "Home needs the TV to allow its debugging connection, and it didn't (" + msg + ").\n\n"
+                                        + "Nothing was changed. From a computer, run ./restore.sh in the repo instead.")
+                        .setPositiveButton("OK", null).create());
+            });
+        }, "restore").start();
+    }
+
+    private void startMove(AppStore.App a) {
+        movingPkg = a.pkg;
+        rebuild();
+        focus(posOf(a));
+    }
+
+    private void endMove() {
+        movingPkg = null;
+        store.saveOrder(all);
+        rebuild();
+    }
+
+    /** Move the dragged tile by `delta` positions within its own section, keeping `all` in sync. */
+    private void moveBy(int pos, int delta) {
+        int to = pos + delta;
+        if (to < 0 || to >= rows.size() || rows.get(to).type != rows.get(pos).type) return;
+        AppStore.App a = rows.get(pos).app, b = rows.get(to).app;
+        Collections.swap(rows, pos, to);
+        Collections.swap(all, all.indexOf(a), all.indexOf(b));
+        adapter.notifyItemChanged(pos);
+        adapter.notifyItemChanged(to);
+        focus(to);
+    }
+
+    /** Focus scrolling only brings a tile just into view, which leaves the first/last row a few px short of
+     *  the end: the fading edge then eats that row and its glow. On those rows, go all the way. */
+    private void snapToEnds(int pos) {
+        if (pos == RecyclerView.NO_POSITION || rows.isEmpty()) return;
+        GridLayoutManager.SpanSizeLookup g = ((GridLayoutManager) grid.getLayoutManager()).getSpanSizeLookup();
+        int row = g.getSpanGroupIndex(pos, SPANS);
+        int first = firstAppPos();
+        if (first >= 0 && row <= g.getSpanGroupIndex(first, SPANS)) {
+            grid.smoothScrollBy(0, -grid.computeVerticalScrollOffset());
+        } else if (row == g.getSpanGroupIndex(rows.size() - 1, SPANS)) {
+            int rest = grid.computeVerticalScrollRange() - grid.computeVerticalScrollExtent() - grid.computeVerticalScrollOffset();
+            if (rest > 0) grid.smoothScrollBy(0, rest);
+        }
+    }
+
+    private boolean inTopRow(int pos) {
+        if (pos == RecyclerView.NO_POSITION) return false;
+        GridLayoutManager.SpanSizeLookup g = ((GridLayoutManager) grid.getLayoutManager()).getSpanSizeLookup();
+        return g.getSpanGroupIndex(pos, SPANS) <= g.getSpanGroupIndex(firstAppPos(), SPANS);
+    }
+
+    private void focus(int pos) {
+        if (pos < 0 || pos >= rows.size()) return;
+        grid.scrollToPosition(pos);
+        grid.post(() -> {
+            RecyclerView.ViewHolder vh = grid.findViewHolderForAdapterPosition(pos);
+            if (vh != null) vh.itemView.requestFocus();
+        });
+    }
+
+    private final class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        @Override public int getItemViewType(int pos) { return rows.get(pos).type == T_HEADER ? T_HEADER : T_APP; }
+        @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup p, int t) {
+            LayoutInflater li = LayoutInflater.from(p.getContext());
+            if (t == T_HEADER) return new RecyclerView.ViewHolder(li.inflate(R.layout.section, p, false)) { };
+            return new Holder(li.inflate(R.layout.tile, p, false));
+        }
+        @Override public void onBindViewHolder(@NonNull RecyclerView.ViewHolder h, int pos) {
+            Row r = rows.get(pos);
+            if (r.type == T_HEADER) { ((TextView) h.itemView).setText(r.title); ((TextView) h.itemView).setTextColor(look.faint); }
+            else ((Holder) h).bind(r.app);
+        }
+        @Override public int getItemCount() { return rows.size(); }
+    }
+
+    private final class Holder extends RecyclerView.ViewHolder {
+        final ImageView banner, icon; final View iconBox, timeBar; final TextView name, badge;
+        final TileFrame frame;
+        final float lift;
+        AppStore.App app;
+
+        Holder(View v) {
+            super(v);
+            banner = v.findViewById(R.id.banner);
+            icon = v.findViewById(R.id.icon);
+            iconBox = v.findViewById(R.id.iconBox);
+            name = v.findViewById(R.id.name);
+            badge = v.findViewById(R.id.badge);
+            timeBar = v.findViewById(R.id.timeBar);
+            float d = v.getResources().getDisplayMetrics().density;
+            lift = TileFx.LIFT_DP * d;
+            frame = new TileFrame(d);
+            v.setForeground(frame);
+            v.setOnClickListener(x -> { if (movingPkg != null) endMove(); else launch(app); });
+            v.setOnLongClickListener(x -> { if (movingPkg == null) showMenu(app); return true; });
+            v.setOnFocusChangeListener((x, has) -> {
+                animateFocus(has, true);
+                if (has) grid.post(() -> snapToEnds(getBindingAdapterPosition()));
+                if (has && (app == null || !app.pkg.equals(movingPkg))) frame.playSweep(); else frame.stopSweep();
+            });
+            v.setOnKeyListener((x, code, ev) -> {
+                if (ev.getAction() != KeyEvent.ACTION_DOWN) return false;
+                if (code == KeyEvent.KEYCODE_MENU && movingPkg == null) { showMenu(app); return true; }
+                if (code == KeyEvent.KEYCODE_DPAD_UP && movingPkg == null && inTopRow(getBindingAdapterPosition())) {
+                    grownUps.requestFocus();   // not left to focus search, which can pick a camera instead
+                    return true;
+                }
+                if (movingPkg == null || !movingPkg.equals(app.pkg)) return false;
+                int pos = getBindingAdapterPosition();
+                int cols = cols(rows.get(pos));
+                switch (code) {
+                    case KeyEvent.KEYCODE_DPAD_LEFT:  moveBy(pos, -1); return true;
+                    case KeyEvent.KEYCODE_DPAD_RIGHT: moveBy(pos, +1); return true;
+                    case KeyEvent.KEYCODE_DPAD_UP:    moveBy(pos, -cols); return true;
+                    case KeyEvent.KEYCODE_DPAD_DOWN:  moveBy(pos, +cols); return true;
+                }
+                return false;
+            });
+        }
+
+        void animateFocus(boolean has, boolean spring) {
+            boolean moving = app != null && app.pkg.equals(movingPkg);
+            float s = moving ? TileFx.MOVING : has ? TileFx.FOCUS : 1f;
+            frame.setFocused(has || moving);
+            if (spring) TileFx.animate(itemView, s, has || moving ? lift : 0);
+            else TileFx.set(itemView, s, has || moving ? lift : 0);
+        }
+
+        void bind(AppStore.App a) {
+            app = a;
+            boolean hasBanner = a.banner != null;
+            banner.setVisibility(hasBanner ? View.VISIBLE : View.GONE);
+            iconBox.setVisibility(hasBanner ? View.GONE : View.VISIBLE);
+            boolean isTimed = timedApps.timed(a.pkg), isLocked = locked.contains(a.pkg);
+            boolean isRuled = isTimed || isLocked;
+            long now = isRuled ? System.currentTimeMillis() : 0;
+            boolean adult = isRuled && screenTime.adultMode(now);
+            boolean grown = isRuled && (adult || screenTime.hasPass(now));
+            boolean counted = isTimed && !grown;
+            float p = counted ? screenTime.progress(now) : 0f;
+            // The scene tile: a little version of the scene, its sky following today's time.
+            boolean scene = counted && a.pkg.equals(getString(R.string.scene_tile_package));
+            if (scene) {
+                sceneTile().setProgress(p);
+                banner.setVisibility(View.VISIBLE);
+                iconBox.setVisibility(View.GONE);
+                banner.setImageDrawable(sceneTile);
+            } else if (hasBanner) banner.setImageDrawable(a.banner);
+            else { icon.setImageDrawable(a.icon); name.setText(a.label); }
+            int accent = scene ? 0xFFFFB347 : a.accent;   // warm sunshine glow for the scene tile
+            itemView.setContentDescription(a.label);
+            itemView.setTag(R.id.accent, accent);
+            int shadow = look.glowColour != 0 ? look.glowColour : accent;
+            itemView.setOutlineSpotShadowColor(shadow);
+            itemView.setOutlineAmbientShadowColor(shadow);
+            frame.setLook(look);
+            frame.setAccent(accent);
+            itemView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(look.tile));
+            name.setTextColor(look.text);
+            boolean asleep = counted && p >= 1f;
+            boolean lockedApp = isLocked && !grown;
+            itemView.setAlpha(a.hidden ? 0.35f : asleep ? 0.55f : 1f);
+            boolean moving = a.pkg.equals(movingPkg);
+            String note = null; int icon = 0;
+            if (moving) note = "MOVING";
+            else if (a.hidden) note = "HIDDEN";
+            else if (asleep) { note = "THAT'S ALL FOR TODAY"; icon = R.drawable.wx_moon; }
+            // With every app timed, only the scene tile shows the minutes (the rest would all say the same).
+            else if (counted && (scene || !timedApps.all())) {
+                int left = screenTime.minutesLeft(now, p);
+                note = (screenTime.scrubbing() ? Math.round((1 - p) * 100) + "% LEFT" : left + " MIN LEFT");
+                icon = p >= ScreenTime.NIGHT ? R.drawable.wx_moon : R.drawable.wx_sun;
+            }
+            else if (lockedApp) note = "GROWN-UPS";
+            else if (isRuled && !adult) note = "GROWN-UP TIME";
+            badge.setVisibility(note != null ? View.VISIBLE : View.GONE);
+            badge.setText(note);
+            float density = itemView.getResources().getDisplayMetrics().density;
+            android.graphics.drawable.Drawable badgeIcon = icon != 0 ? itemView.getContext().getDrawable(icon) : null;
+            if (badgeIcon != null) badgeIcon.setBounds(0, 0, (int) (12 * density), (int) (12 * density));
+            badge.setCompoundDrawablesRelative(badgeIcon, null, null, null);
+            if (counted && (scene || !timedApps.all()) && !asleep && !moving && !a.hidden) {
+                float cl = Math.min(1f, p);
+                timeBar.setVisibility(View.VISIBLE);
+                timeBar.setBackgroundColor(sceneTile().scene.barColour(cl));
+                timeBar.setPivotX(0);
+                timeBar.setScaleX(1f - cl);
+            } else timeBar.setVisibility(View.GONE);
+            badge.setCompoundDrawablePadding((int) (4 * density));
+            animateFocus(itemView.hasFocus(), itemView.hasFocus() || a.pkg.equals(movingPkg));
+        }
+    }
+}

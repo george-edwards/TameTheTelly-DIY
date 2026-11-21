@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<au.internal.home.AspectFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:focusable="true" android:background="@drawable/cam_bg">
+    <TextureView android:id="@+id/surface" android:layout_width="match_parent" android:layout_height="match_parent"/>
+    <LinearLayout android:id="@+id/label" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="top" android:background="@drawable/cam_scrim"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingTop="14dp" android:paddingBottom="34dp">
+        <View android:id="@+id/dot" android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/live_dot"/>
+        <TextView android:id="@+id/live" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:paddingStart="6dp" android:text="LIVE" android:textColor="@color/live" android:textSize="11sp"
+            android:fontFamily="@font/inter_semibold" android:letterSpacing="0.08"
+            android:shadowColor="#99000000" android:shadowRadius="6" android:shadowDy="1"/>
+        <TextView android:id="@+id/name" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:paddingStart="8dp" android:textColor="#FFFFFF" android:textSize="14sp" android:fontFamily="@font/inter_medium"
+            android:shadowColor="#99000000" android:shadowRadius="6" android:shadowDy="1"/>
+    </LinearLayout>
+    <TextView android:id="@+id/state" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center" android:textColor="@color/muted" android:textSize="14sp" android:text="Connecting…"/>
+</au.internal.home.AspectFrameLayout>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Kids' time: the scene overlay + starting Goodnight from the background, seeing which app is
+         on screen, and a foreground service to watch. The first two are granted over adb (appops). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <application
+        android:label="Home"
+        android:icon="@drawable/ic_home"
+        android:banner="@drawable/banner"
+        android:theme="@style/HomeTheme"
+        android:usesCleartextTraffic="true">
+        <!-- TCL's TV picture API, for the Blue Light Filter at bedtime. Optional so the app still installs elsewhere. -->
+        <uses-library android:name="com.tcl.tvmanager" android:required="false" />
+        <receiver android:name=".Bedtime" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <service android:name=".ScreenTimeService" android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Child's daily screen-time scene and limit for the timed apps" />
+        </service>
+        <service android:name=".RemoteKeyService" android:exported="true"
+            android:label="Home remote buttons"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice"
+                android:resource="@xml/remote_keys_service" />
+        </service>
+        <receiver android:name=".DevReceiver" android:exported="true" android:permission="android.permission.DUMP">
+            <intent-filter>
+                <action android:name="au.internal.home.SCRUB" />
+                <action android:name="au.internal.home.LIVE" />
+                <action android:name="au.internal.home.PREVIEW" />
+                <action android:name="au.internal.home.ADD" />
+                <action android:name="au.internal.home.RESET" />
+                <action android:name="au.internal.home.GROWNUP" />
+                <action android:name="au.internal.home.STATUS" />
+                <action android:name="au.internal.home.DEMO" />
+                <action android:name="au.internal.home.SET" />
+                <action android:name="au.internal.home.KEY" />
+                <action android:name="au.internal.home.RESTORE_CHECK" />
+            </intent-filter>
+        </receiver>
+        <activity android:name=".GoodnightActivity" android:exported="false"
+            android:launchMode="singleTask" android:taskAffinity="au.internal.home.goodnight"
+            android:excludeFromRecents="true" android:screenOrientation="landscape"
+            android:theme="@style/GoodnightTheme" />
+        <!-- Opens a timed app (Home's tiles, and any remote button mapped to a timed app in Config > Remote buttons;
+             extra "pkg" picks the app). -->
+        <activity android:name=".WatchActivity" android:exported="true"
+            android:taskAffinity="au.internal.home.watch" android:excludeFromRecents="true" android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <!-- Only there to give apps that hand themselves off to a new task (YouTube) a window (Framer.adopt). -->
+        <activity android:name=".FrameHolder" android:exported="false"
+            android:taskAffinity="au.internal.home.frame" android:excludeFromRecents="true"
+            android:resizeableActivity="true" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:clearTaskOnLaunch="true"
+            android:resumeWhilePausing="true"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

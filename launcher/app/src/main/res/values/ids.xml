@@ -1,0 +1,4 @@
+<resources>
+    <item name="accent" type="id"/>
+    <item name="springs" type="id"/>
+</resources>

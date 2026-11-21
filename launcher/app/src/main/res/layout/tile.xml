@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<au.internal.home.AspectFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="7dp"
+    android:focusable="true" android:clickable="true"
+    android:background="@drawable/tile_bg">
+    <ImageView android:id="@+id/banner" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="centerCrop"/>
+    <LinearLayout android:id="@+id/iconBox" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center" android:padding="8dp">
+        <ImageView android:id="@+id/icon" android:layout_width="40dp" android:layout_height="40dp"/>
+        <TextView android:id="@+id/name" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:paddingTop="6dp" android:singleLine="true" android:ellipsize="end" android:gravity="center"
+            android:textColor="@color/text" android:textSize="12sp" android:fontFamily="@font/inter_medium"/>
+    </LinearLayout>
+    <!-- YouTube time left: a thin bar along the bottom, sky-coloured for where the day has got to. -->
+    <View android:id="@+id/timeBar" android:layout_width="match_parent" android:layout_height="5dp"
+        android:layout_gravity="bottom" android:visibility="gone"/>
+    <TextView android:id="@+id/badge" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="top|end" android:layout_margin="6dp" android:background="@drawable/label_bg"
+        android:paddingStart="7dp" android:paddingEnd="7dp" android:paddingTop="2dp" android:paddingBottom="2dp"
+        android:textColor="#FFFFFF" android:textSize="10sp" android:fontFamily="@font/inter_semibold"
+        android:letterSpacing="0.06" android:visibility="gone"/>
+</au.internal.home.AspectFrameLayout>

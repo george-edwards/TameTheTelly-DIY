@@ -1,0 +1,12 @@
+<resources>
+    <!-- (TV menu: Config > Camera names and addresses) Two optional camera cards on Home (RTSP, e.g. UniFi Protect
+         rtsp://<nvr>:7447/<token>). A blank address hides that camera; with both blank (the default) the apps take
+         the whole screen. -->
+    <string name="cam1_name" translatable="false">Camera 1</string>
+    <string name="cam2_name" translatable="false">Camera 2</string>
+    <string name="cam1_url" translatable="false"></string>
+    <string name="cam2_url" translatable="false"></string>
+    <!-- Optional 1080p streams, used only when a feed is full screen (blank: the address above). -->
+    <string name="cam1_url_hd" translatable="false"></string>
+    <string name="cam2_url_hd" translatable="false"></string>
+</resources>
