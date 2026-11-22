@@ -14,13 +14,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
-import android.animation.ValueAnimator;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -70,11 +68,11 @@ public class MainActivity extends Activity {
     private TextView status, greeting, weather;
     private View bins;
     private Sky sky;
-    private ValueAnimator parallax;
     private final Adapter adapter = new Adapter();
     private final Handler h = new Handler(Looper.getMainLooper());
     private CameraFeed[] feeds;
     private View[] camViews, camLabels;
+    private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
     private long lastWeather;
     private int lastSunDay = -1;
@@ -137,6 +135,7 @@ public class MainActivity extends Activity {
         scrim = new View(this);
         scrim.setBackgroundColor(0xFF000000);
         scrim.setAlpha(0f);
+        scrim.setVisibility(View.GONE);
         ((ViewGroup) getWindow().getDecorView()).addView(scrim, new ViewGroup.LayoutParams(-1, -1));
         prefs = getSharedPreferences("ui", MODE_PRIVATE);
         status = findViewById(R.id.status);
@@ -208,13 +207,10 @@ public class MainActivity extends Activity {
         registerReceiver(pkgReceiver, f);
         reload();
 
-        // Parallax: the sky drifts a few dp away from wherever focus goes.
-        View root = findViewById(R.id.root);
-        root.getViewTreeObserver().addOnGlobalFocusChangeListener((was, now) -> driftSky(now));
-
         // Gentle fade-in when the launcher is first created (i.e. at boot).
+        View root = findViewById(R.id.root);
         root.setAlpha(0f);
-        root.animate().alpha(1f).setDuration(700).setStartDelay(150).start();
+        root.animate().alpha(1f).setDuration(350).setStartDelay(50).start();
 
         if (!prefs.getBoolean("hintShown", false)) {
             flashStatus("Hold OK on an app to move, favourite or hide it", 8_000);
@@ -234,6 +230,7 @@ public class MainActivity extends Activity {
             v.setPivotY(v.getHeight() / 2f);
             TileFx.animate(v, has ? 1.08f : 1f, 0);
             if (has) {
+                grid.smoothScrollToPosition(0);
                 cornerLabel.setText(v.getContentDescription());
                 cornerLabel.animate().cancel();
                 cornerLabel.animate().alpha(1f).setDuration(140).start();
@@ -255,7 +252,6 @@ public class MainActivity extends Activity {
     @Override protected void onDestroy() {
         dismissDialogs();
         h.removeCallbacksAndMessages(null);
-        if (parallax != null) parallax.cancel();
         unregisterReceiver(pkgReceiver);
         super.onDestroy();
     }
@@ -282,7 +278,14 @@ public class MainActivity extends Activity {
         super.onTopResumedActivityChanged(top);
         ScreenTimeService.setHomeOnTop(top);
         scrim.animate().cancel();
-        scrim.animate().alpha(top ? 0f : 0.88f).setDuration(top ? 250 : 500).start();
+        if (top) {
+            if (scrim.getVisibility() == View.VISIBLE) {
+                scrim.animate().alpha(0f).setDuration(200).withEndAction(() -> scrim.setVisibility(View.GONE)).start();
+            }
+        } else {
+            scrim.setVisibility(View.VISIBLE);
+            scrim.animate().alpha(0.88f).setDuration(350).start();
+        }
         long now = System.currentTimeMillis();
         if (top) {
             // A one-app grown-up pass ends when you come back Home; persistent Adult mode stays on until toggled/scheduled off.
@@ -295,8 +298,11 @@ public class MainActivity extends Activity {
             startCams();
             if (movingPkg == null) {
                 timedApps = new TimedApps(this);
-                rebuild();
-                lastTimeSig = timeSig(now, adult);
+                String sig = timeSig(now, adult);
+                if (!sig.equals(lastTimeSig)) {
+                    lastTimeSig = sig;
+                    refreshRuledTiles();
+                }
             }
             if (passEnded && !adult) flashStatus("Grown-up time over", 4_000);
         } else {
@@ -305,13 +311,24 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Defer and stagger camera startup so returning Home paints and takes D-pad input immediately. */
     private void startCams() {
         for (int i = 0; i < feeds.length; i++) {
-            if (camOn[i] && camViews[i].getVisibility() == View.VISIBLE) { showLabel(camLabels[i]); feeds[i].start(); }
+            if (camStarters[i] != null) h.removeCallbacks(camStarters[i]);
+            if (camOn[i] && camViews[i].getVisibility() == View.VISIBLE) {
+                final int idx = i;
+                camStarters[i] = () -> { showLabel(camLabels[idx]); feeds[idx].start(); };
+                h.postDelayed(camStarters[i], 120L + i * 140L);
+            }
         }
     }
 
-    private void stopCams() { for (CameraFeed f : feeds) f.stop(); }
+    private void stopCams() {
+        for (int i = 0; i < feeds.length; i++) {
+            if (camStarters[i] != null) { h.removeCallbacks(camStarters[i]); camStarters[i] = null; }
+            feeds[i].stop();
+        }
+    }
 
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -399,28 +416,6 @@ public class MainActivity extends Activity {
             Row r = rows.get(i);
             if (r.app != null && ruled(r.app.pkg)) adapter.notifyItemChanged(i);
         }
-    }
-
-    private void driftSky(View focused) {
-        if (focused == null) return;
-        View root = findViewById(R.id.root);
-        // Focus can land (on the Grown-ups button) before the first layout, when there's no size to work from.
-        if (root.getWidth() == 0 || root.getHeight() == 0) return;
-        int[] at = new int[2], r = new int[2];
-        focused.getLocationInWindow(at);
-        root.getLocationInWindow(r);
-        float nx = ((at[0] - r[0] + focused.getWidth() / 2f) / root.getWidth() - 0.5f) * 2f;
-        float ny = ((at[1] - r[1] + focused.getHeight() / 2f) / root.getHeight() - 0.5f) * 2f;
-        float d = getResources().getDisplayMetrics().density;
-        float tx = -nx * Sky.PARALLAX_X_DP * d, ty = -ny * Sky.PARALLAX_Y_DP * d, fx = sky.parallaxX(), fy = sky.parallaxY();
-        if (parallax != null) parallax.cancel();
-        parallax = ValueAnimator.ofFloat(0f, 1f).setDuration(900);
-        parallax.setInterpolator(new DecelerateInterpolator(2f));
-        parallax.addUpdateListener(a -> {
-            float t = (float) a.getAnimatedValue();
-            sky.setParallax(fx + (tx - fx) * t, fy + (ty - fy) * t);
-        });
-        parallax.start();
     }
 
     private final Runnable hideStatus = () -> { if (movingPkg == null && !showHidden) status.setVisibility(View.GONE); };
@@ -726,7 +721,7 @@ public class MainActivity extends Activity {
         int row = g.getSpanGroupIndex(pos, SPANS);
         int first = firstAppPos();
         if (first >= 0 && row <= g.getSpanGroupIndex(first, SPANS)) {
-            grid.smoothScrollBy(0, -grid.computeVerticalScrollOffset());
+            grid.smoothScrollToPosition(0);
         } else if (row == g.getSpanGroupIndex(rows.size() - 1, SPANS)) {
             int rest = grid.computeVerticalScrollRange() - grid.computeVerticalScrollExtent() - grid.computeVerticalScrollOffset();
             if (rest > 0) grid.smoothScrollBy(0, rest);
@@ -766,7 +761,6 @@ public class MainActivity extends Activity {
     private final class Holder extends RecyclerView.ViewHolder {
         final ImageView banner, icon; final View iconBox, timeBar; final TextView name, badge;
         final TileFrame frame;
-        final float lift;
         AppStore.App app;
 
         Holder(View v) {
@@ -778,7 +772,6 @@ public class MainActivity extends Activity {
             badge = v.findViewById(R.id.badge);
             timeBar = v.findViewById(R.id.timeBar);
             float d = v.getResources().getDisplayMetrics().density;
-            lift = TileFx.LIFT_DP * d;
             frame = new TileFrame(d);
             v.setForeground(frame);
             v.setOnClickListener(x -> { if (movingPkg != null) endMove(); else launch(app); });
@@ -786,7 +779,6 @@ public class MainActivity extends Activity {
             v.setOnFocusChangeListener((x, has) -> {
                 animateFocus(has, true);
                 if (has) grid.post(() -> snapToEnds(getBindingAdapterPosition()));
-                if (has && (app == null || !app.pkg.equals(movingPkg))) frame.playSweep(); else frame.stopSweep();
             });
             v.setOnKeyListener((x, code, ev) -> {
                 if (ev.getAction() != KeyEvent.ACTION_DOWN) return false;
@@ -812,8 +804,8 @@ public class MainActivity extends Activity {
             boolean moving = app != null && app.pkg.equals(movingPkg);
             float s = moving ? TileFx.MOVING : has ? TileFx.FOCUS : 1f;
             frame.setFocused(has || moving);
-            if (spring) TileFx.animate(itemView, s, has || moving ? lift : 0);
-            else TileFx.set(itemView, s, has || moving ? lift : 0);
+            if (spring) TileFx.animate(itemView, s, 0);
+            else TileFx.set(itemView, s, 0);
         }
 
         void bind(AppStore.App a) {
@@ -840,9 +832,6 @@ public class MainActivity extends Activity {
             int accent = scene ? 0xFFFFB347 : a.accent;   // warm sunshine glow for the scene tile
             itemView.setContentDescription(a.label);
             itemView.setTag(R.id.accent, accent);
-            int shadow = look.glowColour != 0 ? look.glowColour : accent;
-            itemView.setOutlineSpotShadowColor(shadow);
-            itemView.setOutlineAmbientShadowColor(shadow);
             frame.setLook(look);
             frame.setAccent(accent);
             itemView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(look.tile));

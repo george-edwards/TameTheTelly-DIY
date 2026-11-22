@@ -39,6 +39,9 @@ final class Sky extends Drawable {
     private int overcast = Look.TWILIGHT.overcast;
 
     private final Paint base = new Paint(), glow = new Paint(), grain = new Paint();
+    private final Paint blit = new Paint(Paint.FILTER_BITMAP_FLAG);
+    private Bitmap cache;
+    private boolean dirty = true;
     private Paint[] ribbons = new Paint[0];
     private float night;           // 0 by day .. 1 once it's dark: how bright the ribbons are
     private final Matrix m = new Matrix();
@@ -108,7 +111,8 @@ final class Sky extends Drawable {
 
     void setParallax(float x, float y) {
         if (Float.isNaN(x) || Float.isNaN(y)) return;   // a NaN offset makes the gradients draw black
-        px = x; py = y; place(); invalidateSelf();
+        if (px == x && py == y) return;
+        px = x; py = y; place(); dirty = true; invalidateSelf();
     }
 
     float parallaxX() { return px; }
@@ -170,6 +174,7 @@ final class Sky extends Drawable {
                     new int[]{col | (a << 24), col | ((a * 2 / 5) << 24), col}, new float[]{0f, 0.5f, 1f}, Shader.TileMode.CLAMP));
         }
         place();
+        dirty = true;
     }
 
     private void place() {
@@ -201,10 +206,23 @@ final class Sky extends Drawable {
 
     @Override public void draw(Canvas c) {
         Rect b = getBounds();
-        c.drawRect(b, base);
-        for (Paint r : ribbons) c.drawRect(b, r);
-        c.drawRect(b, glow);
-        c.drawRect(b, grain);
+        if (b.isEmpty()) return;
+        int cw = Math.max(1, b.width() / 2), ch = Math.max(1, b.height() / 2);
+        if (dirty || cache == null || cache.getWidth() != cw || cache.getHeight() != ch) {
+            if (cache == null || cache.getWidth() != cw || cache.getHeight() != ch) {
+                if (cache != null) cache.recycle();
+                cache = Bitmap.createBitmap(cw, ch, Bitmap.Config.ARGB_8888);
+            }
+            Canvas cc = new Canvas(cache);
+            cc.scale(cw / (float) b.width(), ch / (float) b.height());
+            cc.translate(-b.left, -b.top);
+            cc.drawRect(b, base);
+            for (Paint r : ribbons) cc.drawRect(b, r);
+            cc.drawRect(b, glow);
+            cc.drawRect(b, grain);
+            dirty = false;
+        }
+        c.drawBitmap(cache, null, b, blit);
     }
 
     /** Signed grain: tiny light and dark specks averaging out to no change in brightness. */

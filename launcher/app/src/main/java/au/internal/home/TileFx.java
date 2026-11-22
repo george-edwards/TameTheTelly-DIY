@@ -14,7 +14,7 @@ import androidx.dynamicanimation.animation.SpringForce;
 /** Focus motion for app tiles (springs) and picking each app's accent colour from its banner. */
 final class TileFx {
     static final float FOCUS = 1.08f, MOVING = 1.12f, LIFT_DP = 10f;
-    static final float STIFFNESS = 520f, DAMPING = 0.58f;
+    static final float STIFFNESS = 1400f, DAMPING = 0.90f;
     static final int FALLBACK = 0xFFA9C8F0;      // soft blue-white for monochrome banners
 
     private TileFx() { }
@@ -25,13 +25,15 @@ final class TileFx {
         if (s == null) {
             s = new SpringAnimation[]{spring(v, DynamicAnimation.SCALE_X), spring(v, DynamicAnimation.SCALE_Y),
                     spring(v, DynamicAnimation.TRANSLATION_Z)};
-            s[0].addUpdateListener((a, val, vel) -> { if (v.getParent() instanceof View) ((View) v.getParent()).invalidate(); });
-            s[0].addEndListener((a, c, val, vel) -> { if (v.getParent() instanceof View) ((View) v.getParent()).invalidate(); });
+            if (v.getTag(R.id.accent) != null) {
+                s[0].addUpdateListener((a, val, vel) -> { if (v.getParent() instanceof View) ((View) v.getParent()).invalidate(); });
+                s[0].addEndListener((a, c, val, vel) -> { if (v.getParent() instanceof View) ((View) v.getParent()).invalidate(); });
+            }
             v.setTag(R.id.springs, s);
         }
         s[0].animateToFinalPosition(scale);
         s[1].animateToFinalPosition(scale);
-        s[2].animateToFinalPosition(lift);
+        if (lift != 0f || v.getTranslationZ() != 0f) s[2].animateToFinalPosition(lift);
     }
 
     /** Jump straight to a state (used for renders, and when a recycled view is rebound). */

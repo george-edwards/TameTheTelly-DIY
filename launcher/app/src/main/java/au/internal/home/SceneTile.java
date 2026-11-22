@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package au.internal.home;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -23,6 +24,8 @@ final class SceneTile extends Drawable {
     private final String name;
     private final int badge;
     final Scene scene;
+    private Bitmap cache;
+    private boolean dirty = true;
 
     /** scene: a Scene in TILE mode; badge: the play badge's colour. */
     SceneTile(String name, Typeface font, Scene scene, int badge) {
@@ -36,17 +39,30 @@ final class SceneTile extends Drawable {
 
     void setProgress(float p) {
         p = Scene.clamp(p);
-        if (p == scene.p) return;
+        if (Math.abs(p - scene.p) < 0.005f && !dirty) return;
         scene.p = p;
+        dirty = true;
         invalidateSelf();
     }
 
     @Override public void draw(Canvas c) {
         Rect b = getBounds();
-        float w = b.width(), h = b.height();
-        c.save();
-        c.translate(b.left, b.top);
-        scene.draw(c, b.width(), b.height());
+        int bw = b.width(), bh = b.height();
+        if (bw <= 0 || bh <= 0) return;
+        if (dirty || cache == null || cache.getWidth() != bw || cache.getHeight() != bh) {
+            if (cache == null || cache.getWidth() != bw || cache.getHeight() != bh) {
+                if (cache != null) cache.recycle();
+                cache = Bitmap.createBitmap(bw, bh, Bitmap.Config.ARGB_8888);
+            }
+            drawInto(new Canvas(cache), bw, bh);
+            dirty = false;
+        }
+        c.drawBitmap(cache, b.left, b.top, null);
+    }
+
+    private void drawInto(Canvas c, int bwPx, int bhPx) {
+        float w = bwPx, h = bhPx;
+        scene.draw(c, bwPx, bhPx);
         // A quiet panel keeps the title readable over the painted world.
         fill.setColor(scene.tilePanel());
         r.set(w * .045f, h * .55f, w * .70f, h * .94f);
@@ -66,7 +82,6 @@ final class SceneTile extends Drawable {
         fill.setColor(Color.WHITE);
         c.drawPath(path, fill);
         c.drawText(name, bx + bw + w * 0.035f, h * 0.86f - bh * 0.08f, text);
-        c.restore();
     }
 
     @Override public void setAlpha(int a) { }
