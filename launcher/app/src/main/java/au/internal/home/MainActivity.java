@@ -144,7 +144,7 @@ public class MainActivity extends Activity {
         bins = findViewById(R.id.bins);
         float density = getResources().getDisplayMetrics().density;
         sky = new Sky();
-        findViewById(R.id.left).setBackground(sky);
+        findViewById(R.id.root).setBackground(sky);
         grid = findViewById(R.id.grid);
         grid.addItemDecoration(glow = new Glow(density));
         GridLayoutManager glm = new GridLayoutManager(this, SPANS);

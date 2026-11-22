@@ -167,7 +167,8 @@ final class Look {
     void apply(View root, Sky sky, boolean wide) {
         android.content.Context c = root.getContext();
         float d = c.getResources().getDisplayMetrics().density;
-        root.findViewById(R.id.root).setBackgroundColor(bg);
+        root.findViewById(R.id.root).setBackground(sky);
+        root.findViewById(R.id.left).setBackground(null);
         sky.setLook(this);
 
         RollingClock clock = root.findViewById(R.id.clock);
