@@ -76,8 +76,8 @@
                 android:padding="6dp" android:src="@drawable/ic_child"
                 android:focusable="true" android:clickable="true" android:contentDescription="Switch to adult mode"/>
             <ImageView android:id="@+id/timeBtn" android:layout_width="30dp" android:layout_height="30dp"
-                android:layout_marginStart="8dp" android:padding="6dp" android:src="@drawable/ic_timer"
-                android:focusable="true" android:clickable="true" android:contentDescription="Kids' time"/>
+                android:layout_marginStart="8dp" android:padding="6dp" android:src="@drawable/ic_parental"
+                android:focusable="true" android:clickable="true" android:contentDescription="Parental controls"/>
             <ImageView android:id="@+id/remoteBtn" android:layout_width="30dp" android:layout_height="30dp"
                 android:layout_marginStart="8dp" android:padding="6dp" android:src="@drawable/ic_remote"
                 android:focusable="true" android:clickable="true" android:contentDescription="Remote buttons"/>

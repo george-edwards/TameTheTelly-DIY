@@ -120,15 +120,15 @@ final class SettingsMenu {
         List<Runnable> acts = new ArrayList<>();
         items.add("Adult schedule: " + scheduleSummary()); acts.add(this::adultSchedule);
         items.add("Start today again");
-        acts.add(() -> { long t = System.currentTimeMillis(); st.resetToday(t); timeChanged("Kids' time: " + st.describe(t)); });
+        acts.add(() -> { long t = System.currentTimeMillis(); st.resetToday(t); timeChanged("Parental controls: " + st.describe(t)); });
         items.add("+10 more minutes");
-        acts.add(() -> { long t = System.currentTimeMillis(); st.addMinutes(t, 10); timeChanged("Kids' time: " + st.describe(t)); });
+        acts.add(() -> { long t = System.currentTimeMillis(); st.addMinutes(t, 10); timeChanged("Parental controls: " + st.describe(t)); });
         items.add("+n more minutes…"); acts.add(this::topUp);
         if (onDemo != null) { items.add("Demo"); acts.add(onDemo); }
         items.add("Timed apps: " + timedSummary()); acts.add(this::timedApps);
         items.add("Time allowance: " + minutesLabel(cfg.ytMinutes()) + " a day"); acts.add(this::minutes);
         items.add("Timed apps theme: " + HomeConfig.sceneName(cfg.scene())); acts.add(this::scene);
-        String title = (adult ? "Kids' time (adult mode on): " : "Kids' time: ") + st.describe(now);
+        String title = (adult ? "Parental controls (adult mode on): " : "Parental controls: ") + st.describe(now);
         show(dialog(title, () -> { })
                 .setItems(items.toArray(new String[0]), (d, which) -> acts.get(which).run()));
     }
@@ -290,7 +290,7 @@ final class SettingsMenu {
                     long t = System.currentTimeMillis();
                     ScreenTime st = screenTime();
                     st.addMinutes(t, TOP_UPS[which]);
-                    timeChanged("Kids' time: " + st.describe(t));
+                    timeChanged("Parental controls: " + st.describe(t));
                 }));
     }
 
@@ -838,7 +838,7 @@ final class SettingsMenu {
     private void reset() {
         show(dialog(RESET + "?", this::main)
                 .setMessage("Every setting goes back to how Home came (its built-in config.xml). "
-                        + "Kids' time used today, remote buttons, and the app tiles' order, favourites and hidden apps are kept.")
+                        + "Screen time used today, remote buttons, and the app tiles' order, favourites and hidden apps are kept.")
                 .setPositiveButton("Reset", (d, w) -> { cfg.reset(); screenTime().clearModeOverride(); changed("Settings reset to default"); })
                 .setNegativeButton("Cancel", (d, w) -> main()));
     }

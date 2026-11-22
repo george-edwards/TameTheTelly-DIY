@@ -11,7 +11,7 @@ import android.view.animation.LinearInterpolator;
 
 /** Kitten is home and tucked in. OK or Back says goodnight and gently returns Home. */
 public final class GoodnightActivity extends Activity {
-    private static final long BYE_MS = 3_800, IDLE_MS = 15 * 60_000L;
+    private static final long BYE_MS = 900, IDLE_MS = 15 * 60_000L;
     private SceneView view;
     private boolean leaving;
     private final Handler h = new Handler(Looper.getMainLooper());
@@ -53,7 +53,7 @@ public final class GoodnightActivity extends Activity {
         leaving = true;
         ValueAnimator a = ValueAnimator.ofFloat(0f, 1f).setDuration(BYE_MS);
         a.setInterpolator(new LinearInterpolator());
-        a.addUpdateListener(x -> view.scene.bye = (float) x.getAnimatedValue());
+        a.addUpdateListener(x -> { view.scene.bye = (float) x.getAnimatedValue(); view.invalidate(); });
         a.addListener(new android.animation.AnimatorListenerAdapter() {
             @Override public void onAnimationEnd(android.animation.Animator x) {
                 startActivity(MainActivity.home(GoodnightActivity.this));

@@ -20,6 +20,14 @@ class ScreenTimeTest {
         assertEquals(1f, ScreenTime.progress(1, 0), 1e-6f)
     }
 
+    @Test fun describeCapsUsedAtAllowance() {
+        assertEquals("0 of 20 min used today", ScreenTime.describe(0, 20 * 60_000L))
+        assertEquals("12 of 20 min used today", ScreenTime.describe(12 * 60_000L, 20 * 60_000L))
+        assertEquals("20 of 20 min used today", ScreenTime.describe(20 * 60_000L, 20 * 60_000L))
+        assertEquals("20 of 20 min used today", ScreenTime.describe(22 * 60_000L, 20 * 60_000L))
+        assertEquals("0 of 0 min used today", ScreenTime.describe(5 * 60_000L, 0))
+    }
+
     @Test fun adultScheduleWindowAndTimeFormatting() {
         // Same-day window: 19:30 to 23:00
         val s = HomeConfig.parseTimeMin("19:30")

@@ -270,6 +270,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onStop() {
+        ScreenTimeService.setHomeOnTop(false);
         h.removeCallbacks(tick);
         stopCams();   // free the decoders for whatever app is opened
         if (movingPkg != null) endMove();
@@ -279,6 +280,7 @@ public class MainActivity extends Activity {
     /** A timed app's window on top leaves Home visible but not on top: dim it and free the camera decoders. */
     @Override public void onTopResumedActivityChanged(boolean top) {
         super.onTopResumedActivityChanged(top);
+        ScreenTimeService.setHomeOnTop(top);
         scrim.animate().cancel();
         scrim.animate().alpha(top ? 0f : 0.88f).setDuration(top ? 250 : 500).start();
         long now = System.currentTimeMillis();

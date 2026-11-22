@@ -220,8 +220,13 @@ final class ScreenTime {
     void setDemo(boolean on) { p.edit().putBoolean("demo", on).apply(); }
     boolean demo() { return p.getBoolean("demo", false); }
 
+    static String describe(long usedMs, long allowanceMs) {
+        long allMin = Math.max(0, Math.round(allowanceMs / 60_000.0));
+        long usedMin = Math.min(allMin, Math.max(0, Math.round(usedMs / 60_000.0)));
+        return String.format(Locale.ROOT, "%d of %d min used today", usedMin, allMin);
+    }
+
     String describe(long now) {
-        long used = usedMs(now), all = allowanceMs(now);
-        return String.format(Locale.ROOT, "%d of %d min used today", Math.round(used / 60_000.0), Math.round(all / 60_000.0));
+        return describe(usedMs(now), allowanceMs(now));
     }
 }

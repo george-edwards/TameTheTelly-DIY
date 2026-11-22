@@ -91,6 +91,9 @@ public final class ScreenTimeService extends Service {
     private float runFrom, runTo;
     private long runStart = -1, runMs;
 
+    private static volatile boolean homeOnTop;
+    static void setHomeOnTop(boolean top) { homeOnTop = top; }
+
     static void start(Context c) {
         try { c.startForegroundService(new Intent(c, ScreenTimeService.class)); }
         catch (RuntimeException e) { Log.w(TAG, "start failed", e); }
@@ -145,7 +148,7 @@ public final class ScreenTimeService extends Service {
         NotificationManager nm = getSystemService(NotificationManager.class);
         nm.createNotificationChannel(new NotificationChannel("st", "Screen time", NotificationManager.IMPORTANCE_MIN));
         startForeground(1, new Notification.Builder(this, "st").setSmallIcon(R.drawable.ic_home)
-                .setContentTitle("Kids' time").setOngoing(true).build());
+                .setContentTitle("Parental controls").setOngoing(true).build());
     }
 
     @Override public IBinder onBind(Intent i) { return null; }
@@ -179,14 +182,14 @@ public final class ScreenTimeService extends Service {
         updateResumed(now);
 
         boolean on = power.isInteractive();
-        boolean appUp = on && !resumed.isEmpty();
+        boolean appUp = on && !homeOnTop && !resumed.isEmpty();
         boolean grown = !st.demo() && st.grownUp(now);
         if (appUp && !watching) lastAudio = el;   // count the first stretch while it starts up
         watching = appUp;
 
         boolean kid = watching && !grown;
         // Grown-ups-only apps (SmartTube): without grown-up time, straight back to Home.
-        if (on && !grown && !lockedUp.isEmpty()) {
+        if (on && !homeOnTop && !grown && !lockedUp.isEmpty()) {
             lockedUp.clear();
             startActivity(MainActivity.home(this).putExtra(MainActivity.EXTRA_LOCKED, true));
         }

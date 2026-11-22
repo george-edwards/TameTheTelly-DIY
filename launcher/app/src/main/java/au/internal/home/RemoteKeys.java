@@ -298,7 +298,7 @@ final class RemoteKeys {
     /** Same as targetLabel() when the caller already has the app's package and display name. */
     static String appTargetLabel(String pkg, String name, TimedApps timed) {
         if (timed != null && timed.grownUp(pkg)) return name + " (Grown-ups)";
-        if (timed != null && timed.timed(pkg)) return name + " (Kids' time)";
+        if (timed != null && timed.timed(pkg)) return name + " (Timed)";
         return name;
     }
 
