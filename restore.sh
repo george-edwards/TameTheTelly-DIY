@@ -66,7 +66,7 @@ settings put secure accessibility_enabled 0
 # Last, in the background: this removes Home (with its "display over other apps" and usage access) while it may be
 # the one running this, then restarts the TV to finish.
 echo "Removing Home and restarting the TV"
-setsid sh -c 'sleep 3; pm uninstall au.internal.home; rm -f /data/local/tmp/home-restore.sh; reboot' \
+setsid sh -c 'sleep 3; pm uninstall au.internal.home; settings delete secure enabled_accessibility_services; settings put secure accessibility_enabled 0; rm -f /data/local/tmp/home-restore.sh; reboot' \
   </dev/null >/dev/null 2>&1 &
 # adb ends the whole shell session as soon as this script exits: give setsid a moment to get clear of it first
 # (without this the uninstall and restart never happen; found on the first TV).

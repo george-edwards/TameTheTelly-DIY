@@ -27,9 +27,10 @@ A calm TV a young child can use, and grown-ups can still use as normal:
 3. **Grown-ups**, behind an arrow code on the remote, in four top-corner icons (up from the top row of apps):
    - **Adult / Kids mode toggle** (person/face icon): switches all timed apps between normal full-screen adult mode
      and timed kids' mode (Kids → Adult requires the arrow code; Adult → Kids is one click).
-   - **Kids' time** (timer icon): daily **Adult schedule** (auto-toggle to adult mode at bedtime and back to kids'
-     mode later), start today again, +10 or +n more minutes, demo, timed apps, daily time allowance, and bedtime
-     scene. Holding OK on a timed app's tile also offers a quick one-app "Grown-up time" shortcut.
+   - **Parental controls** (padlock icon): daily limit, restart today, extra time today (+5 to +120 min),
+     restricted apps, restricted scene, preview, and **Adult mode schedule** (auto-toggle to adult mode at bedtime
+     and back to kids' mode later). Holding OK on a restricted app's tile also offers a quick one-app "Grown-up
+     time" shortcut.
    - **Remote buttons** (remote icon): press any non-essential remote button and pick an app or TV action (Home,
      TV Settings, Picture settings, Do nothing); timed apps route through `WatchActivity` and grown-ups apps ask
      for the code. Uses a built-in `AccessibilityService` (`RemoteKeyService`) auto-enabled and self-healed over
@@ -86,7 +87,10 @@ device.
 1. **Snapshot**: `./tvs/snapshot.sh <ip>` writes `tvs/<brand>-<product>-<serial>/baseline/` (packages,
    settings, home launcher, getprop, display, features, runtime state). Add the TV to the table in
    `tvs/README.md`. Commit.
-2. Work out, and note in the TV's folder:
+2. **Check `models/`**: look for `models/<brand>-<product>.md` (using `ro.product.brand` and `ro.product.name`
+   from `baseline/getprop.txt`). If a curated profile already exists for this model, use its verified tiers and
+   quirks as your starting plan (still verifying each package exists on this TV and asking before disabling).
+3. Work out, and note in the TV's folder:
    - Android version, screen size and density (`baseline/display.txt`; the scenes assume 1920x1080 at 320 dpi;
      a 4K UI at 1080p is fine, a different size needs a look).
    - **The stock launcher** and anything that guards it: `baseline/home_resolve.txt`, `home_candidates.txt`. On
@@ -186,8 +190,11 @@ matching `pm default-state` lines in restore.sh. Never disable: Settings, the TV
 Play Store, the keyboard, the cast receiver, remote/Bluetooth pairing, package installer/permission controller.
 If something breaks, undo that tier straight away with its restore lines.
 
-On the TCL, disabling the vendor's telemetry/OTA package (`com.tcl.ttvs`) and 15 TCL extras, then 5 Google
-extras, broke nothing; `CHANGES.md` in that repo has the list if this is another TCL.
+If a profile exists in `models/<brand>-<product>.md` (e.g. `models/TCL-G05_4K_GB.md`), start from its curated
+tiers instead of rediscovering packages from scratch. If this is a **previously unseen TV model**, once you have
+finished debloating and verified nothing broke, save a new `models/<brand>-<product>.md` (see `models/README.md`)
+recording the verified disabled packages (with each package's factory state: `default` vs `enabled`) and any
+model-specific quirks so future TVs of the same model can reuse it.
 
 ## Checking your work
 
@@ -206,6 +213,8 @@ extras, broke nothing; `CHANGES.md` in that repo has the list if this is another
   Config, `Restore` for Put the TV back, `LocalAdb` + `Framer` for the windows). Defaults in
   `res/values/config.xml`.
 - `restore.sh`: the TV's undo list, run from a computer or by Home's button (built into the APK).
+- `models/`: curated per-model debloat lists and quirks (`<brand>-<product>.md`), reused when setting up another
+  TV of the same model and updated whenever a new model is verified.
 - `tvs/`: one folder per TV: factory baseline, factory APKs of anything disabled, original settings.
   `snapshot.sh` and `backup-apk.sh` make them.
 - `CHANGES.md`: every change made to the TV, with how it was checked.
