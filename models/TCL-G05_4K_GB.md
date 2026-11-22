@@ -29,6 +29,8 @@ Factory state is noted in parentheses (`default` → undo with `pm default-state
 - `com.tcl.ocean.instructions` (`default`) — Built-in manual/instructions
 - `com.tcl.browser` (`default`) — TCL web browser
 - `com.tcl.MultiScreenInteraction_TV` (`default`) — TCL multi-screen casting helper (Chromecast is separate)
+- `com.tcl.guard` (`default`) — TCL Safety Guard (RAM/rubbish cleaner & permission shield; only bound by `com.tcl.ttvs`)
+- `com.tcl.t_solo` (`default`) — TCL T-solo ("Listen Alone" Bluetooth audio-only app; no background services)
 - `com.tcl.gallery` (`enabled`) — TCL media gallery
 
 ### Tier 2 — Google extras
