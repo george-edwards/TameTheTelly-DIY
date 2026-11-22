@@ -7,7 +7,18 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.RadialGradient;
+import android.graphics.Shader;
+import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.text.TextPaint;
+import android.text.TextUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +43,9 @@ final class AppStore {
             Integer c = ACCENTS.get(pkg);
             if (c == null) ACCENTS.put(pkg, c = TileFx.accentOf(banner != null ? banner : icon));
             accent = c;
+        }
+        App(String pkg, String label, Drawable banner, Drawable icon, int accent) {
+            this.pkg = pkg; this.label = label; this.banner = banner; this.icon = icon; this.accent = accent;
         }
     }
 
@@ -64,8 +78,18 @@ final class AppStore {
             if (ai.packageName.equals(ctx.getPackageName()) || found.containsKey(ai.packageName)) continue;
             Drawable banner = ai.loadBanner(pm);
             if (banner == null) banner = ai.applicationInfo.loadBanner(pm);
+            if (banner == null) {
+                Drawable logo = ai.loadLogo(pm);
+                if (logo == null) logo = ai.applicationInfo.loadLogo(pm);
+                if (logo != null && logo.getIntrinsicWidth() >= logo.getIntrinsicHeight() * 1.4f) banner = logo;
+            }
             Drawable icon = banner == null ? ri.loadIcon(pm) : null;
-            found.put(ai.packageName, new App(ai.packageName, String.valueOf(ri.loadLabel(pm)), banner, icon));
+            String label = String.valueOf(ri.loadLabel(pm));
+            App app = new App(ai.packageName, label, banner, icon);
+            if (banner == null && icon != null) {
+                app = new App(ai.packageName, label, makeBanner(ctx, label, icon, app.accent), null, app.accent);
+            }
+            found.put(ai.packageName, app);
         }
         Set<String> hidden = hidden();
         List<App> out = new ArrayList<>();
@@ -107,6 +131,41 @@ final class AppStore {
     }
 
     private Set<String> hidden() { return set("hidden"); }
+
+    /** Synthesise a 16:9 TV banner for apps that only ship a square icon, tinted with the icon's own accent colour. */
+    private static Drawable makeBanner(Context ctx, String label, Drawable icon, int accent) {
+        int w = 320, h = 180;
+        Bitmap b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(b);
+        float[] hsv = new float[3];
+        Color.colorToHSV(accent, hsv);
+        float sat = Math.min(hsv[1], 0.52f);
+        int top = Color.HSVToColor(new float[]{hsv[0], sat, 0.28f});
+        int bot = Color.HSVToColor(new float[]{hsv[0], sat * 0.85f, 0.12f});
+        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setShader(new LinearGradient(0, 0, w, h, top, bot, Shader.TileMode.CLAMP));
+        c.drawRect(0, 0, w, h, p);
+        p.setShader(new RadialGradient(w * 0.5f, h * 0.38f, w * 0.45f,
+                (accent & 0xFFFFFF) | 0x38000000, accent & 0xFFFFFF, Shader.TileMode.CLAMP));
+        c.drawRect(0, 0, w, h, p);
+        p.setShader(null);
+
+        int size = 78, ix = (w - size) / 2, iy = 28;
+        Drawable ic = icon.getConstantState() != null ? icon.getConstantState().newDrawable().mutate() : icon;
+        ic.setBounds(ix, iy, ix + size, iy + size);
+        ic.draw(c);
+
+        TextPaint tp = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        try { tp.setTypeface(ctx.getResources().getFont(R.font.inter_semibold)); }
+        catch (RuntimeException ignored) { tp.setTypeface(Typeface.DEFAULT_BOLD); }
+        tp.setTextSize(22f);
+        tp.setColor(0xF2FFFFFF);
+        tp.setTextAlign(Paint.Align.CENTER);
+        tp.setShadowLayer(6f, 0f, 2f, 0x80000000);
+        CharSequence ellip = TextUtils.ellipsize(label, tp, w - 36f, TextUtils.TruncateAt.END);
+        c.drawText(ellip, 0, ellip.length(), w * 0.5f, 146f, tp);
+        return new BitmapDrawable(ctx.getResources(), b);
+    }
 
     /** The TV (leanback) launch intent, else the ordinary one; null if the app can't be launched. */
     static Intent launchIntent(PackageManager pm, String pkg) {

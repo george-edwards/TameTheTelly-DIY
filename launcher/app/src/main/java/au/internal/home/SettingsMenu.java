@@ -74,7 +74,58 @@ final class SettingsMenu {
     }
 
     /** Settings' own reset, worded so it isn't mistaken for Put the TV back. */
-    private static final String RESET = "Reset these options to default";
+    private static final String RESET = "Reset settings";
+
+    /** One row in a clean two-column menu: bright label left, optional muted value right. */
+    private static final class MenuRow {
+        final String label, value;
+        final Runnable action;
+        MenuRow(String label, String value, Runnable action) {
+            this.label = label; this.value = value; this.action = action;
+        }
+    }
+
+    /** Show a two-column menu dialog: crisp labels on the left, quiet values on the right. */
+    private AlertDialog showMenu(String title, Runnable up, List<MenuRow> rows) {
+        float dp = a.getResources().getDisplayMetrics().density;
+        int hPad = Math.round(24 * dp), vPad = Math.round(13 * dp), gap = Math.round(16 * dp), maxVal = Math.round(220 * dp);
+        android.graphics.Typeface med = a.getResources().getFont(R.font.inter_medium);
+        android.graphics.Typeface reg = a.getResources().getFont(R.font.inter_regular);
+        int textCol = a.getColor(R.color.text), mutedCol = a.getColor(R.color.muted);
+        android.widget.ArrayAdapter<MenuRow> adapter = new android.widget.ArrayAdapter<MenuRow>(a, 0, rows) {
+            @Override public android.view.View getView(int pos, android.view.View convert, android.view.ViewGroup parent) {
+                android.widget.LinearLayout row;
+                TextView left, right;
+                if (convert instanceof android.widget.LinearLayout) {
+                    row = (android.widget.LinearLayout) convert;
+                    left = (TextView) row.getChildAt(0);
+                    right = (TextView) row.getChildAt(1);
+                } else {
+                    row = new android.widget.LinearLayout(a);
+                    row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+                    row.setGravity(Gravity.CENTER_VERTICAL);
+                    row.setPadding(hPad, vPad, hPad, vPad);
+                    left = new TextView(a);
+                    left.setTextSize(15.5f); left.setTypeface(med); left.setTextColor(textCol);
+                    left.setSingleLine(true); left.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                    right = new TextView(a);
+                    right.setTextSize(14f); right.setTypeface(reg); right.setTextColor(mutedCol);
+                    right.setSingleLine(true); right.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                    right.setPadding(gap, 0, 0, 0);
+                    right.setMaxWidth(maxVal);
+                    row.addView(left, new android.widget.LinearLayout.LayoutParams(0, -2, 1f));
+                    row.addView(right, new android.widget.LinearLayout.LayoutParams(-2, -2));
+                }
+                MenuRow item = rows.get(pos);
+                left.setText(item.label);
+                boolean hasVal = item.value != null && !item.value.isEmpty();
+                right.setVisibility(hasVal ? android.view.View.VISIBLE : android.view.View.GONE);
+                if (hasVal) right.setText(item.value);
+                return row;
+            }
+        };
+        return show(dialog(title, up).setAdapter(adapter, (d, which) -> rows.get(which).action.run()));
+    }
 
     /** A dialog that goes back to `up` when Back cancels it (picking an item dismisses it instead). */
     private AlertDialog.Builder dialog(String title, Runnable up) {
@@ -84,58 +135,54 @@ final class SettingsMenu {
     private AlertDialog show(AlertDialog.Builder b) { return MainActivity.showDialog(b); }
 
     private void main() {
-        List<String> items = new ArrayList<>();
-        List<Runnable> acts = new ArrayList<>();
-        items.add("Home theme: " + cfg.look().name); acts.add(this::theme);
-        items.add("Cameras: " + (cfg.camerasOn() ? "on" : "off"));
-        acts.add(() -> {
+        List<MenuRow> rows = new ArrayList<>();
+        rows.add(new MenuRow("Home theme", cfg.look().name, this::theme));
+        rows.add(new MenuRow("Cameras", cfg.camerasOn() ? "On" : "Off", () -> {
             boolean on = !cfg.camerasOn();
             cfg.set(HomeConfig.K_CAMERAS, on ? "on" : "off");
             changed(on ? "Cameras on" : "Cameras off: apps use the whole screen");
-        });
-        items.add("Camera config"); acts.add(this::cameras);
-        items.add("Grown-up code: " + HomeConfig.dots(cfg.parentCode().length())); acts.add(this::newCode);
-        items.add("Family: " + (cfg.familyName().isEmpty() ? "none (just \"Good morning\")" : cfg.familyName()));
-        acts.add(() -> text("Family: the name in the greeting (blank for none)", cfg.familyName(), false,
-                v -> MainActivity.greeting(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), v.trim()), this::main, v -> {
-            cfg.set(HomeConfig.K_FAMILY, v.trim());
-            changed("Saved");
         }));
-        items.add("Weather: " + (cfg.place().isEmpty() ? "not set" : cfg.place())); acts.add(() -> postcode(cfg.postcode()));
-        items.add("Bin night: " + (cfg.binsDay() >= 1 && cfg.binsDay() <= 7
-                ? DAYS[cfg.binsDay() - 1] + ", " + cfg.binsEvery() + " every week" : "off"));
-        acts.add(this::bins);
-        items.add(RESET); acts.add(this::reset);
-        items.add("Put the TV back"); acts.add(onRestore);
-        show(dialog("Settings", () -> { }).setItems(items.toArray(new String[0]), (d, which) -> acts.get(which).run()));
+        rows.add(new MenuRow("Camera setup", null, this::cameras));
+        rows.add(new MenuRow("Grown-up code", HomeConfig.dots(cfg.parentCode().length()), this::newCode));
+        rows.add(new MenuRow("Family name", cfg.familyName().isEmpty() ? "None" : cfg.familyName(), () ->
+                text("Family name in the greeting (blank for none)", cfg.familyName(), false,
+                        v -> MainActivity.greeting(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), v.trim()), this::main, v -> {
+                    cfg.set(HomeConfig.K_FAMILY, v.trim());
+                    changed("Saved");
+                })));
+        rows.add(new MenuRow("Weather", cfg.place().isEmpty() ? "Off" : cfg.place(), () -> postcode(cfg.postcode())));
+        rows.add(new MenuRow("Bin night", cfg.binsDay() >= 1 && cfg.binsDay() <= 7 ? DAYS[cfg.binsDay() - 1] : "Off", this::bins));
+        rows.add(new MenuRow(RESET, null, this::reset));
+        rows.add(new MenuRow("Put the TV back", null, onRestore));
+        showMenu("Settings", () -> { }, rows);
     }
 
-    // ---------- kids' time ----------
+    // ---------- parental controls ----------
 
     private void kidsTime() {
         long now = System.currentTimeMillis();
         ScreenTime st = screenTime();
         boolean adult = st.adultMode(now);
-        List<String> items = new ArrayList<>();
-        List<Runnable> acts = new ArrayList<>();
-        items.add("Adult schedule: " + scheduleSummary()); acts.add(this::adultSchedule);
-        items.add("Start today again");
-        acts.add(() -> { long t = System.currentTimeMillis(); st.resetToday(t); timeChanged("Parental controls: " + st.describe(t)); });
-        items.add("+10 more minutes");
-        acts.add(() -> { long t = System.currentTimeMillis(); st.addMinutes(t, 10); timeChanged("Parental controls: " + st.describe(t)); });
-        items.add("+n more minutes…"); acts.add(this::topUp);
-        if (onDemo != null) { items.add("Demo"); acts.add(onDemo); }
-        items.add("Timed apps: " + timedSummary()); acts.add(this::timedApps);
-        items.add("Time allowance: " + minutesLabel(cfg.ytMinutes()) + " a day"); acts.add(this::minutes);
-        items.add("Timed apps theme: " + HomeConfig.sceneName(cfg.scene())); acts.add(this::scene);
-        String title = (adult ? "Parental controls (adult mode on): " : "Parental controls: ") + st.describe(now);
-        show(dialog(title, () -> { })
-                .setItems(items.toArray(new String[0]), (d, which) -> acts.get(which).run()));
+        List<MenuRow> rows = new ArrayList<>();
+        rows.add(new MenuRow("Adult schedule", scheduleSummary(), this::adultSchedule));
+        rows.add(new MenuRow("Reset today", null, () -> {
+            long t = System.currentTimeMillis(); st.resetToday(t); timeChanged("Parental controls: " + st.describe(t));
+        }));
+        rows.add(new MenuRow("+10 min", null, () -> {
+            long t = System.currentTimeMillis(); st.addMinutes(t, 10); timeChanged("Parental controls: " + st.describe(t));
+        }));
+        rows.add(new MenuRow("Add time…", null, this::topUp));
+        if (onDemo != null) rows.add(new MenuRow("Preview scene", null, onDemo));
+        rows.add(new MenuRow("Restricted apps", timedCountSummary(), this::timedApps));
+        rows.add(new MenuRow("Daily limit", minutesShort(cfg.ytMinutes()), this::minutes));
+        rows.add(new MenuRow("Timer scene", HomeConfig.sceneName(cfg.scene()), this::scene));
+        String title = (adult ? "Parental controls (adult) · " : "Parental controls · ") + st.describeShort(now);
+        showMenu(title, () -> { }, rows);
     }
 
     private String scheduleSummary() {
         String s = cfg.adultScheduleText();
-        return s != null ? s : "off";
+        return s != null ? s : "Off";
     }
 
     /** Automatic daily adult-mode schedule: start time (e.g. kids' bedtime) and fall-back to kids' mode (e.g. 11 pm). */
@@ -356,9 +403,9 @@ final class SettingsMenu {
         String[] names = HomeConfig.SCENE_NAMES;
         int cur = HomeConfig.indexOf(HomeConfig.SCENES, cfg.scene());
         ScenePreview preview = new ScenePreview(a);
-        AlertDialog d = sidePicker("Timed apps theme", names, cur, this::kidsTime,
+        AlertDialog d = sidePicker("Timer scene", names, cur, this::kidsTime,
                 pos -> preview.show(HomeConfig.SCENES[pos]),
-                which -> { cfg.set(HomeConfig.K_SCENE, HomeConfig.SCENES[which]); changed("Timed apps theme: " + names[which]); });
+                which -> { cfg.set(HomeConfig.K_SCENE, HomeConfig.SCENES[which]); changed("Timer scene: " + names[which]); });
         d.setOnDismissListener(x -> preview.close());
         preview.open();
         preview.show(cfg.scene());
@@ -366,39 +413,37 @@ final class SettingsMenu {
         toSide(d);
     }
 
-    // ---------- timed apps ----------
+    // ---------- restricted apps ----------
 
-    private String timedSummary() {
-        if (cfg.timedAll()) return "all apps";
+    private String timedCountSummary() {
+        if (cfg.timedAll()) return "All";
         TimedApps ta = timed();
-        List<String> names = new ArrayList<>();
-        for (AppStore.App app : installed) if (ta.timed(app.pkg)) names.add(app.label);
-        return names.isEmpty() ? "none" : String.join(", ", names);
+        int n = 0;
+        for (AppStore.App app : installed) if (ta.timed(app.pkg)) n++;
+        return n == 0 ? "None" : n == 1 ? "1 app" : n + " apps";
     }
 
-    /** "All apps" first, then every app on Home (ticked if timed). OK saves; Back goes up without saving.
-     *  Apps that can't be timed (config.xml's unwindowable_apps) are listed, but ticking one explains why instead. */
+    /** "All apps" first, then every app on Home (ticked if restricted). Save applies; Back goes up without saving.
+     *  Apps that can't be windowed (config.xml's unwindowable_apps) are listed, but ticking one explains why instead. */
     private void timedApps() {
         TimedApps ta = timed();
         List<AppStore.App> apps = new ArrayList<>();
-        List<String> cantNames = new ArrayList<>();
         for (AppStore.App app : installed) {
             if (!ta.offered(app.pkg)) continue;
             apps.add(app);
-            if (ta.cantBeTimed(app.pkg) != null) cantNames.add(app.label);
         }
         String[] labels = new String[apps.size() + 1];
         boolean[] on = new boolean[labels.length];
-        labels[0] = "All apps (not Settings, the Play Store, grown-ups apps" + (cantNames.isEmpty() ? "" : " or " + String.join(", ", cantNames)) + ")";
+        labels[0] = "All apps";
         on[0] = cfg.timedAll();
         java.util.Set<String> timedSet = cfg.timedList();
         for (int i = 0; i < apps.size(); i++) {
             String pkg = apps.get(i).pkg;
             boolean cant = ta.cantBeTimed(pkg) != null;
-            labels[i + 1] = apps.get(i).label + (cant ? " (can't be timed)" : "");
+            labels[i + 1] = apps.get(i).label + (cant ? " (unsupported)" : "");
             on[i + 1] = !on[0] && timedSet.contains(pkg) && !cant;
         }
-        show(dialog("Timed apps: they share the daily time and get the scene", this::kidsTime)
+        show(dialog("Restricted apps", this::kidsTime)
                 .setMultiChoiceItems(labels, on, (d, which, checked) -> {
                     android.widget.ListView lv = ((AlertDialog) d).getListView();
                     String why = which > 0 ? ta.cantBeTimed(apps.get(which - 1).pkg) : null;
@@ -406,7 +451,7 @@ final class SettingsMenu {
                         // `on` is the dialog's own record of the ticks (it already says true), and the row has ticked itself.
                         on[which] = false;
                         lv.post(() -> lv.setItemChecked(which, false));
-                        show(new AlertDialog.Builder(a).setTitle(apps.get(which - 1).label + " can't be a timed app")
+                        show(new AlertDialog.Builder(a).setTitle(apps.get(which - 1).label + " can't be restricted")
                                 .setMessage(why).setPositiveButton("OK", null));
                         return;
                     }
@@ -427,8 +472,8 @@ final class SettingsMenu {
                         value = String.join(",", pkgs);
                     }
                     cfg.set(HomeConfig.K_TIMED, value);
-                    timed = null;   // pick up the saved list in timedSummary()
-                    changed("Timed apps: " + timedSummary());
+                    timed = null;   // pick up the saved list in timedCountSummary()
+                    changed("Restricted apps: " + timedCountSummary());
                 }));
     }
 
@@ -439,11 +484,18 @@ final class SettingsMenu {
             labels[i] = minutesLabel(MINUTES[i]);
             if (MINUTES[i] == cfg.ytMinutes()) cur = i;
         }
-        show(dialog("Time allowance: each day, shared by the timed apps", this::kidsTime).setSingleChoiceItems(labels, cur, (d, which) -> {
+        show(dialog("Daily limit", this::kidsTime).setSingleChoiceItems(labels, cur, (d, which) -> {
             d.dismiss();
             cfg.set(HomeConfig.K_MINUTES, MINUTES[which]);
-            changed("Time allowance: " + labels[which] + " a day");
+            changed("Daily limit: " + labels[which]);
         }));
+    }
+
+    /** 20 min, 1 hr, 1½ hr, 2 hr. */
+    private static String minutesShort(int m) {
+        if (m < 60 || (m % 30) != 0) return m + " min";
+        String h = (m / 60) + (m % 60 == 30 ? "½" : "");
+        return h + (m == 60 ? " hr" : " hrs");
     }
 
     /** 30 minutes, 1 hour, 1½ hours, 2 hours. */
@@ -655,24 +707,19 @@ final class SettingsMenu {
         TimedApps ta = timed();
         java.util.Map<String, String> mapped = rk.all();
         if (!mapped.isEmpty() && !RemoteKeyService.isConnected()) ensureRemoteService(null);
-        List<String> items = new ArrayList<>();
-        List<Runnable> acts = new ArrayList<>();
-        items.add("+ Remap a button"); acts.add(this::captureButton);
+        List<MenuRow> rows = new ArrayList<>();
+        rows.add(new MenuRow("+ Remap a button", null, this::captureButton));
         for (java.util.Map.Entry<String, String> e : mapped.entrySet()) {
             String id = e.getKey();
-            items.add(rk.label(id) + " → " + RemoteKeys.targetLabel(e.getValue(), installed, ta));
-            acts.add(() -> editButton(id));
+            rows.add(new MenuRow(rk.label(id), RemoteKeys.targetLabel(e.getValue(), installed, ta), () -> editButton(id)));
         }
         if (!mapped.isEmpty() && !RemoteKeyService.isConnected()) {
-            items.add("Turn on remote buttons…");
-            acts.add(this::enableRemoteService);
+            rows.add(new MenuRow("Turn on remote buttons…", null, this::enableRemoteService));
         }
         if (mapped.size() >= 2) {
-            items.add("Reset all buttons");
-            acts.add(this::clearAllButtons);
+            rows.add(new MenuRow("Reset all buttons", null, this::clearAllButtons));
         }
-        show(dialog("Remote buttons", () -> { })
-                .setItems(items.toArray(new String[0]), (d, which) -> acts.get(which).run()));
+        showMenu("Remote buttons", () -> { }, rows);
     }
 
     /** Listen for one button press on the remote, then ask what it should do. */

@@ -215,11 +215,11 @@ final class RemoteKeys {
             try {
                 String s = KeyEvent.keyCodeToString(code);
                 if (s != null && s.startsWith("KEYCODE_")) return humaniseKeyCode(s.substring(8)) + " button";
-            } catch (RuntimeException ignored) { }   // JVM unit tests without Robolectric
-            return "Remote button #" + code;
+            } catch (RuntimeException | LinkageError ignored) { }   // JVM unit tests without Robolectric
+            return "#" + code;
         }
         int scan = scanCodeOf(id);
-        return scan > 0 ? "Remote button (scan " + scan + ")" : "Remote button";
+        return scan > 0 ? "#s" + scan : "Button";
     }
 
     private static String knownKeyName(int code) {

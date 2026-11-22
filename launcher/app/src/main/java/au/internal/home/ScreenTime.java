@@ -229,4 +229,11 @@ final class ScreenTime {
     String describe(long now) {
         return describe(usedMs(now), allowanceMs(now));
     }
+
+    /** Compact form for menu titles: "20 / 20 min". */
+    String describeShort(long now) {
+        long allMin = Math.max(0, Math.round(allowanceMs(now) / 60_000.0));
+        long usedMin = Math.min(allMin, Math.max(0, Math.round(usedMs(now) / 60_000.0)));
+        return String.format(Locale.ROOT, "%d / %d min", usedMin, allMin);
+    }
 }

@@ -53,8 +53,8 @@ class RemoteKeysTest {
         assertEquals("Settings button", RemoteKeys.defaultKeyLabel("k:" + KeyEvent.KEYCODE_SETTINGS))
         assertEquals("Red button", RemoteKeys.defaultKeyLabel("k:" + KeyEvent.KEYCODE_PROG_RED))
         assertEquals("Button 3", RemoteKeys.defaultKeyLabel("k:" + KeyEvent.KEYCODE_BUTTON_3))
-        assertEquals("Remote button #4062", RemoteKeys.defaultKeyLabel("k:4062"))
-        assertEquals("Remote button (scan 705)", RemoteKeys.defaultKeyLabel("s:705"))
+        assertEquals("#4062", RemoteKeys.defaultKeyLabel("k:4062"))
+        assertEquals("#s705", RemoteKeys.defaultKeyLabel("s:705"))
     }
 
     @Test fun targetsValidate() {
