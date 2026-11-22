@@ -3,6 +3,7 @@ package au.internal.home;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.SparseArray;
@@ -41,6 +42,7 @@ public final class RemoteKeyService extends AccessibilityService {
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private final SparseBooleanArray swallowedDown = new SparseBooleanArray();
+    private AudioManager audio;
     private RemoteKeys store;
     private volatile SparseArray<String> map = new SparseArray<>();
 
@@ -90,6 +92,7 @@ public final class RemoteKeyService extends AccessibilityService {
 
     @Override protected void onServiceConnected() {
         super.onServiceConnected();
+        audio = (AudioManager) getSystemService(AUDIO_SERVICE);
         store = new RemoteKeys(this);
         store.register(listener);
         reload();
@@ -123,6 +126,20 @@ public final class RemoteKeyService extends AccessibilityService {
         if (action == KeyEvent.ACTION_UP) {
             if (!swallowedDown.get(slot)) return false;
             swallowedDown.delete(slot);
+            return true;
+        }
+
+        // Work around Android TV 11's AccessibilityService flagRequestFilterKeyEvents bug where
+        // passing VOLUME_UP/DOWN through (returning false) double-dispatches them (+2/-2 per press).
+        if ((code == KeyEvent.KEYCODE_VOLUME_UP || code == KeyEvent.KEYCODE_VOLUME_DOWN)
+                && action == KeyEvent.ACTION_DOWN) {
+            swallowedDown.put(slot, true);
+            if (audio != null) {
+                audio.adjustSuggestedStreamVolume(
+                        code == KeyEvent.KEYCODE_VOLUME_UP ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER,
+                        AudioManager.USE_DEFAULT_STREAM_TYPE,
+                        AudioManager.FLAG_SHOW_UI);
+            }
             return true;
         }
 
