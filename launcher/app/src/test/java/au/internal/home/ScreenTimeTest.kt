@@ -56,6 +56,8 @@ class ScreenTimeTest {
         assertEquals(at(2, 23, 0), ScreenTime.scheduledOverrideUntil(at(2, 14, 0), true, s, e, 4))
         assertEquals(at(3, 4, 0), ScreenTime.scheduledOverrideUntil(at(2, 23, 5), true, s, e, 4))
         assertEquals(at(3, 19, 30), ScreenTime.scheduledOverrideUntil(at(2, 20, 0), false, s, e, 4))
+        // Overnight schedule spanning the 4 am reset falls back at the schedule end (5 am), not 4 am
+        assertEquals(at(3, 5, 0), ScreenTime.scheduledOverrideUntil(at(2, 14, 0), true, os, oe, 4))
         // Negative sentinel normalization
         assertEquals("23:59", HomeConfig.formatTime24(-1))
         assertEquals("11:59 pm", HomeConfig.formatTime12(-1))

@@ -32,8 +32,8 @@ final class TimedApps {
         grownUp = ScreenTime.pkgs(c, R.array.grownup_packages);
         youtube = ScreenTime.pkgs(c, R.array.youtube_packages);
         for (String item : c.getResources().getStringArray(R.array.unwindowable_apps)) {   // "package|reason"
-            int bar = item.indexOf('|');
-            if (bar > 0) unwindowable.put(item.substring(0, bar).trim(), item.substring(bar + 1).trim());
+            String pkg = unwindowablePkg(item);
+            if (pkg != null) unwindowable.put(pkg, item.substring(item.indexOf('|') + 1).trim());
         }
         onHome = all ? launchable(c) : null;
     }
@@ -61,16 +61,25 @@ final class TimedApps {
     boolean youtube(String pkg) { return youtube.contains(pkg); }
 
     /** Single-package check without scanning all launchable apps (for remote-button dispatch). */
-    static boolean isTimedSingle(Context c, String pkg, boolean launchable) {
+    static boolean isTimedSingle(Context c, String pkg, java.util.function.BooleanSupplier launchable) {
         if (pkg == null || pkg.equals(c.getPackageName())) return false;
-        if (ScreenTime.pkgs(c, R.array.untimed_packages).contains(pkg)
-                || ScreenTime.pkgs(c, R.array.grownup_packages).contains(pkg)) return false;
+        if (inArray(c, R.array.untimed_packages, pkg) || inArray(c, R.array.grownup_packages, pkg)) return false;
         for (String item : c.getResources().getStringArray(R.array.unwindowable_apps)) {
-            int bar = item.indexOf('|');
-            if (bar > 0 && item.substring(0, bar).trim().equals(pkg)) return false;
+            if (pkg.equals(unwindowablePkg(item))) return false;
         }
         HomeConfig cfg = new HomeConfig(c);
-        return cfg.timedAll() ? launchable : cfg.timedList().contains(pkg);
+        return cfg.timedAll() ? launchable.getAsBoolean() : cfg.timedList().contains(pkg);
+    }
+
+    static boolean inArray(Context c, int arrayId, String pkg) {
+        if (pkg == null) return false;
+        for (String s : c.getResources().getStringArray(arrayId)) if (pkg.equals(s)) return true;
+        return false;
+    }
+
+    private static String unwindowablePkg(String item) {
+        int bar = item.indexOf('|');
+        return bar > 0 ? item.substring(0, bar).trim() : null;
     }
 
     /** Packages with a launcher activity (TV or ordinary), as Home lists them. */

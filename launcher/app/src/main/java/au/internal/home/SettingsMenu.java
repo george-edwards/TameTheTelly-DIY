@@ -31,9 +31,9 @@ final class SettingsMenu {
 
     private final Activity a;
     private final HomeConfig cfg;
-    private final RemoteKeys remoteKeys;
-    private final TimedApps timed;
-    private final ScreenTime screenTime;
+    private RemoteKeys remoteKeys;
+    private TimedApps timed;
+    private ScreenTime screenTime;
     private final List<AppStore.App> installed;
     private final Runnable onChanged, onRestore, onDemo;
     private final java.util.function.Consumer<String> onTimeChanged;
@@ -44,9 +44,6 @@ final class SettingsMenu {
                          java.util.function.Consumer<Look> preview, Runnable onRestore) {
         this.a = a;
         this.cfg = new HomeConfig(a);
-        this.remoteKeys = new RemoteKeys(a);
-        this.timed = new TimedApps(a);
-        this.screenTime = new ScreenTime(a);
         this.installed = installed;
         this.onChanged = onChanged;
         this.onTimeChanged = onTimeChanged;
@@ -55,23 +52,25 @@ final class SettingsMenu {
         this.onRestore = onRestore;
     }
 
+    private RemoteKeys remoteKeys() { return remoteKeys != null ? remoteKeys : (remoteKeys = new RemoteKeys(a)); }
+    private TimedApps timed() { return timed != null ? timed : (timed = new TimedApps(a)); }
+    private ScreenTime screenTime() { return screenTime != null ? screenTime : (screenTime = new ScreenTime(a)); }
+
     /** Corner Settings button: Home & household settings (theme, cameras, code, family, weather, bins, restore). */
-    static void showSettings(Activity a, List<AppStore.App> installed, Runnable onChanged,
+    static void showSettings(Activity a, Runnable onChanged,
                              java.util.function.Consumer<Look> preview, Runnable onRestore) {
-        new SettingsMenu(a, installed, onChanged, null, null, preview, onRestore).main();
+        new SettingsMenu(a, null, onChanged, null, null, preview, onRestore).main();
     }
 
     /** Corner Remote buttons button: remap remote buttons directly. */
-    static void showRemoteButtons(Activity a, List<AppStore.App> installed, Runnable onChanged,
-                                  java.util.function.Consumer<Look> preview, Runnable onRestore) {
-        new SettingsMenu(a, installed, onChanged, null, null, preview, onRestore).remoteButtons();
+    static void showRemoteButtons(Activity a, List<AppStore.App> installed) {
+        new SettingsMenu(a, installed, null, null, null, null, null).remoteButtons();
     }
 
     /** Corner Kids' time button: today's allowance controls plus timed apps, daily limit, and bedtime scene. */
     static void showKidsTime(Activity a, List<AppStore.App> installed, Runnable onChanged,
-                             java.util.function.Consumer<String> onTimeChanged, Runnable onDemo,
-                             java.util.function.Consumer<Look> preview, Runnable onRestore) {
-        new SettingsMenu(a, installed, onChanged, onTimeChanged, onDemo, preview, onRestore).kidsTime();
+                             java.util.function.Consumer<String> onTimeChanged, Runnable onDemo) {
+        new SettingsMenu(a, installed, onChanged, onTimeChanged, onDemo, null, null).kidsTime();
     }
 
     /** Settings' own reset, worded so it isn't mistaken for Put the TV back. */
@@ -82,7 +81,7 @@ final class SettingsMenu {
         return new AlertDialog.Builder(a).setTitle(title).setOnCancelListener(x -> up.run());
     }
 
-    private AlertDialog show(AlertDialog.Builder b) { return MainActivity.showDialog(b.create()); }
+    private AlertDialog show(AlertDialog.Builder b) { return MainActivity.showDialog(b); }
 
     private void main() {
         List<String> items = new ArrayList<>();
@@ -115,20 +114,21 @@ final class SettingsMenu {
 
     private void kidsTime() {
         long now = System.currentTimeMillis();
-        boolean adult = screenTime.adultMode(now);
+        ScreenTime st = screenTime();
+        boolean adult = st.adultMode(now);
         List<String> items = new ArrayList<>();
         List<Runnable> acts = new ArrayList<>();
         items.add("Adult schedule: " + scheduleSummary()); acts.add(this::adultSchedule);
         items.add("Start today again");
-        acts.add(() -> { long t = System.currentTimeMillis(); screenTime.resetToday(t); timeChanged("Kids' time: " + screenTime.describe(t)); });
+        acts.add(() -> { long t = System.currentTimeMillis(); st.resetToday(t); timeChanged("Kids' time: " + st.describe(t)); });
         items.add("+10 more minutes");
-        acts.add(() -> { long t = System.currentTimeMillis(); screenTime.addMinutes(t, 10); timeChanged("Kids' time: " + screenTime.describe(t)); });
+        acts.add(() -> { long t = System.currentTimeMillis(); st.addMinutes(t, 10); timeChanged("Kids' time: " + st.describe(t)); });
         items.add("+n more minutes…"); acts.add(this::topUp);
         if (onDemo != null) { items.add("Demo"); acts.add(onDemo); }
         items.add("Timed apps: " + timedSummary()); acts.add(this::timedApps);
         items.add("Time allowance: " + minutesLabel(cfg.ytMinutes()) + " a day"); acts.add(this::minutes);
         items.add("Timed apps theme: " + HomeConfig.sceneName(cfg.scene())); acts.add(this::scene);
-        String title = (adult ? "Kids' time (adult mode on): " : "Kids' time: ") + screenTime.describe(now);
+        String title = (adult ? "Kids' time (adult mode on): " : "Kids' time: ") + st.describe(now);
         show(dialog(title, () -> { })
                 .setItems(items.toArray(new String[0]), (d, which) -> acts.get(which).run()));
     }
@@ -186,7 +186,7 @@ final class SettingsMenu {
 
     private void applySchedule(String start, String end, String msg) {
         cfg.setAdultSchedule(start, end);
-        screenTime.clearModeOverride();
+        screenTime().clearModeOverride();
         timeChanged(msg);
         kidsTime();
     }
@@ -288,8 +288,9 @@ final class SettingsMenu {
         show(dialog("How many more minutes?", this::kidsTime)
                 .setItems(labels, (d, which) -> {
                     long t = System.currentTimeMillis();
-                    screenTime.addMinutes(t, TOP_UPS[which]);
-                    timeChanged("Kids' time: " + screenTime.describe(t));
+                    ScreenTime st = screenTime();
+                    st.addMinutes(t, TOP_UPS[which]);
+                    timeChanged("Kids' time: " + st.describe(t));
                 }));
     }
 
@@ -369,20 +370,22 @@ final class SettingsMenu {
 
     private String timedSummary() {
         if (cfg.timedAll()) return "all apps";
+        TimedApps ta = timed();
         List<String> names = new ArrayList<>();
-        for (AppStore.App app : installed) if (timed.timed(app.pkg)) names.add(app.label);
+        for (AppStore.App app : installed) if (ta.timed(app.pkg)) names.add(app.label);
         return names.isEmpty() ? "none" : String.join(", ", names);
     }
 
     /** "All apps" first, then every app on Home (ticked if timed). OK saves; Back goes up without saving.
      *  Apps that can't be timed (config.xml's unwindowable_apps) are listed, but ticking one explains why instead. */
     private void timedApps() {
+        TimedApps ta = timed();
         List<AppStore.App> apps = new ArrayList<>();
         List<String> cantNames = new ArrayList<>();
         for (AppStore.App app : installed) {
-            if (!timed.offered(app.pkg)) continue;
+            if (!ta.offered(app.pkg)) continue;
             apps.add(app);
-            if (timed.cantBeTimed(app.pkg) != null) cantNames.add(app.label);
+            if (ta.cantBeTimed(app.pkg) != null) cantNames.add(app.label);
         }
         String[] labels = new String[apps.size() + 1];
         boolean[] on = new boolean[labels.length];
@@ -391,14 +394,14 @@ final class SettingsMenu {
         java.util.Set<String> timedSet = cfg.timedList();
         for (int i = 0; i < apps.size(); i++) {
             String pkg = apps.get(i).pkg;
-            boolean cant = timed.cantBeTimed(pkg) != null;
+            boolean cant = ta.cantBeTimed(pkg) != null;
             labels[i + 1] = apps.get(i).label + (cant ? " (can't be timed)" : "");
             on[i + 1] = !on[0] && timedSet.contains(pkg) && !cant;
         }
         show(dialog("Timed apps: they share the daily time and get the scene", this::kidsTime)
                 .setMultiChoiceItems(labels, on, (d, which, checked) -> {
                     android.widget.ListView lv = ((AlertDialog) d).getListView();
-                    String why = which > 0 ? timed.cantBeTimed(apps.get(which - 1).pkg) : null;
+                    String why = which > 0 ? ta.cantBeTimed(apps.get(which - 1).pkg) : null;
                     if (checked && why != null) {
                         // `on` is the dialog's own record of the ticks (it already says true), and the row has ticked itself.
                         on[which] = false;
@@ -424,6 +427,7 @@ final class SettingsMenu {
                         value = String.join(",", pkgs);
                     }
                     cfg.set(HomeConfig.K_TIMED, value);
+                    timed = null;   // pick up the saved list in timedSummary()
                     changed("Timed apps: " + timedSummary());
                 }));
     }
@@ -647,14 +651,16 @@ final class SettingsMenu {
     }
 
     private void remoteButtons() {
-        java.util.Map<String, String> mapped = remoteKeys.all();
+        RemoteKeys rk = remoteKeys();
+        TimedApps ta = timed();
+        java.util.Map<String, String> mapped = rk.all();
         if (!mapped.isEmpty() && !RemoteKeyService.isConnected()) ensureRemoteService(null);
         List<String> items = new ArrayList<>();
         List<Runnable> acts = new ArrayList<>();
         items.add("+ Remap a button"); acts.add(this::captureButton);
         for (java.util.Map.Entry<String, String> e : mapped.entrySet()) {
             String id = e.getKey();
-            items.add(remoteKeys.label(id) + " → " + RemoteKeys.targetLabel(e.getValue(), installed, timed));
+            items.add(rk.label(id) + " → " + RemoteKeys.targetLabel(e.getValue(), installed, ta));
             acts.add(() -> editButton(id));
         }
         if (!mapped.isEmpty() && !RemoteKeyService.isConnected()) {
@@ -739,23 +745,24 @@ final class SettingsMenu {
     }
 
     private void editButton(String id) {
-        String target = remoteKeys.target(id);
-        String title = remoteKeys.label(id) + " → " + RemoteKeys.targetLabel(target, installed, timed);
+        RemoteKeys rk = remoteKeys();
+        String target = rk.target(id);
+        String title = rk.label(id) + " → " + RemoteKeys.targetLabel(target, installed, timed());
         String[] items = {"Change what it does", "Rename this button…", "Reset to normal"};
         show(dialog(title, this::remoteButtons).setItems(items, (d, which) -> {
             switch (which) {
                 case 0: pickTarget(id, () -> editButton(id)); break;
                 case 1:
-                    text("Name for " + RemoteKeys.defaultKeyLabel(id), remoteKeys.customLabel(id), false,
+                    text("Name for " + RemoteKeys.defaultKeyLabel(id), rk.customLabel(id), false,
                             () -> editButton(id), v -> {
-                                remoteKeys.setLabel(id, v);
+                                rk.setLabel(id, v);
                                 Toast.makeText(a, "Saved", Toast.LENGTH_SHORT).show();
                                 remoteButtons();
                             });
                     break;
                 case 2:
-                    remoteKeys.remove(id);
-                    if (remoteKeys.isEmpty()) disableRemoteService();
+                    rk.remove(id);
+                    if (rk.isEmpty()) disableRemoteService();
                     Toast.makeText(a, "Back to normal", Toast.LENGTH_SHORT).show();
                     remoteButtons();
                     break;
@@ -765,12 +772,14 @@ final class SettingsMenu {
 
     /** Pick an app or TV action for button `id`. */
     private void pickTarget(String id, Runnable back) {
+        RemoteKeys rk = remoteKeys();
+        TimedApps ta = timed();
         List<String> targets = new ArrayList<>();
         List<String> labels = new ArrayList<>();
 
         for (String t : RemoteKeys.ACTIONS) {
             targets.add(t);
-            labels.add(RemoteKeys.targetLabel(t, installed, timed));
+            labels.add(RemoteKeys.targetLabel(t, installed, ta));
         }
         // Favourites first, then visible apps, then hidden apps (familiar order from Home).
         List<AppStore.App> favs = new ArrayList<>(), vis = new ArrayList<>(), hid = new ArrayList<>();
@@ -783,16 +792,16 @@ final class SettingsMenu {
         ordered.addAll(favs); ordered.addAll(vis); ordered.addAll(hid);
         for (AppStore.App app : ordered) {
             targets.add(RemoteKeys.appTarget(app.pkg));
-            labels.add(RemoteKeys.appTargetLabel(app.pkg, app.label, timed));
+            labels.add(RemoteKeys.appTargetLabel(app.pkg, app.label, ta));
         }
 
-        String cur = remoteKeys.target(id);
+        String cur = rk.target(id);
         int checked = cur != null ? targets.indexOf(cur) : -1;
-        show(dialog("What should " + remoteKeys.label(id) + " do?", back)
+        show(dialog("What should " + rk.label(id) + " do?", back)
                 .setSingleChoiceItems(labels.toArray(new String[0]), checked, (d, which) -> {
                     d.dismiss();
-                    remoteKeys.set(id, targets.get(which));
-                    Toast.makeText(a, remoteKeys.label(id) + " → " + labels.get(which), Toast.LENGTH_SHORT).show();
+                    rk.set(id, targets.get(which));
+                    Toast.makeText(a, rk.label(id) + " → " + labels.get(which), Toast.LENGTH_SHORT).show();
                     remoteButtons();
                 }));
     }
@@ -817,7 +826,7 @@ final class SettingsMenu {
         show(dialog("Reset all remote buttons?", this::remoteButtons)
                 .setMessage("Every remapped remote button goes back to how the TV handles it normally.")
                 .setPositiveButton("Reset", (d, w) -> {
-                    remoteKeys.clear();
+                    remoteKeys().clear();
                     disableRemoteService();
                     Toast.makeText(a, "All remote buttons back to normal", Toast.LENGTH_SHORT).show();
                 })
@@ -830,7 +839,7 @@ final class SettingsMenu {
         show(dialog(RESET + "?", this::main)
                 .setMessage("Every setting goes back to how Home came (its built-in config.xml). "
                         + "Kids' time used today, remote buttons, and the app tiles' order, favourites and hidden apps are kept.")
-                .setPositiveButton("Reset", (d, w) -> { cfg.reset(); screenTime.clearModeOverride(); changed("Settings reset to default"); })
+                .setPositiveButton("Reset", (d, w) -> { cfg.reset(); screenTime().clearModeOverride(); changed("Settings reset to default"); })
                 .setNegativeButton("Cancel", (d, w) -> main()));
     }
 

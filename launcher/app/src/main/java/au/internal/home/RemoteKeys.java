@@ -172,12 +172,6 @@ final class RemoteKeys {
         return true;
     }
 
-    int count() {
-        int n = 0;
-        for (Map.Entry<String, ?> e : p.getAll().entrySet()) if (isMapEntry(e)) n++;
-        return n;
-    }
-
     String target(String id) {
         String t = p.getString(MAP_PREFIX + id, null);
         return validTarget(t) ? t : null;
@@ -329,16 +323,27 @@ final class RemoteKeys {
         if (!target.startsWith(APP_PREFIX)) return;
         String pkg = target.substring(APP_PREFIX.length());
         long now = System.currentTimeMillis();
-        if (ScreenTime.pkgs(c, R.array.grownup_packages).contains(pkg) && !new ScreenTime(c).grownUp(now)) {
-            start(c, MainActivity.home(c).putExtra(MainActivity.EXTRA_UNLOCK_PKG, pkg));
+        if (TimedApps.inArray(c, R.array.grownup_packages, pkg)) {
+            if (!new ScreenTime(c).grownUp(now)) {
+                start(c, MainActivity.home(c).putExtra(MainActivity.EXTRA_UNLOCK_PKG, pkg));
+                return;
+            }
+            Intent launch = AppStore.launchIntent(c.getPackageManager(), pkg);
+            if (launch != null) start(c, launch);
             return;
         }
-        Intent launch = AppStore.launchIntent(c.getPackageManager(), pkg);
-        if (TimedApps.isTimedSingle(c, pkg, launch != null)) {
+        Intent[] launch = new Intent[1];
+        boolean[] resolved = new boolean[1];
+        if (TimedApps.isTimedSingle(c, pkg, () -> {
+            resolved[0] = true;
+            launch[0] = AppStore.launchIntent(c.getPackageManager(), pkg);
+            return launch[0] != null;
+        })) {
             start(c, new Intent(c, WatchActivity.class).putExtra("pkg", pkg));
             return;
         }
-        if (launch != null) start(c, launch);
+        Intent i = resolved[0] ? launch[0] : AppStore.launchIntent(c.getPackageManager(), pkg);
+        if (i != null) start(c, i);
     }
 
     private static boolean start(Context c, Intent i) {

@@ -38,7 +38,7 @@ public final class DevReceiver extends BroadcastReceiver {
             case "RESET": st.resetToday(now); break;
             case "GROWNUP": st.setGrownUp(now + i.getIntExtra("min", 120) * 60_000L); break;
             case "SCRUB": case "LIVE": case "PREVIEW": case "DEMO": {
-                if (cmd.equals("DEMO")) st.setScrub(0f);   // before WatchActivity starts, so it opens even if today's time is up
+                if (cmd.equals("DEMO")) { st.setScrub(0f); st.setDemo(true); }   // before WatchActivity starts, so it opens windowed even if asleep or in adult mode
                 Bundle x = i.getExtras();
                 Intent s = ScreenTimeService.dev(c, cmd);
                 if (x != null) s.putExtras(x);
@@ -63,9 +63,7 @@ public final class DevReceiver extends BroadcastReceiver {
                 String label = i.getStringExtra("label");
                 if ("clear".equals(id)) {
                     rk.clear();
-                    Context app = c.getApplicationContext();
-                    PendingResult r = goAsync();
-                    new Thread(() -> { RemoteKeys.disableService(app); r.setResultData("cleared"); r.finish(); }).start();
+                    runAsync(c, app -> { RemoteKeys.disableService(app); return "cleared"; });
                     return;
                 }
                 if (!RemoteKeys.validId(id)) { setResultData("bad id (use k:<keyCode> or s:<scanCode>)"); return; }
@@ -73,9 +71,7 @@ public final class DevReceiver extends BroadcastReceiver {
                 if (target == null || target.isEmpty()) {
                     rk.remove(id);
                     if (!rk.isEmpty()) { setResultData("removed " + id); return; }
-                    Context app = c.getApplicationContext();
-                    PendingResult r = goAsync();
-                    new Thread(() -> { RemoteKeys.disableService(app); r.setResultData("removed " + id + " (service off)"); r.finish(); }).start();
+                    runAsync(c, app -> { RemoteKeys.disableService(app); return "removed " + id + " (service off)"; });
                     return;
                 }
                 if (!RemoteKeys.validTarget(target)) {
@@ -84,20 +80,15 @@ public final class DevReceiver extends BroadcastReceiver {
                 }
                 rk.set(id, target);
                 if (label != null) rk.setLabel(id, label);
-                Context app = c.getApplicationContext();
-                PendingResult r = goAsync();
-                new Thread(() -> {
+                runAsync(c, app -> {
                     boolean ok = RemoteKeys.ensureService(app);
-                    r.setResultData("mapped " + id + " -> " + target + " (service " + (ok ? "connected" : "not connected") + ")");
-                    r.finish();
-                }).start();
+                    return "mapped " + id + " -> " + target + " (service " + (ok ? "connected" : "not connected") + ")";
+                });
                 return;
             }
             case "RESTORE_CHECK": {
                 // Copies restore.sh onto the TV and has the shell read it without running it (sh -n). Never runs it.
-                PendingResult r = goAsync();
-                Context app = c.getApplicationContext();
-                new Thread(() -> { r.setResultData(Restore.check(app)); r.finish(); }).start();
+                runAsync(c, Restore::check);
                 return;
             }
             case "STATUS": break;
@@ -120,5 +111,11 @@ public final class DevReceiver extends BroadcastReceiver {
                 st.adultMode(now) ? ", adult mode" : st.hasPass(now) ? ", grown-up pass" : "",
                 sched)
                 + "\nFramer:\n" + Framer.notes() + "\n" + keys);
+    }
+
+    private void runAsync(Context c, java.util.function.Function<Context, String> work) {
+        Context app = c.getApplicationContext();
+        PendingResult r = goAsync();
+        new Thread(() -> { r.setResultData(work.apply(app)); r.finish(); }).start();
     }
 }

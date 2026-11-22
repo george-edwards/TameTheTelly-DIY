@@ -29,15 +29,22 @@ final class HomeConfig {
     static final String K_CAM_NAME = "cam_name", K_CAM_URL = "cam_url", K_CAM_HD = "cam_url_hd";
     static final int CAMERAS = 2;
 
+    private static final Object UNSET = new Object();
+
     private final SharedPreferences p;
     private final Resources r;
+    private Object lastStartRaw = UNSET, lastEndRaw = UNSET;
+    private int cachedStartMin = -1, cachedEndMin = -1;
 
     HomeConfig(Context c) {
         p = c.getApplicationContext().getSharedPreferences("settings", Context.MODE_PRIVATE);
         r = c.getResources();
     }
 
-    private String str(String key, int def) { return p.getString(key, r.getString(def)); }
+    private String str(String key, int def) {
+        String v = p.getString(key, null);
+        return v != null ? v : r.getString(def);
+    }
     private int num(String key, int def) { return p.getInt(key, r.getInteger(def)); }
 
     /** Home's theme (Look). */
@@ -59,12 +66,23 @@ final class HomeConfig {
         return out;
     }
     int ytMinutes() { return Math.max(1, num(K_MINUTES, R.integer.yt_minutes)); }
-    String adultStart() { return str(K_ADULT_START, R.string.adult_start).trim(); }
-    String adultEnd() { return str(K_ADULT_END, R.string.adult_end).trim(); }
-    int adultStartMin() { return parseTimeMin(adultStart()); }
-    int adultEndMin() { return parseTimeMin(adultEnd()); }
+    int adultStartMin() {
+        String raw = p.getString(K_ADULT_START, null);
+        if (raw != lastStartRaw) {
+            lastStartRaw = raw;
+            cachedStartMin = parseTimeMin(raw != null ? raw : r.getString(R.string.adult_start));
+        }
+        return cachedStartMin;
+    }
+    int adultEndMin() {
+        String raw = p.getString(K_ADULT_END, null);
+        if (raw != lastEndRaw) {
+            lastEndRaw = raw;
+            cachedEndMin = parseTimeMin(raw != null ? raw : r.getString(R.string.adult_end));
+        }
+        return cachedEndMin;
+    }
     static boolean validWindow(int startMin, int endMin) { return startMin >= 0 && endMin >= 0 && startMin != endMin; }
-    boolean hasAdultSchedule() { return validWindow(adultStartMin(), adultEndMin()); }
     /** Formatted schedule range (e.g. "7:30 pm – 11:00 pm"), or null when off. */
     String adultScheduleText() {
         int s = adultStartMin(), e = adultEndMin();

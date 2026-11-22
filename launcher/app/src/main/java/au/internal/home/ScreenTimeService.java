@@ -26,7 +26,6 @@ import android.view.WindowManager;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -61,7 +60,6 @@ public final class ScreenTimeService extends Service {
     private RemoteKeys remoteKeys;
     private TimedApps timed;
     private volatile boolean timedDirty, hasRemoteKeys;
-    private Set<String> locked;
     private final SharedPreferences.OnSharedPreferenceChangeListener settingsListener = (p, k) -> {
         if (HomeConfig.K_TIMED.equals(k) || k == null) timedDirty = true;
     };
@@ -123,7 +121,6 @@ public final class ScreenTimeService extends Service {
         pkgFilter.addDataScheme("package");
         registerReceiver(pkgReceiver, pkgFilter);
         timed = new TimedApps(this);
-        locked = ScreenTime.pkgs(this, R.array.grownup_packages);
         framer = new Framer(this);
         frameViaAdb = getResources().getBoolean(R.bool.frame_via_adb);
         // Left lowered (Home stopped while a timed app was up)? Then the first tick puts it back.
@@ -183,7 +180,7 @@ public final class ScreenTimeService extends Service {
 
         boolean on = power.isInteractive();
         boolean appUp = on && !resumed.isEmpty();
-        boolean grown = st.grownUp(now);
+        boolean grown = !st.demo() && st.grownUp(now);
         if (appUp && !watching) lastAudio = el;   // count the first stretch while it starts up
         watching = appUp;
 
@@ -267,7 +264,7 @@ public final class ScreenTimeService extends Service {
         UsageEvents.Event e = new UsageEvents.Event();
         while (ev.getNextEvent(e)) {
             String pkg = e.getPackageName();
-            Map<String, String> into = timed.timed(pkg) ? resumed : locked.contains(pkg) ? lockedUp : null;
+            Map<String, String> into = timed.timed(pkg) ? resumed : timed.grownUp(pkg) ? lockedUp : null;
             if (into == null) continue;
             String key = pkg + "/" + e.getClassName();
             switch (e.getEventType()) {

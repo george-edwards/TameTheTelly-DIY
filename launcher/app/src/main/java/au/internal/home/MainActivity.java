@@ -82,7 +82,6 @@ public class MainActivity extends Activity {
     private String lastTimeSig;
     private ScreenTime screenTime;
     private TimedApps timedApps;
-    private java.util.Set<String> locked;
     private View scrim;
     private SceneTile sceneTile;
     private boolean leftDuringPass;
@@ -92,7 +91,7 @@ public class MainActivity extends Activity {
     private boolean wide;           // no cameras: apps across the whole screen
     private Glow glow;
     private ImageView modeBtn;
-    private View corner, timeBtn, remoteBtn, grownUps;
+    private View grownUps;
     private TextView cornerLabel;
     private Boolean modeBtnAdult;
     /** Open dialogs owned by Home (Config, ParentGate, app menu, etc.): dismissed when Home is pressed. */
@@ -102,6 +101,8 @@ public class MainActivity extends Activity {
         OPEN_DIALOGS.removeIf(ref -> { AlertDialog x = ref.get(); return x == null || !x.isShowing(); });
         OPEN_DIALOGS.add(new java.lang.ref.WeakReference<>(d));
     }
+
+    static AlertDialog showDialog(AlertDialog.Builder b) { return showDialog(b.create()); }
 
     static AlertDialog showDialog(AlertDialog d) {
         d.show();
@@ -132,7 +133,6 @@ public class MainActivity extends Activity {
         cfg = new HomeConfig(this);
         screenTime = new ScreenTime(this);
         timedApps = new TimedApps(this);
-        locked = ScreenTime.pkgs(this, R.array.grownup_packages);
         // Dims Home while a timed app's window sits on top of it (Home stays visible behind it).
         scrim = new View(this);
         scrim.setBackgroundColor(0xFF000000);
@@ -186,11 +186,11 @@ public class MainActivity extends Activity {
         setLook(cfg.look());
 
         // Top corner, up from the top row of apps: Adult/Kids toggle, Kids' time, Remote buttons, and Settings.
-        corner = findViewById(R.id.corner);
+        View corner = findViewById(R.id.corner);
         cornerLabel = findViewById(R.id.cornerLabel);
         modeBtn = findViewById(R.id.modeBtn);
-        timeBtn = findViewById(R.id.timeBtn);
-        remoteBtn = findViewById(R.id.remoteBtn);
+        View timeBtn = findViewById(R.id.timeBtn);
+        View remoteBtn = findViewById(R.id.remoteBtn);
         grownUps = findViewById(R.id.grownups);
         bindCorner(modeBtn, this::toggleMode, null, timeBtn);
         bindCorner(timeBtn, () -> ParentGate.ask(this, this::kidsTime), modeBtn, remoteBtn);
@@ -506,7 +506,7 @@ public class MainActivity extends Activity {
     }
 
     /** Timed (YouTube, or whatever Config says) or grown-ups-only (SmartTube): an app the allowance rules apply to. */
-    private boolean ruled(String pkg) { return timedApps.timed(pkg) || locked.contains(pkg); }
+    private boolean ruled(String pkg) { return timedApps.timed(pkg) || timedApps.grownUp(pkg); }
 
     private int firstAppPos() {
         for (int i = 0; i < rows.size(); i++) if (rows.get(i).type != T_HEADER) return i;
@@ -521,7 +521,7 @@ public class MainActivity extends Activity {
     private void launch(AppStore.App a) { launch(a.pkg, a.label); }
 
     private void launch(String pkg, String label) {
-        if (locked.contains(pkg) && !screenTime.grownUp(System.currentTimeMillis())) {
+        if (timedApps.grownUp(pkg) && !screenTime.grownUp(System.currentTimeMillis())) {
             ParentGate.ask(this, () -> {
                 screenTime.setGrownUp(System.currentTimeMillis() + GROWN_UP_MS);
                 launch(pkg, label);
@@ -546,7 +546,7 @@ public class MainActivity extends Activity {
     private void showMenu(AppStore.App a) {
         List<String> items = new ArrayList<>();
         List<Runnable> acts = new ArrayList<>();
-        if (timedApps.timed(a.pkg)) {
+        if (timedApps.timed(a.pkg) && !screenTime.adultMode(System.currentTimeMillis())) {
             items.add("Grown-up time: " + a.label);
             acts.add(() -> ParentGate.ask(this, () -> {
                 screenTime.setGrownUp(System.currentTimeMillis() + GROWN_UP_MS);
@@ -565,8 +565,7 @@ public class MainActivity extends Activity {
                 Uri.fromParts("package", a.pkg, null))));
         showDialog(new AlertDialog.Builder(this)
                 .setTitle(a.label)
-                .setItems(items.toArray(new String[0]), (d, which) -> acts.get(which).run())
-                .create());
+                .setItems(items.toArray(new String[0]), (d, which) -> acts.get(which).run()));
     }
 
     /** "Good morning" etc. for the hour (0–23), with optional family name. */
@@ -616,21 +615,22 @@ public class MainActivity extends Activity {
 
     /** Top corner's Settings button, past the arrow code: Home & household settings. */
     private void settings() {
-        SettingsMenu.showSettings(this, all, this::recreate, this::setLook, this::confirmRestore);
+        SettingsMenu.showSettings(this, this::recreate, this::setLook, this::confirmRestore);
     }
 
     /** Top corner's Remote buttons button, past the arrow code: remote button remapping. */
     private void remoteButtons() {
-        SettingsMenu.showRemoteButtons(this, all, this::recreate, this::setLook, this::confirmRestore);
+        SettingsMenu.showRemoteButtons(this, all);
     }
 
     /** Top corner's Kids' time button, past the arrow code: daily limits, top-ups, timed apps & scene. */
     private void kidsTime() {
-        SettingsMenu.showKidsTime(this, all, this::recreate, this::timeChanged, this::runDemo, this::setLook, this::confirmRestore);
+        SettingsMenu.showKidsTime(this, all, this::recreate, this::timeChanged, this::runDemo);
     }
 
     private void runDemo() {
         screenTime.setScrub(0f);   // so the app opens even if today's real time is used up
+        screenTime.setDemo(true);  // and stays windowed even while Adult mode is on
         startService(ScreenTimeService.dev(this, "DEMO").putExtra("secs", 10));
         WatchActivity.open(this, getString(R.string.scene_tile_package));
     }
@@ -662,8 +662,8 @@ public class MainActivity extends Activity {
     }
 
     private void runRestore() {
-        AlertDialog busy = showDialog(new AlertDialog.Builder(this).setTitle("Putting the TV back…")
-                .setMessage("This takes a minute or so. Please don't switch the TV off.").setCancelable(false).create());
+        AlertDialog busy = new AlertDialog.Builder(this).setTitle("Putting the TV back…")
+                .setMessage("This takes a minute or so. Please don't switch the TV off.").setCancelable(false).show();
         android.content.Context app = getApplicationContext();
         new Thread(() -> {
             String err = null;
@@ -678,7 +678,7 @@ public class MainActivity extends Activity {
                 busy.dismiss();
                 if (msg == null) {
                     showDialog(new AlertDialog.Builder(this).setTitle("Done")
-                            .setMessage("The TV will restart in a few seconds, with its own home screen.").create());
+                            .setMessage("The TV will restart in a few seconds, with its own home screen."));
                     return;
                 }
                 showDialog(new AlertDialog.Builder(this).setTitle("Couldn't put the TV back")
@@ -687,7 +687,7 @@ public class MainActivity extends Activity {
                                         + "From a computer, run ./restore.sh in the repo to finish."
                                 : "Home needs the TV to allow its debugging connection, and it didn't (" + msg + ").\n\n"
                                         + "Nothing was changed. From a computer, run ./restore.sh in the repo instead.")
-                        .setPositiveButton("OK", null).create());
+                        .setPositiveButton("OK", null));
             });
         }, "restore").start();
     }
@@ -819,7 +819,7 @@ public class MainActivity extends Activity {
             boolean hasBanner = a.banner != null;
             banner.setVisibility(hasBanner ? View.VISIBLE : View.GONE);
             iconBox.setVisibility(hasBanner ? View.GONE : View.VISIBLE);
-            boolean isTimed = timedApps.timed(a.pkg), isLocked = locked.contains(a.pkg);
+            boolean isTimed = timedApps.timed(a.pkg), isLocked = timedApps.grownUp(a.pkg);
             boolean isRuled = isTimed || isLocked;
             long now = isRuled ? System.currentTimeMillis() : 0;
             boolean adult = isRuled && screenTime.adultMode(now);

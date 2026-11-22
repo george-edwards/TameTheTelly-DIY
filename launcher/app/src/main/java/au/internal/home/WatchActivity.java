@@ -40,7 +40,7 @@ public final class WatchActivity extends Activity {
     static void open(Activity a, String pkg) {
         ScreenTime st = new ScreenTime(a);
         long now = System.currentTimeMillis();
-        if (st.grownUp(now)) { openFullScreen(a, pkg); return; }
+        if (!st.demo() && st.grownUp(now)) { openFullScreen(a, pkg); return; }
         if (st.asleep(now)) {
             a.startActivity(new Intent(a, GoodnightActivity.class));
             return;

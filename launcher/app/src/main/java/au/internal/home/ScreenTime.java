@@ -146,7 +146,9 @@ final class ScreenTime {
      */
     static long scheduledOverrideUntil(long nowMs, boolean wantAdult, int startMin, int endMin, int resetHour) {
         if (!wantAdult) return nextOccurrence(nowMs, startMin);
-        return Math.min(nextOccurrence(nowMs, endMin), nextOccurrence(nowMs, resetHour * 60));
+        long endAt = nextOccurrence(nowMs, endMin);
+        if (inWindow(resetHour * 60, startMin, endMin)) return endAt;
+        return Math.min(endAt, nextOccurrence(nowMs, resetHour * 60));
     }
 
     private int minuteOfDay(long nowMs) {
