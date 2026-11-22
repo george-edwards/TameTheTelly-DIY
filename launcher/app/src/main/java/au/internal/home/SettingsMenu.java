@@ -27,7 +27,7 @@ import java.util.Locale;
 final class SettingsMenu {
     private static final String[] DAYS = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
     private static final int[] MINUTES = {15, 20, 30, 45, 60, 90, 120};
-    private static final int[] TOP_UPS = {5, 15, 20, 30, 45, 60, 90, 120};
+    private static final int[] TOP_UPS = {5, 10, 15, 20, 30, 60, 90, 120};
 
     private final Activity a;
     private final HomeConfig cfg;
@@ -164,18 +164,15 @@ final class SettingsMenu {
         ScreenTime st = screenTime();
         boolean adult = st.adultMode(now);
         List<MenuRow> rows = new ArrayList<>();
-        rows.add(new MenuRow("Adult schedule", scheduleSummary(), this::adultSchedule));
-        rows.add(new MenuRow("Reset today", null, () -> {
+        rows.add(new MenuRow("Daily limit", minutesShort(cfg.ytMinutes()), this::minutes));
+        rows.add(new MenuRow("Restart today", null, () -> {
             long t = System.currentTimeMillis(); st.resetToday(t); timeChanged("Parental controls: " + st.describe(t));
         }));
-        rows.add(new MenuRow("+10 min", null, () -> {
-            long t = System.currentTimeMillis(); st.addMinutes(t, 10); timeChanged("Parental controls: " + st.describe(t));
-        }));
-        rows.add(new MenuRow("Add time…", null, this::topUp));
-        if (onDemo != null) rows.add(new MenuRow("Preview scene", null, onDemo));
+        rows.add(new MenuRow("Extra time today", null, this::topUp));
         rows.add(new MenuRow("Restricted apps", timedCountSummary(), this::timedApps));
-        rows.add(new MenuRow("Daily limit", minutesShort(cfg.ytMinutes()), this::minutes));
-        rows.add(new MenuRow("Timer scene", HomeConfig.sceneName(cfg.scene()), this::scene));
+        rows.add(new MenuRow("Restricted scene", HomeConfig.sceneName(cfg.scene()), this::scene));
+        if (onDemo != null) rows.add(new MenuRow("Preview", null, onDemo));
+        rows.add(new MenuRow("Adult mode schedule", scheduleSummary(), this::adultSchedule));
         String title = (adult ? "Parental controls (adult) · " : "Parental controls · ") + st.describeShort(now);
         showMenu(title, () -> { }, rows);
     }
@@ -197,7 +194,7 @@ final class SettingsMenu {
                 "Back to kids' mode: " + HomeConfig.formatTime12(e),
                 "Turn schedule off"
         };
-        show(dialog("Adult schedule", this::kidsTime).setItems(items, (d, which) -> {
+        show(dialog("Adult mode schedule", this::kidsTime).setItems(items, (d, which) -> {
             switch (which) {
                 case 0: pickScheduleStart(s, e, false, this::adultSchedule); break;
                 case 1: pickScheduleEnd(s, e, this::adultSchedule); break;
@@ -332,7 +329,7 @@ final class SettingsMenu {
     private void topUp() {
         String[] labels = new String[TOP_UPS.length];
         for (int i = 0; i < labels.length; i++) labels[i] = "+" + TOP_UPS[i] + " minutes";
-        show(dialog("How many more minutes?", this::kidsTime)
+        show(dialog("Extra time today", this::kidsTime)
                 .setItems(labels, (d, which) -> {
                     long t = System.currentTimeMillis();
                     ScreenTime st = screenTime();
@@ -403,9 +400,9 @@ final class SettingsMenu {
         String[] names = HomeConfig.SCENE_NAMES;
         int cur = HomeConfig.indexOf(HomeConfig.SCENES, cfg.scene());
         ScenePreview preview = new ScenePreview(a);
-        AlertDialog d = sidePicker("Timer scene", names, cur, this::kidsTime,
+        AlertDialog d = sidePicker("Restricted scene", names, cur, this::kidsTime,
                 pos -> preview.show(HomeConfig.SCENES[pos]),
-                which -> { cfg.set(HomeConfig.K_SCENE, HomeConfig.SCENES[which]); changed("Timer scene: " + names[which]); });
+                which -> { cfg.set(HomeConfig.K_SCENE, HomeConfig.SCENES[which]); changed("Restricted scene: " + names[which]); });
         d.setOnDismissListener(x -> preview.close());
         preview.open();
         preview.show(cfg.scene());
