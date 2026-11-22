@@ -115,6 +115,10 @@ final class AppStore {
 
     void setFav(String pkg, boolean fav) { setMember("favs", pkg, fav); }
 
+    void setFavs(Set<String> pkgs) {
+        prefs.edit().putStringSet("favs", new HashSet<>(pkgs)).apply();
+    }
+
     private void setMember(String key, String pkg, boolean in) {
         Set<String> h = new HashSet<>(set(key));
         if (in) h.add(pkg); else h.remove(pkg);

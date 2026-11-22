@@ -23,6 +23,7 @@ import android.os.Bundle;
  *   ... -a au.internal.home.RESTORE_CHECK       copy restore.sh onto the TV and check it parses (sh -n); runs nothing
  *   ... -a au.internal.home.SET --es key scene --es value brook    a setting (keys in HomeConfig; key reset
  *                                                                  with any value forgets them all)
+ *   ... -a au.internal.home.FAVS --es pkgs pkg1,pkg2,...           replace favourites (blank clears all)
  *   ... -a au.internal.home.KEY --es id k:176 --es target action:settings [--es label Settings]
  *       remap a remote button (empty target removes it; id "clear" clears all)
  */
@@ -54,6 +55,18 @@ public final class DevReceiver extends BroadcastReceiver {
                 if (err == null && (HomeConfig.K_ADULT_START.equals(key) || HomeConfig.K_ADULT_END.equals(key) || "reset".equals(key)))
                     st.clearModeOverride();
                 setResultData(err != null ? err : "set " + key);
+                return;
+            }
+            case "FAVS": {
+                String raw = i.getStringExtra("pkgs");
+                if (raw == null) { setResultData("need --es pkgs (comma-separated, or blank to clear)"); return; }
+                java.util.Set<String> pkgs = new java.util.LinkedHashSet<>();
+                for (String s : raw.split(",")) {
+                    String p = s.trim();
+                    if (!p.isEmpty()) pkgs.add(p);
+                }
+                new AppStore(c).setFavs(pkgs);
+                setResultData("favs (" + pkgs.size() + "): " + String.join(", ", pkgs));
                 return;
             }
             case "KEY": {

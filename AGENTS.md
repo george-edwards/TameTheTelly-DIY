@@ -138,7 +138,11 @@ Install, in this order, each with its undo already in `restore.sh` (the "Home it
    go in restore.sh's "Home itself" section), set Home again, press Home on the remote.
 6. Screensaver: Home is happy to stay up (cameras, clock). If the household wants that, `screensaver_enabled 0`
    and a longer `screen_off_timeout`, both with undo lines.
-7. Optional: remap broken or branded remote buttons (e.g. YouTube, Netflix, Settings, Picture) directly on the TV
+7. Favourites: check `adb -s <ip>:5555 shell dumpsys usagestats` (`In-memory yearly stats`) for the TV's top 4
+   most-used launchable apps and flag them as favourites via
+   `adb -s <ip>:5555 shell am broadcast -n au.internal.home/.DevReceiver -a au.internal.home.FAVS --es pkgs <pkg1>,<pkg2>,<pkg3>,<pkg4>`,
+   then `am force-stop au.internal.home` and `input keyevent KEYCODE_HOME` so they appear at the top immediately.
+8. Optional: remap broken or branded remote buttons (e.g. YouTube, Netflix, Settings, Picture) directly on the TV
    via the top-corner **Remote buttons** icon (or over adb with `DevReceiver` `KEY`). No third-party key mapper
    needed; `restore.sh` already resets accessibility.
 
