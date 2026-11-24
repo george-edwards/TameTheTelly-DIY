@@ -8,7 +8,7 @@ One file per TV model, named `<brand>-<product>.md` using Android's `ro.product.
 | Model | Profile | Android | UI | Freeform | Notes |
 |---|---|---|---|---|---|
 | TCL Smart TV Pro (`TCL-G05_4K_GB`) | [TCL-G05_4K_GB.md](TCL-G05_4K_GB.md) | 11 | 1080p @ 320 dpi | Yes | Full rollback verified; `com.tcl.tvmanager` backlight/blue-light API |
-| TCL Smart TV Pro (`TCL-G08_4K_GB`) | [TCL-G08_4K_GB.md](TCL-G08_4K_GB.md) | 14 (SDK 34) | 1080p @ 320 dpi | Not declared | `dreamx` Google Photos screensaver works with `launcherx` off; `com.google.android.pano.action.SLEEP` triggers screensaver |
+| TCL Smart TV Pro (`TCL-G08_4K_GB`) | [TCL-G08_4K_GB.md](TCL-G08_4K_GB.md) | 14 (SDK 34) | 1080p @ 320 dpi | Works (undeclared) | `dreamx` Google Photos screensaver works with `launcherx` off; `RootTask` framing + `appops` boot self-heal verified |
 
 ## How to use this folder
 

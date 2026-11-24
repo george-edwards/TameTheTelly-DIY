@@ -4,8 +4,8 @@
 - **Model / Device**: `Smart TV Pro` / `G08`
 - **Android**: 14 / SDK 34 (`TCL/G08_4K_GB/G08:14/UTT2.250416.001/AU02:user/release-keys`)
 - **UI display**: 1920×1080 @ 320 dpi (4K physical panel 3840×2160, 1080p override UI)
-- **Freeform windows**: `android.software.freeform_window_management` is **not** declared in `features.txt` (unlike `TCL-G05_4K_GB`); `enable_freeform_support=1` + `force_resizable_activities=1` can still be set, and timed apps fall back to full screen if windowing isn't supported
-- **Verified**: Home `2.18.9` as default launcher, reboot, `RESTORE_CHECK` (`LocalAdb`), Ambient Mode Google Photos screensaver (`dreamx` + `com.google.android.pano.action.SLEEP`), and Remote buttons remapper verified OK (2026-11-24)
+- **Freeform windows**: `android.software.freeform_window_management` is not declared in `features.txt`, **but multi-window framing still works cleanly** with `enable_freeform_support=1` + `force_resizable_activities=1` + `wm density 240` (`[240,100][1680,910]`, `960×540 dp @ 240 dpi`) once `Framer` parses Android 14's `RootTask id=` format
+- **Verified**: Home `2.18.9` as default launcher, YouTube multi-window framing, reboot survival (both framing and remapped buttons), `RESTORE_CHECK` (`LocalAdb`), Ambient Mode Google Photos screensaver (`dreamx` + `com.google.android.pano.action.SLEEP`), and Remote buttons remapper verified OK (2026-11-24)
 
 ## Curated bloat tiers
 
@@ -57,3 +57,4 @@ Optional additional TCL tiles left enabled (can be hidden on Home or disabled if
 - **Screenshots**: Strip any leading bytes before `\x89PNG` when piping `adb exec-out screencap -p` (same TCL quirk as G05).
 - **Android 14 appops & boot self-heal**: TCL Android 14 resets `SYSTEM_ALERT_WINDOW` and `GET_USAGE_STATS` back to `default` on both reboot and `adb install -r`, and `adbd` takes a few seconds to come up after boot. `ScreenTimeService` now self-heals both `appops` and `RemoteKeyService` over `LocalAdb` with fast exponential backoff (starting at 10 s).
 - **Android 14 `am stack list`**: Prints `RootTask id=...` instead of `Stack id=...` (supported by `Framer.java`).
+- **Android 14 overlay opacity**: `TYPE_APPLICATION_OVERLAY` + `FLAG_NOT_TOUCHABLE` is capped at `alpha=0.8` by Android 14 (`MAXIMUM_OBSCURING_OPACITY_FOR_TOUCH`). `MainActivity`'s opaque black scrim (`1.0f`, initialized visible so density-change recreation doesn't expose Home behind a windowed app) prevents Home tiles from bleeding through the scene.
