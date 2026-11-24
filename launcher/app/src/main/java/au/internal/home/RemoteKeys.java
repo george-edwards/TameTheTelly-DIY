@@ -43,8 +43,9 @@ final class RemoteKeys {
     static final String ACTION_HOME = "action:home";
     static final String ACTION_SETTINGS = "action:settings";
     static final String ACTION_PICTURE = "action:picture";
+    static final String ACTION_SCREENSAVER = "action:screensaver";
     static final String ACTION_NOOP = "action:noop";
-    static final String[] ACTIONS = {ACTION_HOME, ACTION_SETTINGS, ACTION_PICTURE, ACTION_NOOP};
+    static final String[] ACTIONS = {ACTION_HOME, ACTION_SETTINGS, ACTION_PICTURE, ACTION_SCREENSAVER, ACTION_NOOP};
 
     private static final Object CONNECT_LOCK = new Object();
 
@@ -280,6 +281,7 @@ final class RemoteKeys {
             case ACTION_HOME: return "Home screen";
             case ACTION_SETTINGS: return "TV Settings";
             case ACTION_PICTURE: return "Picture settings";
+            case ACTION_SCREENSAVER: return "Screensaver";
             case ACTION_NOOP: return "Do nothing (disabled)";
         }
         if (target.startsWith(APP_PREFIX)) {
@@ -318,6 +320,9 @@ final class RemoteKeys {
             case ACTION_PICTURE:
                 if (!start(c, new Intent(Settings.ACTION_DISPLAY_SETTINGS)))
                     start(c, new Intent(Settings.ACTION_SETTINGS));
+                return;
+            case ACTION_SCREENSAVER:
+                start(c, new Intent("com.google.android.pano.action.SLEEP"));
                 return;
         }
         if (!target.startsWith(APP_PREFIX)) return;
