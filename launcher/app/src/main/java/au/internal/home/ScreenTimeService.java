@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package au.internal.home;
 
+import android.app.AppOpsManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -18,6 +19,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.Process;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.util.Log;
@@ -76,8 +78,9 @@ public final class ScreenTimeService extends Service {
     private Framer framer;
     private final java.util.concurrent.atomic.AtomicBoolean framing = new java.util.concurrent.atomic.AtomicBoolean();
     private final java.util.concurrent.atomic.AtomicBoolean checkingKeys = new java.util.concurrent.atomic.AtomicBoolean();
-    private long lastFrame, lastKeyCheck = -60_000;
-    private volatile long keyCheckWait = 30_000;
+    private final java.util.concurrent.atomic.AtomicBoolean checkingOps = new java.util.concurrent.atomic.AtomicBoolean();
+    private long lastFrame, lastKeyCheck = -60_000, lastOpsCheck = -60_000;
+    private volatile long keyCheckWait = 10_000, opsCheckWait = 10_000;
     private boolean frameViaAdb;
 
     private final Map<String, String> resumed = new HashMap<>();   // "pkg/class" -> pkg, counted apps
@@ -202,6 +205,24 @@ public final class ScreenTimeService extends Service {
             densitySmall = wantSmall;
             worker.execute(() -> framer.windowDensity(wantSmall));
         }
+        // Self-heal SYSTEM_ALERT_WINDOW and GET_USAGE_STATS over LocalAdb (Android 14 / TCL resets appops on reboot/reinstall).
+        if (!hasAppOps() && el - lastOpsCheck > opsCheckWait && checkingOps.compareAndSet(false, true)) {
+            lastOpsCheck = el;
+            Context app = getApplicationContext();
+            new Thread(() -> {
+                try {
+                    String pkg = app.getPackageName();
+                    LocalAdb.exec(app, "appops set " + pkg + " SYSTEM_ALERT_WINDOW allow; "
+                            + "appops set " + pkg + " GET_USAGE_STATS allow", 5_000);
+                    opsCheckWait = 10_000;
+                } catch (java.io.IOException | RuntimeException e) {
+                    Log.w(TAG, "appops heal failed: " + e.getMessage());
+                    opsCheckWait = Math.min(5 * 60_000L, opsCheckWait * 2);
+                } finally {
+                    checkingOps.set(false);
+                }
+            }, "appops-heal").start();
+        }
         // Keep RemoteKeyService bound when buttons are mapped (off the framing worker so binds never stall Framer).
         if (hasRemoteKeys && !RemoteKeyService.isConnected() && el - lastKeyCheck > keyCheckWait
                 && checkingKeys.compareAndSet(false, true)) {
@@ -210,7 +231,7 @@ public final class ScreenTimeService extends Service {
             new Thread(() -> {
                 try {
                     boolean ok = RemoteKeys.ensureService(app);
-                    keyCheckWait = ok ? 30_000 : 5 * 60_000L;
+                    keyCheckWait = ok ? 10_000 : Math.min(5 * 60_000L, keyCheckWait * 2);
                 } finally {
                     checkingKeys.set(false);
                 }
@@ -240,6 +261,13 @@ public final class ScreenTimeService extends Service {
         setSceneProgress(now, p);
         if (kid && !goingToSleep) { fadeVolume(p); warm(p >= ScreenTime.GOLDEN); }
         else if (!goingToSleep) { restoreVolume(); warm(false); }
+    }
+
+    private boolean hasAppOps() {
+        if (!Settings.canDrawOverlays(this)) return false;
+        AppOpsManager ops = getSystemService(AppOpsManager.class);
+        return ops != null && ops.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(), getPackageName()) == AppOpsManager.MODE_ALLOWED;
     }
 
     private float progress(long now) {
