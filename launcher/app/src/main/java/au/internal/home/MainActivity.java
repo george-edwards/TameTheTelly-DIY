@@ -131,11 +131,12 @@ public class MainActivity extends Activity {
         cfg = new HomeConfig(this);
         screenTime = new ScreenTime(this);
         timedApps = new TimedApps(this);
-        // Dims Home while a timed app's window sits on top of it (Home stays visible behind it).
+        // Hides Home while a timed app's window sits on top of it (Home stays visible behind it, and may be
+        // recreated there when Framer changes density; onTopResumedActivityChanged(true) clears it when Home is on top).
         scrim = new View(this);
         scrim.setBackgroundColor(0xFF000000);
-        scrim.setAlpha(0f);
-        scrim.setVisibility(View.GONE);
+        scrim.setAlpha(1f);
+        scrim.setVisibility(View.VISIBLE);
         ((ViewGroup) getWindow().getDecorView()).addView(scrim, new ViewGroup.LayoutParams(-1, -1));
         prefs = getSharedPreferences("ui", MODE_PRIVATE);
         status = findViewById(R.id.status);
@@ -284,7 +285,7 @@ public class MainActivity extends Activity {
             }
         } else {
             scrim.setVisibility(View.VISIBLE);
-            scrim.animate().alpha(0.88f).setDuration(350).start();
+            scrim.animate().alpha(1f).setDuration(350).start();
         }
         long now = System.currentTimeMillis();
         if (top) {
