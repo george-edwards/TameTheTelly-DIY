@@ -24,7 +24,7 @@ import java.util.Map;
  * Each button is identified by its Android keyCode ("k:176", "k:4062") or, for unmapped Linux keys
  * where keyCode is 0, its hardware scanCode ("s:705"). Targets are either an app ("app:<pkg>", which
  * automatically honours Kids' time via WatchActivity and grown-ups-only apps via ParentGate) or one of
- * the built-in TV actions (Home, TV Settings, Picture settings, Do nothing).
+ * the built-in TV actions (Home, TV Settings, Picture settings, Screensaver, Do nothing).
  *
  * Keys are intercepted globally by RemoteKeyService (an AccessibilityService inside Home). Android TV
  * sometimes resets accessibility_enabled to 0 or leaves a service unbound after a reboot, so

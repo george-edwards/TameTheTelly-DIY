@@ -32,7 +32,7 @@ A calm TV a young child can use, and grown-ups can still use as normal:
      and back to kids' mode later). Holding OK on a restricted app's tile also offers a quick one-app "Grown-up
      time" shortcut.
    - **Remote buttons** (remote icon): press any non-essential remote button and pick an app or TV action (Home,
-     TV Settings, Picture settings, Do nothing); timed apps route through `WatchActivity` and grown-ups apps ask
+     TV Settings, Picture settings, Screensaver, Do nothing); timed apps route through `WatchActivity` and grown-ups apps ask
      for the code. Uses a built-in `AccessibilityService` (`RemoteKeyService`) auto-enabled and self-healed over
      `LocalAdb`.
    - **Settings** (sliders icon): Home theme, cameras, grown-up code, family name, weather, bin night, reset, and
