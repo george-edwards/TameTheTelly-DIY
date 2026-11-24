@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 final class Framer {
     private static final String TAG = "HomeFramer";
     private static final String MULTI_WINDOW = "multi-window";
-    private static final Pattern ROOT = Pattern.compile("^Stack id=(\\d+) bounds=\\[(-?\\d+),(-?\\d+)\\]\\[(-?\\d+),(-?\\d+)\\]");
+    private static final Pattern ROOT = Pattern.compile("^(?:Stack|RootTask) id=(\\d+) bounds=\\[(-?\\d+),(-?\\d+)\\]\\[(-?\\d+),(-?\\d+)\\]");
     private static final Pattern STACK = Pattern.compile("mWindowingMode=([\\w-]+)");
     private static final Pattern TASK = Pattern.compile("taskId=(\\d+): ([\\w.]+)/\\S+ bounds=\\[(-?\\d+),(-?\\d+)\\]\\[(-?\\d+),(-?\\d+)\\].*visible=(\\w+)");
 
