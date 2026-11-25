@@ -467,7 +467,8 @@ final class RemoteKeys {
             String cur = Settings.Secure.getString(c.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
             boolean enabled = Settings.Secure.getInt(c.getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 0) == 1;
             String with = mergeService(cur, SERVICE, true);
-            String enableCmd = setServicesCmd(with) + "; settings put secure accessibility_enabled 1";
+            String autoStart = "appops set " + c.getPackageName() + " APP_AUTO_START allow 2>/dev/null; ";
+            String enableCmd = autoStart + setServicesCmd(with) + "; settings put secure accessibility_enabled 1";
             if (enabled && containsOwnService(cur)) {
                 String without = mergeService(cur, SERVICE, false);
                 LocalAdb.exec(c, setServicesCmd(without) + "; sleep 0.3; " + enableCmd, 5_000);
