@@ -71,7 +71,7 @@ public class MainActivity extends Activity {
     private final Adapter adapter = new Adapter();
     private final Handler h = new Handler(Looper.getMainLooper());
     private CameraFeed[] feeds;
-    private WebCamFeed[] webFeeds;
+    private WebCamHost webHost;
     private WorldCams worldCams;
     private List<WorldCams.Stream> worldCatalog = Collections.emptyList();
     private WorldCams.Stream[] worldSlots = new WorldCams.Stream[2];
@@ -169,56 +169,58 @@ public class MainActivity extends Activity {
         camOn = new boolean[2];
         camIsWorld = new boolean[2];
         feeds = new CameraFeed[2];
-        webFeeds = new WebCamFeed[2];
         worldCams = new WorldCams(this);
         if (cfg.camerasOn() && cfg.worldCamsOn()) {
             worldCatalog = worldCams.load();
             worldCams.refreshIfDue(cfg.worldCamsUrl(), () -> worldCatalog = worldCams.load());
         }
+        Runnable[] webOnLive = new Runnable[2];
+        for (int i = 0; i < 2; i++) {
+            final int idx = i;
+            camLabels[i] = camViews[i].findViewById(R.id.label);
+            webOnLive[i] = () -> { if (!camViews[idx].hasFocus()) fadeLabel(camLabels[idx], LABEL_FADE_MS); };
+        }
+        webHost = new WebCamHost(this, findViewById(R.id.webBackdrop), camViews, webOnLive);
         for (int i = 0; i < 2; i++) {
             View v = camViews[i];
-            View label = camLabels[i] = v.findViewById(R.id.label);
+            View label = camLabels[i];
             boolean hasLocal = !cfg.camUrl(i).isEmpty();
-            boolean useWorld = cfg.camerasOn() && !hasLocal && cfg.worldCamsOn() && !worldCatalog.isEmpty();
+            boolean useWorld = cfg.camerasOn() && cfg.worldCamsOn() && !worldCatalog.isEmpty()
+                    && (!hasLocal || worldCams.slotUsesWorld(i));
             camIsWorld[i] = useWorld;
             camOn[i] = cfg.camerasOn() && (hasLocal || useWorld);
             v.setVisibility(camOn[i] ? View.VISIBLE : View.GONE);
             final int idx = i;
-            if (useWorld) {
-                worldSlots[i] = worldCams.slotStream(i, worldCatalog);
-                updateWorldLabel(i);
-                webFeeds[i] = new WebCamFeed(this, (ViewGroup) v, v.findViewById(R.id.surface),
-                        v.findViewById(R.id.state),
-                        () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
-                if (worldSlots[i] != null) webFeeds[i].setEmbedUrl(worldSlots[i].embedUrl());
-            } else {
-                ((TextView) v.findViewById(R.id.name)).setText(cfg.camName(i));
+            if (hasLocal) {
                 feeds[i] = new CameraFeed(this, cfg.camUrl(i), cfg.camHdUrl(i),
                         (TextureView) v.findViewById(R.id.surface), v.findViewById(R.id.state),
                         () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
             }
+            if (!worldCatalog.isEmpty()) worldSlots[i] = worldCams.slotStream(i, worldCatalog);
+            if (useWorld) {
+                v.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                v.findViewById(R.id.surface).setVisibility(View.GONE);
+                updateWorldLabel(i);
+                webHost.setSlot(i, true, worldSlots[i] != null ? worldSlots[i].embedUrl() : null);
+            } else {
+                ((TextView) v.findViewById(R.id.name)).setText(cfg.camName(i));
+            }
             v.setOnClickListener(this::toggleFullscreen);
             v.setOnLongClickListener(x -> {
-                if (camIsWorld[idx]) {
-                    worldCamMenu(idx);
-                    return true;
-                }
-                boolean wasPinned = ScreenTimeService.pinnedCam() == idx;
-                ScreenTimeService.camOverlay(this, wasPinned ? "off" : "set", idx);
-                flashStatus(wasPinned ? "Camera overlay off"
-                        : cfg.camName(idx) + " pinned as overlay — open any app", 5_000);
+                if (camIsWorld[idx]) worldCamMenu(idx);
+                else localCamMenu(idx);
                 return true;
             });
             v.setOnFocusChangeListener((x, has) -> {
                 boolean isLive = camIsWorld[idx]
-                        ? (webFeeds[idx] != null && webFeeds[idx].isLive())
+                        ? webHost.isLive(idx)
                         : (feeds[idx] != null && feeds[idx].isLive());
                 if (has) showLabel(label);
                 else if (isLive) fadeLabel(label, 2_000);
             });
         }
         findViewById(R.id.camGap).setVisibility(camOn[0] && camOn[1] ? View.VISIBLE : View.GONE);
-        findViewById(R.id.right).setVisibility(camOn[0] || camOn[1] ? View.VISIBLE : View.GONE);
+        findViewById(R.id.rightWrap).setVisibility(camOn[0] || camOn[1] ? View.VISIBLE : View.GONE);
         wide = !camOn[0] && !camOn[1];
         setLook(cfg.look());
 
@@ -355,26 +357,29 @@ public class MainActivity extends Activity {
 
     /** Defer and stagger camera startup so returning Home paints and takes D-pad input immediately. */
     private void startCams() {
+        boolean anyWorld = false;
         for (int i = 0; i < camViews.length; i++) {
             if (camStarters[i] != null) h.removeCallbacks(camStarters[i]);
             if (camOn[i] && camViews[i].getVisibility() == View.VISIBLE) {
-                final int idx = i;
-                camStarters[i] = () -> {
-                    showLabel(camLabels[idx]);
-                    if (camIsWorld[idx]) { if (webFeeds[idx] != null) webFeeds[idx].start(); }
-                    else if (feeds[idx] != null) feeds[idx].start();
-                };
-                h.postDelayed(camStarters[i], 120L + i * 180L);
+                if (camIsWorld[i]) {
+                    showLabel(camLabels[i]);
+                    anyWorld = true;
+                } else {
+                    final int idx = i;
+                    camStarters[i] = () -> { showLabel(camLabels[idx]); if (feeds[idx] != null) feeds[idx].start(); };
+                    h.postDelayed(camStarters[i], 120L + i * 140L);
+                }
             }
         }
+        if (anyWorld && webHost != null) h.postDelayed(webHost::start, 140L);
     }
 
     private void stopCams() {
         for (int i = 0; i < camViews.length; i++) {
             if (camStarters[i] != null) { h.removeCallbacks(camStarters[i]); camStarters[i] = null; }
             if (feeds[i] != null) feeds[i].stop();
-            if (webFeeds[i] != null) webFeeds[i].stop();
         }
+        if (webHost != null) webHost.stop();
     }
 
     @Override protected void onNewIntent(Intent intent) {
@@ -501,17 +506,58 @@ public class MainActivity extends Activity {
                 if (!camIsWorld[i] && feeds[i] != null) feeds[i].setHd(goFull); // 1080p only when RTSP fills the screen
             } else if (camOn[i]) {
                 camViews[i].setVisibility(vis);
-                if (goFull) {
-                    if (camIsWorld[i]) { if (webFeeds[i] != null) webFeeds[i].stop(); }
-                    else if (feeds[i] != null) feeds[i].stop();
+                if (camIsWorld[i]) {
+                    if (!goFull) showLabel(camLabels[i]);
+                    webHost.setSlot(i, !goFull, worldSlots[i] != null ? worldSlots[i].embedUrl() : null);
                 } else {
-                    showLabel(camLabels[i]);
-                    if (camIsWorld[i]) { if (webFeeds[i] != null) webFeeds[i].start(); }
-                    else if (feeds[i] != null) feeds[i].start();
+                    if (goFull) { if (feeds[i] != null) feeds[i].stop(); }
+                    else { showLabel(camLabels[i]); if (feeds[i] != null) feeds[i].start(); }
                 }
             }
         }
+        if (webHost != null) webHost.setFullscreen(goFull);
         cam.requestFocus();
+    }
+
+    private void setSlotMode(int slot, boolean toWorld) {
+        if (camIsWorld[slot] == toWorld) return;
+        camIsWorld[slot] = toWorld;
+        worldCams.setSlotUsesWorld(slot, toWorld);
+        if (toWorld) {
+            if (feeds[slot] != null) feeds[slot].stop();
+            camViews[slot].setBackgroundColor(android.graphics.Color.TRANSPARENT);
+            camViews[slot].findViewById(R.id.surface).setVisibility(View.GONE);
+            if (worldSlots[slot] == null && !worldCatalog.isEmpty()) worldSlots[slot] = worldCams.slotStream(slot, worldCatalog);
+            updateWorldLabel(slot);
+            showLabel(camLabels[slot]);
+            webHost.setSlot(slot, true, worldSlots[slot] != null ? worldSlots[slot].embedUrl() : null);
+            webHost.start();
+        } else {
+            webHost.setSlot(slot, false, null);
+            camViews[slot].setBackgroundResource(R.drawable.cam_bg);
+            camViews[slot].findViewById(R.id.surface).setVisibility(View.VISIBLE);
+            ((TextView) camViews[slot].findViewById(R.id.name)).setText(cfg.camName(slot));
+            showLabel(camLabels[slot]);
+            if (feeds[slot] != null) feeds[slot].start();
+        }
+    }
+
+    private void localCamMenu(int slot) {
+        boolean wasPinned = ScreenTimeService.pinnedCam() == slot;
+        List<String> items = new ArrayList<>();
+        items.add(wasPinned ? "Turn off floating overlay" : "Pin as floating overlay");
+        boolean canWorld = cfg.worldCamsOn() && !worldCatalog.isEmpty();
+        if (canWorld) items.add("Switch to World Cam…");
+        showDialog(new AlertDialog.Builder(this).setTitle(cfg.camName(slot))
+                .setItems(items.toArray(new String[0]), (d, which) -> {
+                    if (which == 0) {
+                        ScreenTimeService.camOverlay(this, wasPinned ? "off" : "set", slot);
+                        flashStatus(wasPinned ? "Camera overlay off"
+                                : cfg.camName(slot) + " pinned as overlay — open any app", 5_000);
+                    } else if (which == 1 && canWorld) {
+                        setSlotMode(slot, true);
+                    }
+                }));
     }
 
     private void updateWorldLabel(int slot) {
@@ -527,7 +573,7 @@ public class MainActivity extends Activity {
         worldCams.setSlot(slot, s);
         updateWorldLabel(slot);
         showLabel(camLabels[slot]);
-        if (webFeeds[slot] != null) webFeeds[slot].setEmbedUrl(s.embedUrl());
+        webHost.setSlot(slot, true, s.embedUrl());
     }
 
     private String otherWorldKey(int slot) {
@@ -540,36 +586,36 @@ public class MainActivity extends Activity {
         WorldCams.Stream cur = worldSlots[slot];
         boolean isH = worldCams.isHearted(cur);
         List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
+        boolean hasLocal = !cfg.camUrl(slot).isEmpty();
         List<String> items = new ArrayList<>();
         items.add(isH ? "♥ Remove heart" : "♡ Heart this stream");
         items.add(favs.size() > 1 ? "Next hearted stream" : "Next stream");
         items.add("Shuffle");
         items.add("Browse all streams (" + worldCatalog.size() + ")…");
-        if (!favs.isEmpty()) items.add("♥ Hearted streams (" + favs.size() + ")…");
+        int favIdx = -1, localIdx = -1;
+        if (!favs.isEmpty()) { favIdx = items.size(); items.add("♥ Hearted streams (" + favs.size() + ")…"); }
+        if (hasLocal) { localIdx = items.size(); items.add("Switch back to " + cfg.camName(slot)); }
 
+        final int fIdx = favIdx, lIdx = localIdx;
         String title = cur != null ? cur.name : "World Cams";
         showDialog(new AlertDialog.Builder(this).setTitle(title)
                 .setItems(items.toArray(new String[0]), (d, which) -> {
-                    switch (which) {
-                        case 0:
-                            boolean added = worldCams.toggleHeart(cur);
-                            updateWorldLabel(slot);
-                            flashStatus(added ? "♥ Hearted " + cur.name : "Removed heart", 3_500);
-                            break;
-                        case 1:
-                            List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
-                            switchWorldSlot(slot, worldCams.next(slot, pool, otherWorldKey(slot)));
-                            break;
-                        case 2:
-                            List<WorldCams.Stream> spool = favs.size() > 1 ? favs : worldCatalog;
-                            switchWorldSlot(slot, worldCams.shuffle(slot, spool, otherWorldKey(slot)));
-                            break;
-                        case 3:
-                            pickWorldStream(slot, "All World Cams", worldCatalog);
-                            break;
-                        case 4:
-                            pickWorldStream(slot, "♥ Hearted streams", favs);
-                            break;
+                    if (which == 0) {
+                        boolean added = worldCams.toggleHeart(cur);
+                        updateWorldLabel(slot);
+                        flashStatus(added ? "♥ Hearted " + cur.name : "Removed heart", 3_500);
+                    } else if (which == 1) {
+                        List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
+                        switchWorldSlot(slot, worldCams.next(slot, pool, otherWorldKey(slot)));
+                    } else if (which == 2) {
+                        List<WorldCams.Stream> spool = favs.size() > 1 ? favs : worldCatalog;
+                        switchWorldSlot(slot, worldCams.shuffle(slot, spool, otherWorldKey(slot)));
+                    } else if (which == 3) {
+                        pickWorldStream(slot, "All World Cams", worldCatalog);
+                    } else if (which == fIdx) {
+                        pickWorldStream(slot, "♥ Hearted streams", favs);
+                    } else if (which == lIdx) {
+                        setSlotMode(slot, false);
                     }
                 }));
     }

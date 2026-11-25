@@ -88,12 +88,18 @@
     </FrameLayout>
 
     <!-- RIGHT: cameras -->
-    <LinearLayout android:id="@+id/right"
-        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
-        android:orientation="vertical" android:gravity="center"
-        android:paddingStart="10dp" android:paddingEnd="12dp">
-        <include android:id="@+id/cam1" layout="@layout/camera"/>
-        <Space android:id="@+id/camGap" android:layout_width="match_parent" android:layout_height="10dp"/>
-        <include android:id="@+id/cam2" layout="@layout/camera"/>
-    </LinearLayout>
+    <FrameLayout android:id="@+id/rightWrap"
+        android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+        <FrameLayout android:id="@+id/webBackdrop"
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:visibility="gone"/>
+        <LinearLayout android:id="@+id/right"
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:orientation="vertical" android:gravity="center"
+            android:paddingStart="10dp" android:paddingEnd="12dp">
+            <include android:id="@+id/cam1" layout="@layout/camera"/>
+            <Space android:id="@+id/camGap" android:layout_width="match_parent" android:layout_height="10dp"/>
+            <include android:id="@+id/cam2" layout="@layout/camera"/>
+        </LinearLayout>
+    </FrameLayout>
 </LinearLayout>

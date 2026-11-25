@@ -41,6 +41,7 @@ final class WorldCams {
     private static final String K_FETCHED = "catalog_fetched_at";
     private static final String K_HEARTS = "hearted";
     private static final String K_SLOT = "slot_";
+    private static final String K_SLOT_WORLD = "slot_world_";
     private static final long REFRESH_MS = 24 * 3_600_000L;
     private static final Pattern YT_ID = Pattern.compile("(?:v=|youtu\\.be/|embed/|live/)([A-Za-z0-9_-]{11})");
 
@@ -192,6 +193,9 @@ final class WorldCams {
     }
 
     // ---------- per-slot selection ----------
+
+    boolean slotUsesWorld(int slot) { return p.getBoolean(K_SLOT_WORLD + slot, false); }
+    void setSlotUsesWorld(int slot, boolean on) { p.edit().putBoolean(K_SLOT_WORLD + slot, on).apply(); }
 
     Stream slotStream(int slot, List<Stream> all) {
         if (all.isEmpty()) return null;
