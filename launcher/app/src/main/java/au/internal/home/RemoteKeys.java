@@ -297,7 +297,7 @@ final class RemoteKeys {
             case ACTION_CAM_BOTH:
             case ACTION_CAM_CYCLE: return hasCam1 && hasCam2;
             case ACTION_WORLD_NEXT:
-            case ACTION_WORLD_PREV: return worldCamsOn;
+            case ACTION_WORLD_PREV: return true;
             default: return true;
         }
     }

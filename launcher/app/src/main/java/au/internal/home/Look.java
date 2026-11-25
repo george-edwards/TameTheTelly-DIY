@@ -189,7 +189,7 @@ final class Look {
         status.setBackgroundTintList(ColorStateList.valueOf(pill));
         status.setTextColor(pillText);
         ((TextView) root.findViewById(R.id.cornerLabel)).setTextColor(text);
-        for (int id : new int[]{R.id.modeBtn, R.id.timeBtn, R.id.remoteBtn, R.id.grownups})
+        for (int id : new int[]{R.id.camBtn, R.id.modeBtn, R.id.timeBtn, R.id.remoteBtn, R.id.grownups})
             styleCornerIcon(root.findViewById(id), d);
         for (int id : new int[]{R.id.cam1, R.id.cam2}) {
             View cam = root.findViewById(id);

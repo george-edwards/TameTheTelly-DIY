@@ -920,7 +920,11 @@ final class SettingsMenu {
         for (String t : RemoteKeys.ACTIONS) {
             if (!RemoteKeys.actionAvailable(t, cfg)) continue;
             targets.add(t);
-            labels.add(RemoteKeys.targetLabel(t, installed, ta, cfg));
+            String lbl = RemoteKeys.targetLabel(t, installed, ta, cfg);
+            if ((RemoteKeys.ACTION_WORLD_NEXT.equals(t) || RemoteKeys.ACTION_WORLD_PREV.equals(t)) && !cfg.worldCamsOn()) {
+                lbl += " (turn on World cams first)";
+            }
+            labels.add(lbl);
         }
         // Favourites first, then visible apps, then hidden apps (familiar order from Home).
         List<AppStore.App> favs = new ArrayList<>(), vis = new ArrayList<>(), hid = new ArrayList<>();
@@ -941,7 +945,20 @@ final class SettingsMenu {
         show(dialog("What should " + rk.label(id) + " do?", back)
                 .setSingleChoiceItems(labels.toArray(new String[0]), checked, (d, which) -> {
                     d.dismiss();
-                    rk.set(id, targets.get(which));
+                    String chosen = targets.get(which);
+                    if ((RemoteKeys.ACTION_WORLD_NEXT.equals(chosen) || RemoteKeys.ACTION_WORLD_PREV.equals(chosen))
+                            && !cfg.worldCamsOn()) {
+                        show(dialog("Turn on World cams first", () -> pickTarget(id, back))
+                                .setMessage("This action steps through World Cams. Turn on World cams in Settings (or tap the camera icon in Home's top corner) first.")
+                                .setPositiveButton("Turn on & map", (x, w) -> {
+                                    cfg.set(HomeConfig.K_WORLD_CAMS, "on");
+                                    rk.set(id, chosen);
+                                    changed(rk.label(id) + " → " + RemoteKeys.targetLabel(chosen, installed, ta, cfg));
+                                })
+                                .setNegativeButton("Back", (x, w) -> pickTarget(id, back)));
+                        return;
+                    }
+                    rk.set(id, chosen);
                     Toast.makeText(a, rk.label(id) + " → " + labels.get(which), Toast.LENGTH_SHORT).show();
                     remoteButtons();
                 }));

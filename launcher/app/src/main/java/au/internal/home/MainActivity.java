@@ -242,14 +242,17 @@ public class MainActivity extends Activity {
         wide = !camOn[0] && !camOn[1];
         setLook(cfg.look());
 
-        // Top corner, up from the top row of apps: Adult/Kids toggle, Kids' time, Remote buttons, and Settings.
+        // Top corner, up from the top row of apps: Cameras toggle, Adult/Kids toggle, Kids' time, Remote buttons, and Settings.
         View corner = findViewById(R.id.corner);
         cornerLabel = findViewById(R.id.cornerLabel);
+        View camBtn = findViewById(R.id.camBtn);
         modeBtn = findViewById(R.id.modeBtn);
         View timeBtn = findViewById(R.id.timeBtn);
         View remoteBtn = findViewById(R.id.remoteBtn);
         grownUps = findViewById(R.id.grownups);
-        bindCorner(modeBtn, this::toggleMode, null, timeBtn);
+        updateCamButton(camBtn);
+        bindCorner(camBtn, this::cycleCameraPanel, null, modeBtn);
+        bindCorner(modeBtn, this::toggleMode, camBtn, timeBtn);
         bindCorner(timeBtn, () -> ParentGate.ask(this, this::kidsTime), modeBtn, remoteBtn);
         bindCorner(remoteBtn, () -> ParentGate.ask(this, this::remoteButtons), timeBtn, grownUps);
         bindCorner(grownUps, () -> ParentGate.ask(this, this::settings), remoteBtn, null);
@@ -536,6 +539,44 @@ public class MainActivity extends Activity {
         }
         if (webHost != null) webHost.setFullscreen(goFull);
         cam.requestFocus();
+    }
+
+    private void updateCamButton(View camBtn) {
+        boolean anyOn = camOn[0] || camOn[1];
+        boolean allWorld = anyOn && (!camOn[0] || camIsWorld[0]) && (!camOn[1] || camIsWorld[1]);
+        boolean hasLocal = !cfg.camUrl(0).isEmpty() || !cfg.camUrl(1).isEmpty();
+        camBtn.setActivated(anyOn);
+        String desc;
+        if (!anyOn) desc = hasLocal ? "Show cameras" : "Show World cams";
+        else if (allWorld) desc = "Hide cameras (full-width apps)";
+        else desc = "Switch to World cams";
+        camBtn.setContentDescription(desc);
+    }
+
+    /** Cycle right-hand panel: Local RTSP -> World Cams -> Off (full-width apps) -> Local RTSP. */
+    private void cycleCameraPanel() {
+        boolean anyOn = camOn[0] || camOn[1];
+        boolean allWorld = anyOn && (!camOn[0] || camIsWorld[0]) && (!camOn[1] || camIsWorld[1]);
+        boolean hasLocal = !cfg.camUrl(0).isEmpty() || !cfg.camUrl(1).isEmpty();
+        if (!anyOn) {
+            cfg.set(HomeConfig.K_CAMERAS, "on");
+            if (hasLocal) {
+                worldCams.setSlotUsesWorld(0, false);
+                worldCams.setSlotUsesWorld(1, false);
+            } else {
+                cfg.set(HomeConfig.K_WORLD_CAMS, "on");
+                worldCams.setSlotUsesWorld(0, true);
+                worldCams.setSlotUsesWorld(1, true);
+            }
+        } else if (allWorld) {
+            cfg.set(HomeConfig.K_CAMERAS, "off");
+        } else {
+            cfg.set(HomeConfig.K_CAMERAS, "on");
+            cfg.set(HomeConfig.K_WORLD_CAMS, "on");
+            worldCams.setSlotUsesWorld(0, true);
+            worldCams.setSlotUsesWorld(1, true);
+        }
+        recreate();
     }
 
     private void setSlotMode(int slot, boolean toWorld) {

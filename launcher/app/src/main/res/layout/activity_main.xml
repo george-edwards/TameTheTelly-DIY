@@ -71,8 +71,11 @@
             <TextView android:id="@+id/cornerLabel" android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:paddingEnd="10dp" android:textSize="12sp" android:fontFamily="@font/inter_semibold"
                 android:letterSpacing="0.03" android:singleLine="true" android:alpha="0"/>
+            <ImageView android:id="@+id/camBtn" android:layout_width="30dp" android:layout_height="30dp"
+                android:padding="6dp" android:src="@drawable/ic_cam"
+                android:focusable="true" android:clickable="true" android:contentDescription="Cameras"/>
             <ImageView android:id="@+id/modeBtn" android:layout_width="30dp" android:layout_height="30dp"
-                android:padding="6dp" android:src="@drawable/ic_child"
+                android:layout_marginStart="8dp" android:padding="6dp" android:src="@drawable/ic_child"
                 android:focusable="true" android:clickable="true" android:contentDescription="Switch to adult mode"/>
             <ImageView android:id="@+id/timeBtn" android:layout_width="30dp" android:layout_height="30dp"
                 android:layout_marginStart="8dp" android:padding="6dp" android:src="@drawable/ic_parental"
