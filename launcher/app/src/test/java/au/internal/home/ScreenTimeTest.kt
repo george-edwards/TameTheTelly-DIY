@@ -18,6 +18,31 @@ class ScreenTimeTest {
     @Test fun progress() {
         assertEquals(0.5f, ScreenTime.progress(15 * 60_000L, 30 * 60_000L), 1e-6f)
         assertEquals(1f, ScreenTime.progress(1, 0), 1e-6f)
+        assertEquals(1f, ScreenTime.progress(30 * 60_000L, 30 * 60_000L), 1e-6f)
+        assertEquals(1f, ScreenTime.progress(35 * 60_000L, 30 * 60_000L), 1e-6f)
+    }
+
+    @Test fun freshJourneyAfterExpiry() {
+        val m = 60_000L
+        // 30 min used of 30 min, then +10 min granted -> fresh journey from 0% over those 10 min
+        val p0 = ScreenTime.progress(30 * m, 40 * m, 30 * m)
+        assertEquals(0f, p0, 1e-6f)
+        assertEquals(10 * m, ScreenTime.journeySpan(30 * m, 40 * m, 30 * m))
+        assertEquals(10, ScreenTime.minutesLeft(p0, 10 * m))
+
+        // 5 min into the 10-min top-up -> halfway across, 5 min left
+        val p5 = ScreenTime.progress(35 * m, 40 * m, 30 * m)
+        assertEquals(0.5f, p5, 1e-6f)
+        assertEquals(5, ScreenTime.minutesLeft(p5, ScreenTime.journeySpan(35 * m, 40 * m, 30 * m)))
+
+        // Adding another +10 min before watching any of the first top-up keeps 0% with 20 min left
+        val p20 = ScreenTime.progress(30 * m, 50 * m, 30 * m)
+        assertEquals(0f, p20, 1e-6f)
+        assertEquals(20, ScreenTime.minutesLeft(p20, ScreenTime.journeySpan(30 * m, 50 * m, 30 * m)))
+
+        // Daily limit lowered below journeyStart: still safe and clamped to asleep
+        assertEquals(1f, ScreenTime.progress(30 * m, 25 * m, 30 * m), 1e-6f)
+        assertEquals(0L, ScreenTime.journeySpan(30 * m, 25 * m, 30 * m))
     }
 
     @Test fun describeCapsUsedAtAllowance() {

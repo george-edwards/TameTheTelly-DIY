@@ -251,7 +251,7 @@ public final class ScreenTimeService extends Service {
             });
         }
         if (kid && audio.isMusicActive()) lastAudio = el;
-        if (kid && el - lastAudio < SILENT_GRACE_MS && !st.scrubbing()) st.addUsed(now, dt);
+        if (kid && !goingToSleep && el - lastAudio < SILENT_GRACE_MS && !st.scrubbing()) st.addUsed(now, dt);
 
         float p = progress(now);
         // Night closes slowly if she was watching as it ran out; quickly if a timed app was just opened while asleep.

@@ -290,7 +290,11 @@ public class MainActivity extends Activity {
         long now = System.currentTimeMillis();
         if (top) {
             // A one-app grown-up pass ends when you come back Home; persistent Adult mode stays on until toggled/scheduled off.
-            if (screenTime.demo()) startService(ScreenTimeService.dev(this, "LIVE"));
+            if (screenTime.demo()) {
+                screenTime.setScrub(-1f);
+                screenTime.setDemo(false);
+                startService(ScreenTimeService.dev(this, "LIVE"));
+            }
             boolean adult = screenTime.adultMode(now);
             boolean passEnded = leftDuringPass && screenTime.hasPass(now);
             if (passEnded) screenTime.setGrownUp(0);

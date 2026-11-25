@@ -69,35 +69,66 @@ final class ScreenTime {
             cachedDay = today;
         }
         if (!today.equals(p.getString("day", ""))) {
-            p.edit().putString("day", today).putLong("used", 0).putLong("bonus", 0).apply();
+            p.edit().putString("day", today).putLong("used", 0).putLong("bonus", 0).putLong("journeyStart", 0).apply();
         }
     }
 
     long usedMs(long now) { roll(now); return p.getLong("used", 0); }
     long allowanceMs(long now) { roll(now); return config.ytMinutes() * 60_000L + p.getLong("bonus", 0); }
+    long journeyStartMs(long now) { roll(now); return p.getLong("journeyStart", 0); }
 
     void addUsed(long now, long ms) {
+        if (ms <= 0) return;
         roll(now);
-        p.edit().putLong("used", p.getLong("used", 0) + ms).apply();
+        long used = p.getLong("used", 0);
+        long allowance = allowanceMs(now);
+        if (used >= allowance) return;
+        p.edit().putLong("used", Math.min(allowance, used + ms)).apply();
     }
 
-    /** Grown-up top-up for today only. */
+    /** Grown-up top-up for today only. If today's time has already run out, starts a fresh scene journey for the
+     *  extra time while keeping total daily usage accurate. */
     void addMinutes(long now, int min) {
+        if (min <= 0) return;
         roll(now);
-        p.edit().putLong("bonus", p.getLong("bonus", 0) + min * 60_000L).apply();
+        long used = p.getLong("used", 0);
+        long allowance = allowanceMs(now);
+        long bonus = p.getLong("bonus", 0) + min * 60_000L;
+        SharedPreferences.Editor ed = p.edit().putLong("bonus", bonus);
+        if (used >= allowance) {
+            long base = Math.max(0L, allowance);
+            ed.putLong("used", base).putLong("journeyStart", base);
+        }
+        ed.apply();
     }
 
     void resetToday(long now) {
-        p.edit().putString("day", dayOf(now, resetHour)).putLong("used", 0).putLong("bonus", 0).apply();
+        p.edit().putString("day", dayOf(now, resetHour)).putLong("used", 0).putLong("bonus", 0).putLong("journeyStart", 0).apply();
     }
 
-    /** Real progress through today's allowance. */
+    /** Real progress through today's allowance (or the extra-time journey granted after expiry). */
     float realProgress(long now) {
-        return progress(usedMs(now), allowanceMs(now));
+        return progress(usedMs(now), allowanceMs(now), journeyStartMs(now));
     }
 
     static float progress(long used, long allowance) {
-        return allowance <= 0 ? 1f : used / (float) allowance;
+        return progress(used, allowance, 0);
+    }
+
+    static float progress(long used, long allowance, long journeyStart) {
+        if (allowance <= 0 || used >= allowance) return 1f;
+        long start = Math.max(0L, Math.min(journeyStart, used));
+        return (used - start) / (float) (allowance - start);
+    }
+
+    static long journeySpan(long used, long allowance, long journeyStart) {
+        if (allowance <= 0) return 0L;
+        long start = Math.max(0L, Math.min(journeyStart, Math.min(used, allowance)));
+        return Math.max(0L, allowance - start);
+    }
+
+    static int minutesLeft(float p, long spanMs) {
+        return (int) Math.ceil(Math.max(0f, 1f - p) * spanMs / 60_000.0 - 1e-6);
     }
 
     /** What the scene and the rules follow: the scrub if one is set, otherwise the real progress. */
@@ -109,7 +140,9 @@ final class ScreenTime {
     /** Whole minutes left at progress p, rounded up (so it reads 1 until the time has really gone). During a
      *  scrub or demo this follows the scrubbed progress, counting down through today's allowance. */
     int minutesLeft(long now, float p) {
-        return (int) Math.ceil(Math.max(0f, 1f - p) * allowanceMs(now) / 60_000.0 - 1e-6);
+        long allowance = allowanceMs(now);
+        long span = scrubbing() ? allowance : journeySpan(usedMs(now), allowance, journeyStartMs(now));
+        return minutesLeft(p, span);
     }
 
     boolean asleep(long now) { return !grownUp(now) && progress(now) >= 1f; }
