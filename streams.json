@@ -48,6 +48,13 @@
       "match": "International Space Station"
     },
     {
+      "name": "Space — Sen 4K ISS Earth",
+      "category": "Space",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/channel/UCkvW_7kp9LJrztmgA4q4bJQ/live",
+      "channelId": "UCkvW_7kp9LJrztmgA4q4bJQ"
+    },
+    {
       "name": "Iraq — Holy Shrine of Imam Hussain, Karbala",
       "category": "Temples, Shrines & Journeys",
       "type": "youtube_channel",
