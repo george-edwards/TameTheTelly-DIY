@@ -49,12 +49,8 @@ Optional additional TCL tiles left enabled (can be hidden on Home or disabled if
 - `com.google.android.apps.tv.launcherx` (`default`) — Stock Google TV launcher (`com.google.android.apps.tv.launcherx/.home.HomeActivity`)
 
 ## Model quirks
+- **Android version**: see [android-14.md](android-14.md) for Android TV 14 platform quirks (`RootTask id=` framing, `0.8` overlay opacity cap + black scrim, `appops` reset on reboot/reinstall, and `dreamx` / `SLEEP` screensaver).
 - **Ambient Mode / Google Photos screensaver**: Keeps working with `launcherx` disabled as long as `com.google.android.apps.tv.dreamx` stays enabled.
-  - Android 14 locks `cmd dreams` to root and `com.android.systemui/.Somnambulator` exits without starting a dream.
-  - Ambient Mode settings open via `am start -a com.google.android.tv.settings.ambient`.
-  - Starting the screensaver directly uses `am start -a com.google.android.pano.action.SLEEP` (resolved by `com.android.tv.settings/.device.display.daydream.DaydreamVoiceAction`) — available as the **Screensaver** action in Home's Remote buttons menu.
 - **Keep enabled**: `com.tcl.tv`, `com.tcl.tvinput` (HDMI/TV), `com.tcl.airplay2`, `com.mediatek.AirplayAPK` / `com.mediatek.airplaydaemon` (AirPlay), `com.google.android.apps.mediashell` (Chromecast), `com.tcl.autopair` (Bluetooth remote pairing), `com.android.tv.settings`.
 - **Screenshots**: Strip any leading bytes before `\x89PNG` when piping `adb exec-out screencap -p` (same TCL quirk as G05).
-- **Android 14 appops & boot self-heal**: TCL Android 14 resets `SYSTEM_ALERT_WINDOW` and `GET_USAGE_STATS` back to `default` on both reboot and `adb install -r`, and `adbd` takes a few seconds to come up after boot. `ScreenTimeService` now self-heals both `appops` and `RemoteKeyService` over `LocalAdb` with fast exponential backoff (starting at 10 s).
-- **Android 14 `am stack list`**: Prints `RootTask id=...` instead of `Stack id=...` (supported by `Framer.java`).
-- **Android 14 overlay opacity**: `TYPE_APPLICATION_OVERLAY` + `FLAG_NOT_TOUCHABLE` is capped at `alpha=0.8` by Android 14 (`MAXIMUM_OBSCURING_OPACITY_FOR_TOUCH`). `MainActivity`'s opaque black scrim (`1.0f`, initialized visible so density-change recreation doesn't expose Home behind a windowed app) prevents Home tiles from bleeding through the scene.
+- **TCL `APP_AUTO_START`**: TCL's `TclAppBootManagerImpl` may block `RemoteKeyService` rebind unless `APP_AUTO_START` is `allow` (handled automatically by `RemoteKeys.ensureService()`).

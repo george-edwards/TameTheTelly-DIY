@@ -45,6 +45,9 @@ Factory state is noted in parentheses (`default` → undo with `pm default-state
 - `com.google.android.apps.tv.launcherx` (`default`) — Stock Google TV launcher (`com.google.android.apps.tv.launcherx/.home.HomeActivity`)
 
 ## Model quirks
+- **Android version**: see also [android-11.md](android-11.md) for Android TV 11 platform quirks.
 - **Picture API**: exposes `com.tcl.tvmanager` (`TvBlueLight` / `TvBacklight` work automatically; factory defaults were Blue Light Filter ON, Backlight 100).
-- **Screenshots**: `adb exec-out screencap -p` prints extra bytes before the `\x89PNG` header — strip everything before `\x89PNG`.
+- **Screenshots**: `adb exec-out screencap -p` prints extra bytes before the `\x89PNG` header — strip everything before `\x89PNG` (or write to `/data/local/tmp/s.png` and `adb pull`).
+- **TCL `APP_AUTO_START` blocks `RemoteKeyService` rebind**: `TclAppBootManagerImpl` defaults `APP_AUTO_START` to `ignore`, causing Android's `bind_service` for `au.internal.home/.RemoteKeyService` to fail after `adb install -r` or reboot (`callee_does't_have_OP_AUTO_START_permission`). Fix: `appops set au.internal.home APP_AUTO_START allow` (now run automatically by `RemoteKeys.ensureService()`).
+- **Hardware AV1 decoder limit (`OMX.MS.AV1.Decoder`)**: MediaTek/MStar MT9615 throws `OMX_ErrorInsufficientResources` (`-2147479533`) when decoding a 2nd concurrent AV1 stream (e.g. dual YouTube World Cams), even though `media_codecs.xml` advertises `max="5"`. `WebCamHost.java` works around this by intercepting YouTube `/embed/` HTML and disabling AV1/VP9/WebM in `MediaSource.isTypeSupported`, `canPlayType`, and `mediaCapabilities.decodingInfo`, forcing H.264 (`OMX.MS.AVC.Decoder`), which decodes 2 streams cleanly at 30 fps.
 - **Factory-disabled packages** (already disabled out of the box; leave alone): `air.jp.co.fujitv.fodviewer.tv`, `com.tcl.logkit`, `jp.happyon.android`, `jp.unext.tv.player`, `tv.abema`, `tv.wuaki.apptv`.

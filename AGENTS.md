@@ -87,9 +87,12 @@ device.
 1. **Snapshot**: `./tvs/snapshot.sh <ip>` writes `tvs/<brand>-<product>-<serial>/baseline/` (packages,
    settings, home launcher, getprop, display, features, runtime state). Add the TV to the table in
    `tvs/README.md`. Commit.
-2. **Check `models/`**: look for `models/<brand>-<product>.md` (using `ro.product.brand` and `ro.product.name`
-   from `baseline/getprop.txt`). If a curated profile already exists for this model, use its verified tiers and
-   quirks as your starting plan (still verifying each package exists on this TV and asking before disabling).
+2. **Check `models/`**: read **both** `models/android-<major>.md` (for its Android version) and
+   `models/<brand>-<product>.md` (using `ro.product.brand` and `ro.product.name` from `baseline/getprop.txt`, or the
+   closest sibling from the same brand). This covers everything learned so far — window framing, overlays, decoders,
+   remote keys, permissions, screensavers, and curated debloat tiers (still verify each package exists on this TV
+   and ask before disabling). Whenever you uncover a new quirk on any TV (for any feature, not just debloating),
+   record it in the matching `models/android-<major>.md` or `models/<brand>-<product>.md` right away.
 3. Work out, and note in the TV's folder:
    - Android version, screen size and density (`baseline/display.txt`; the scenes assume 1920x1080 at 320 dpi;
      a 4K UI at 1080p is fine, a different size needs a look).
@@ -217,8 +220,9 @@ model-specific quirks so future TVs of the same model can reuse it.
   Config, `Restore` for Put the TV back, `LocalAdb` + `Framer` for the windows). Defaults in
   `res/values/config.xml`.
 - `restore.sh`: the TV's undo list, run from a computer or by Home's button (built into the APK).
-- `models/`: curated per-model debloat lists and quirks (`<brand>-<product>.md`), reused when setting up another
-  TV of the same model and updated whenever a new model is verified.
+- `models/`: curated per-model profiles (`<brand>-<product>.md`) and per-Android-version quirk sheets
+  (`android-<major>.md`) covering framing, overlays, decoders, remote keys, permissions, screensavers, and debloating
+  — read before working on any TV and updated whenever a new quirk or model is verified.
 - `tvs/`: one folder per TV: factory baseline, factory APKs of anything disabled, original settings.
   `snapshot.sh` and `backup-apk.sh` make them.
 - `CHANGES.md`: every change made to the TV, with how it was checked.
