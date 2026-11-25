@@ -245,7 +245,7 @@ public class MainActivity extends Activity {
         // Top corner, up from the top row of apps: Cameras toggle, Adult/Kids toggle, Kids' time, Remote buttons, and Settings.
         View corner = findViewById(R.id.corner);
         cornerLabel = findViewById(R.id.cornerLabel);
-        View camBtn = findViewById(R.id.camBtn);
+        ImageView camBtn = findViewById(R.id.camBtn);
         modeBtn = findViewById(R.id.modeBtn);
         View timeBtn = findViewById(R.id.timeBtn);
         View remoteBtn = findViewById(R.id.remoteBtn);
@@ -541,15 +541,23 @@ public class MainActivity extends Activity {
         cam.requestFocus();
     }
 
-    private void updateCamButton(View camBtn) {
+    private void updateCamButton(ImageView camBtn) {
         boolean anyOn = camOn[0] || camOn[1];
         boolean allWorld = anyOn && (!camOn[0] || camIsWorld[0]) && (!camOn[1] || camIsWorld[1]);
         boolean hasLocal = !cfg.camUrl(0).isEmpty() || !cfg.camUrl(1).isEmpty();
-        camBtn.setActivated(anyOn);
+        int icon;
         String desc;
-        if (!anyOn) desc = hasLocal ? "Show cameras" : "Show World cams";
-        else if (allWorld) desc = "Hide cameras (full-width apps)";
-        else desc = "Switch to World cams";
+        if (!anyOn) {
+            icon = R.drawable.ic_cam_off;
+            desc = hasLocal ? "Show cameras" : "Show World cams";
+        } else if (allWorld) {
+            icon = R.drawable.ic_world;
+            desc = "Hide cameras (full-width apps)";
+        } else {
+            icon = R.drawable.ic_cam;
+            desc = "Switch to World cams";
+        }
+        camBtn.setImageResource(icon);
         camBtn.setContentDescription(desc);
     }
 
@@ -859,7 +867,6 @@ public class MainActivity extends Activity {
         if (modeBtn == null || (modeBtnAdult != null && modeBtnAdult == adult)) return;
         modeBtnAdult = adult;
         modeBtn.setImageResource(adult ? R.drawable.ic_adult : R.drawable.ic_child);
-        modeBtn.setActivated(adult);
         modeBtn.setContentDescription(adult ? "Adult mode on (OK for kids)" : "Switch to adult mode");
         if (modeBtn.hasFocus()) cornerLabel.setText(modeBtn.getContentDescription());
     }
