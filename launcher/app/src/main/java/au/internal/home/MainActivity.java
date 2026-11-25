@@ -44,18 +44,19 @@ public class MainActivity extends Activity {
 
     private static volatile MainActivity active;
 
-    /** Advance visible World Cam card(s) to the next pair in the catalog (no overlap between top & bottom). */
-    static void nextWorldCams(Context c) {
+    /** Step visible World Cam card(s) forward (dir > 0) or backward (dir < 0) by a non-overlapping pair. */
+    static void stepWorldCams(Context c, int dir) {
         MainActivity a = active;
         if (a != null) {
-            a.h.post(a::advanceWorldCams);
+            a.h.post(() -> a.advanceWorldCams(dir));
             return;
         }
         WorldCams wc = new WorldCams(c);
         List<WorldCams.Stream> all = wc.load();
         if (all.isEmpty()) return;
         List<WorldCams.Stream> favs = wc.hearted(all);
-        wc.nextPair(favs.size() > 1 ? favs : all);
+        List<WorldCams.Stream> pool = favs.size() > 1 ? favs : all;
+        if (dir < 0) wc.prevPair(pool); else wc.nextPair(pool);
     }
 
     /** This launcher's own Home screen, startable from anywhere. */
@@ -594,18 +595,18 @@ public class MainActivity extends Activity {
         webHost.setSlot(slot, true, s.embedUrl());
     }
 
-    private void advanceWorldCams() {
+    private void advanceWorldCams(int dir) {
         if (worldCatalog.isEmpty()) return;
         List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
         List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
         if (camIsWorld[0] && camIsWorld[1]) {
-            WorldCams.Stream[] pair = worldCams.nextPair(pool);
+            WorldCams.Stream[] pair = dir < 0 ? worldCams.prevPair(pool) : worldCams.nextPair(pool);
             if (pair[0] != null) switchWorldSlot(0, pair[0]);
             if (pair[1] != null) switchWorldSlot(1, pair[1]);
         } else if (camIsWorld[0]) {
-            switchWorldSlot(0, worldCams.next(0, pool, null));
+            switchWorldSlot(0, dir < 0 ? worldCams.prev(0, pool, null) : worldCams.next(0, pool, null));
         } else if (camIsWorld[1]) {
-            switchWorldSlot(1, worldCams.next(1, pool, null));
+            switchWorldSlot(1, dir < 0 ? worldCams.prev(1, pool, null) : worldCams.next(1, pool, null));
         }
     }
 

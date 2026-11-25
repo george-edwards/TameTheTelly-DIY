@@ -67,9 +67,12 @@ class RemoteKeysTest {
         assertTrue(RemoteKeys.validTarget(RemoteKeys.ACTION_CAM_BOTH))
         assertTrue(RemoteKeys.validTarget(RemoteKeys.ACTION_CAM_CYCLE))
         assertTrue(RemoteKeys.validTarget(RemoteKeys.ACTION_WORLD_NEXT))
+        assertTrue(RemoteKeys.validTarget(RemoteKeys.ACTION_WORLD_PREV))
         assertTrue(RemoteKeys.validTarget(RemoteKeys.ACTION_NOOP))
         assertFalse(RemoteKeys.actionAvailable(RemoteKeys.ACTION_WORLD_NEXT, false, false, false))
         assertTrue(RemoteKeys.actionAvailable(RemoteKeys.ACTION_WORLD_NEXT, false, false, true))
+        assertFalse(RemoteKeys.actionAvailable(RemoteKeys.ACTION_WORLD_PREV, false, false, false))
+        assertTrue(RemoteKeys.actionAvailable(RemoteKeys.ACTION_WORLD_PREV, false, false, true))
 
         assertFalse(RemoteKeys.actionAvailable(RemoteKeys.ACTION_CAM_1, false, false))
         assertFalse(RemoteKeys.actionAvailable(RemoteKeys.ACTION_CAM_2, false, false))

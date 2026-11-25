@@ -255,6 +255,44 @@ final class WorldCams {
         return new Stream[]{next0, next1};
     }
 
+    /** Step both slots backward as a non-overlapping pair: (4,5) -> (2,3) -> (0,1) -> (n-2,n-1). */
+    Stream[] prevPair(List<Stream> pool) {
+        if (pool.isEmpty()) return new Stream[]{null, null};
+        if (pool.size() == 1) {
+            Stream only = pool.get(0);
+            setSlot(0, only);
+            setSlot(1, only);
+            return new Stream[]{only, only};
+        }
+        Stream s0 = slotStream(0, pool);
+        Stream s1 = slotStream(1, pool);
+        int i0 = indexOf(pool, s0), i1 = indexOf(pool, s1);
+        int base = i0 >= 0 ? i0 : (i1 >= 0 ? i1 : 0);
+        int n = pool.size();
+        Stream prev0 = pool.get(Math.floorMod(base - 2, n));
+        Stream prev1 = pool.get(Math.floorMod(base - 1, n));
+        setSlot(0, prev0);
+        setSlot(1, prev1);
+        return new Stream[]{prev0, prev1};
+    }
+
+    /** Step `slot` backward by 1 in `pool`. */
+    Stream prev(int slot, List<Stream> pool, String avoidKey) {
+        if (pool.isEmpty()) return null;
+        Stream cur = slotStream(slot, pool);
+        int idx = indexOf(pool, cur);
+        if (idx < 0) idx = 0;
+        int n = pool.size();
+        for (int step = 1; step <= n; step++) {
+            Stream cand = pool.get(Math.floorMod(idx - step, n));
+            if (n == 1 || avoidKey == null || !cand.key.equals(avoidKey)) {
+                setSlot(slot, cand);
+                return cand;
+            }
+        }
+        return cur;
+    }
+
     private static int indexOf(List<Stream> pool, Stream s) {
         if (s == null) return -1;
         for (int i = 0; i < pool.size(); i++) if (pool.get(i).key.equals(s.key)) return i;

@@ -49,10 +49,12 @@ final class RemoteKeys {
     static final String ACTION_CAM_BOTH = "action:cam_both";
     static final String ACTION_CAM_CYCLE = "action:cam_cycle";
     static final String ACTION_WORLD_NEXT = "action:world_next";
+    static final String ACTION_WORLD_PREV = "action:world_prev";
     static final String ACTION_NOOP = "action:noop";
     static final String[] ACTIONS = {
             ACTION_HOME, ACTION_SETTINGS, ACTION_PICTURE, ACTION_SCREENSAVER,
-            ACTION_CAM_1, ACTION_CAM_2, ACTION_CAM_BOTH, ACTION_CAM_CYCLE, ACTION_WORLD_NEXT, ACTION_NOOP
+            ACTION_CAM_1, ACTION_CAM_2, ACTION_CAM_BOTH, ACTION_CAM_CYCLE,
+            ACTION_WORLD_NEXT, ACTION_WORLD_PREV, ACTION_NOOP
     };
 
     private static final Object CONNECT_LOCK = new Object();
@@ -294,7 +296,8 @@ final class RemoteKeys {
             case ACTION_CAM_2: return hasCam2;
             case ACTION_CAM_BOTH:
             case ACTION_CAM_CYCLE: return hasCam1 && hasCam2;
-            case ACTION_WORLD_NEXT: return worldCamsOn;
+            case ACTION_WORLD_NEXT:
+            case ACTION_WORLD_PREV: return worldCamsOn;
             default: return true;
         }
     }
@@ -321,6 +324,7 @@ final class RemoteKeys {
             case ACTION_CAM_BOTH: return "Both cameras overlay";
             case ACTION_CAM_CYCLE: return "Camera overlay (cycle)";
             case ACTION_WORLD_NEXT: return "Next World Cams";
+            case ACTION_WORLD_PREV: return "Previous World Cams";
             case ACTION_NOOP: return "Do nothing (disabled)";
         }
         if (target.startsWith(APP_PREFIX)) {
@@ -376,7 +380,10 @@ final class RemoteKeys {
                 ScreenTimeService.camOverlay(c, "cycle", CameraOverlay.MODE_OFF);
                 return;
             case ACTION_WORLD_NEXT:
-                MainActivity.nextWorldCams(c);
+                MainActivity.stepWorldCams(c, 1);
+                return;
+            case ACTION_WORLD_PREV:
+                MainActivity.stepWorldCams(c, -1);
                 return;
         }
         if (!target.startsWith(APP_PREFIX)) return;
