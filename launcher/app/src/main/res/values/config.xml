@@ -12,6 +12,9 @@
          and size (small, medium, large). -->
     <string name="overlay_corner" translatable="false">top_right</string>
     <string name="overlay_size" translatable="false">medium</string>
+    <!-- (TV menu) World Cams: public live streams in any camera slot that has no local RTSP address. -->
+    <string name="world_cams" translatable="false">off</string>
+    <string name="world_cams_url" translatable="false">https://raw.githubusercontent.com/george-edwards/TameTheTelly-DIY/main/streams.json</string>
     <!-- SET FOR EACH HOUSEHOLD (AGENTS.md, "Make it theirs"): family name, weather place, bin night, timed apps,
          scene, grown-ups code. Most can also be set later on the TV in Config. -->
     <!-- (TV menu) Greeting: "Good morning, <family_name>" (blank: just "Good morning"). -->

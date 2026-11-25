@@ -7,6 +7,7 @@ plugins {
 def restoreAssets = file("${rootProject.ext.outDir}/restore-assets")
 def copyRestore = tasks.register('copyRestoreScript', Copy) {
     from rootProject.file('../restore.sh')
+    from rootProject.file('../streams.json')
     into restoreAssets
 }
 tasks.matching { it.name == 'preBuild' }.configureEach { dependsOn copyRestore }
@@ -23,8 +24,8 @@ android {
         applicationId 'au.internal.home'
         minSdk 26
         targetSdk 34
-        versionCode 61
-        versionName "2.19.0"
+        versionCode 62
+        versionName "2.20.0"
     }
     signingConfigs {
         release {

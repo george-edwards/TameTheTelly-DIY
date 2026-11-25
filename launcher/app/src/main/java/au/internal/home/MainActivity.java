@@ -71,6 +71,11 @@ public class MainActivity extends Activity {
     private final Adapter adapter = new Adapter();
     private final Handler h = new Handler(Looper.getMainLooper());
     private CameraFeed[] feeds;
+    private WebCamFeed[] webFeeds;
+    private WorldCams worldCams;
+    private List<WorldCams.Stream> worldCatalog = Collections.emptyList();
+    private WorldCams.Stream[] worldSlots = new WorldCams.Stream[2];
+    private boolean[] camIsWorld;
     private View[] camViews, camLabels;
     private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
@@ -162,20 +167,42 @@ public class MainActivity extends Activity {
         camViews = new View[]{findViewById(R.id.cam1), findViewById(R.id.cam2)};
         camLabels = new View[2];
         camOn = new boolean[2];
+        camIsWorld = new boolean[2];
         feeds = new CameraFeed[2];
+        webFeeds = new WebCamFeed[2];
+        worldCams = new WorldCams(this);
+        if (cfg.camerasOn() && cfg.worldCamsOn()) {
+            worldCatalog = worldCams.load();
+            worldCams.refreshIfDue(cfg.worldCamsUrl(), () -> worldCatalog = worldCams.load());
+        }
         for (int i = 0; i < 2; i++) {
             View v = camViews[i];
             View label = camLabels[i] = v.findViewById(R.id.label);
-            ((TextView) v.findViewById(R.id.name)).setText(cfg.camName(i));
-            // A camera with no address is hidden; with none (or cameras off in Config), the apps get the whole screen.
-            camOn[i] = cfg.camerasOn() && !cfg.camUrl(i).isEmpty();
+            boolean hasLocal = !cfg.camUrl(i).isEmpty();
+            boolean useWorld = cfg.camerasOn() && !hasLocal && cfg.worldCamsOn() && !worldCatalog.isEmpty();
+            camIsWorld[i] = useWorld;
+            camOn[i] = cfg.camerasOn() && (hasLocal || useWorld);
             v.setVisibility(camOn[i] ? View.VISIBLE : View.GONE);
             final int idx = i;
-            feeds[i] = new CameraFeed(this, cfg.camUrl(i), cfg.camHdUrl(i),
-                    (TextureView) v.findViewById(R.id.surface), v.findViewById(R.id.state),
-                    () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
+            if (useWorld) {
+                worldSlots[i] = worldCams.slotStream(i, worldCatalog);
+                updateWorldLabel(i);
+                webFeeds[i] = new WebCamFeed(this, (ViewGroup) v, v.findViewById(R.id.surface),
+                        v.findViewById(R.id.state),
+                        () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
+                if (worldSlots[i] != null) webFeeds[i].setEmbedUrl(worldSlots[i].embedUrl());
+            } else {
+                ((TextView) v.findViewById(R.id.name)).setText(cfg.camName(i));
+                feeds[i] = new CameraFeed(this, cfg.camUrl(i), cfg.camHdUrl(i),
+                        (TextureView) v.findViewById(R.id.surface), v.findViewById(R.id.state),
+                        () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
+            }
             v.setOnClickListener(this::toggleFullscreen);
             v.setOnLongClickListener(x -> {
+                if (camIsWorld[idx]) {
+                    worldCamMenu(idx);
+                    return true;
+                }
                 boolean wasPinned = ScreenTimeService.pinnedCam() == idx;
                 ScreenTimeService.camOverlay(this, wasPinned ? "off" : "set", idx);
                 flashStatus(wasPinned ? "Camera overlay off"
@@ -183,8 +210,11 @@ public class MainActivity extends Activity {
                 return true;
             });
             v.setOnFocusChangeListener((x, has) -> {
+                boolean isLive = camIsWorld[idx]
+                        ? (webFeeds[idx] != null && webFeeds[idx].isLive())
+                        : (feeds[idx] != null && feeds[idx].isLive());
                 if (has) showLabel(label);
-                else if (feeds[idx].isLive()) fadeLabel(label, 2_000);
+                else if (isLive) fadeLabel(label, 2_000);
             });
         }
         findViewById(R.id.camGap).setVisibility(camOn[0] && camOn[1] ? View.VISIBLE : View.GONE);
@@ -325,20 +355,25 @@ public class MainActivity extends Activity {
 
     /** Defer and stagger camera startup so returning Home paints and takes D-pad input immediately. */
     private void startCams() {
-        for (int i = 0; i < feeds.length; i++) {
+        for (int i = 0; i < camViews.length; i++) {
             if (camStarters[i] != null) h.removeCallbacks(camStarters[i]);
             if (camOn[i] && camViews[i].getVisibility() == View.VISIBLE) {
                 final int idx = i;
-                camStarters[i] = () -> { showLabel(camLabels[idx]); feeds[idx].start(); };
-                h.postDelayed(camStarters[i], 120L + i * 140L);
+                camStarters[i] = () -> {
+                    showLabel(camLabels[idx]);
+                    if (camIsWorld[idx]) { if (webFeeds[idx] != null) webFeeds[idx].start(); }
+                    else if (feeds[idx] != null) feeds[idx].start();
+                };
+                h.postDelayed(camStarters[i], 120L + i * 180L);
             }
         }
     }
 
     private void stopCams() {
-        for (int i = 0; i < feeds.length; i++) {
+        for (int i = 0; i < camViews.length; i++) {
             if (camStarters[i] != null) { h.removeCallbacks(camStarters[i]); camStarters[i] = null; }
-            feeds[i].stop();
+            if (feeds[i] != null) feeds[i].stop();
+            if (webFeeds[i] != null) webFeeds[i].stop();
         }
     }
 
@@ -463,13 +498,99 @@ public class MainActivity extends Activity {
         cam.setClipToOutline(!goFull);   // square corners when it fills the screen
         for (int i = 0; i < camViews.length; i++) {
             if (camViews[i] == cam) {
-                feeds[i].setHd(goFull);                 // 1080p only when it fills the screen
+                if (!camIsWorld[i] && feeds[i] != null) feeds[i].setHd(goFull); // 1080p only when RTSP fills the screen
             } else if (camOn[i]) {
                 camViews[i].setVisibility(vis);
-                if (goFull) feeds[i].stop(); else { showLabel(camLabels[i]); feeds[i].start(); }
+                if (goFull) {
+                    if (camIsWorld[i]) { if (webFeeds[i] != null) webFeeds[i].stop(); }
+                    else if (feeds[i] != null) feeds[i].stop();
+                } else {
+                    showLabel(camLabels[i]);
+                    if (camIsWorld[i]) { if (webFeeds[i] != null) webFeeds[i].start(); }
+                    else if (feeds[i] != null) feeds[i].start();
+                }
             }
         }
         cam.requestFocus();
+    }
+
+    private void updateWorldLabel(int slot) {
+        WorldCams.Stream s = worldSlots[slot];
+        if (s == null) return;
+        String prefix = worldCams.isHearted(s) ? "♥ " : "";
+        ((TextView) camViews[slot].findViewById(R.id.name)).setText(prefix + s.name);
+    }
+
+    private void switchWorldSlot(int slot, WorldCams.Stream s) {
+        if (s == null) return;
+        worldSlots[slot] = s;
+        worldCams.setSlot(slot, s);
+        updateWorldLabel(slot);
+        showLabel(camLabels[slot]);
+        if (webFeeds[slot] != null) webFeeds[slot].setEmbedUrl(s.embedUrl());
+    }
+
+    private String otherWorldKey(int slot) {
+        int other = 1 - slot;
+        return camIsWorld[other] && worldSlots[other] != null ? worldSlots[other].key : null;
+    }
+
+    private void worldCamMenu(int slot) {
+        if (worldCatalog.isEmpty()) return;
+        WorldCams.Stream cur = worldSlots[slot];
+        boolean isH = worldCams.isHearted(cur);
+        List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
+        List<String> items = new ArrayList<>();
+        items.add(isH ? "♥ Remove heart" : "♡ Heart this stream");
+        items.add(favs.size() > 1 ? "Next hearted stream" : "Next stream");
+        items.add("Shuffle");
+        items.add("Browse all streams (" + worldCatalog.size() + ")…");
+        if (!favs.isEmpty()) items.add("♥ Hearted streams (" + favs.size() + ")…");
+
+        String title = cur != null ? cur.name : "World Cams";
+        showDialog(new AlertDialog.Builder(this).setTitle(title)
+                .setItems(items.toArray(new String[0]), (d, which) -> {
+                    switch (which) {
+                        case 0:
+                            boolean added = worldCams.toggleHeart(cur);
+                            updateWorldLabel(slot);
+                            flashStatus(added ? "♥ Hearted " + cur.name : "Removed heart", 3_500);
+                            break;
+                        case 1:
+                            List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
+                            switchWorldSlot(slot, worldCams.next(slot, pool, otherWorldKey(slot)));
+                            break;
+                        case 2:
+                            List<WorldCams.Stream> spool = favs.size() > 1 ? favs : worldCatalog;
+                            switchWorldSlot(slot, worldCams.shuffle(slot, spool, otherWorldKey(slot)));
+                            break;
+                        case 3:
+                            pickWorldStream(slot, "All World Cams", worldCatalog);
+                            break;
+                        case 4:
+                            pickWorldStream(slot, "♥ Hearted streams", favs);
+                            break;
+                    }
+                }));
+    }
+
+    private void pickWorldStream(int slot, String title, List<WorldCams.Stream> pool) {
+        if (pool.isEmpty()) return;
+        WorldCams.Stream cur = worldSlots[slot];
+        String[] labels = new String[pool.size()];
+        int checked = -1;
+        for (int i = 0; i < pool.size(); i++) {
+            WorldCams.Stream s = pool.get(i);
+            String heart = worldCams.isHearted(s) ? "♥ " : "";
+            String cat = s.category.isEmpty() ? "" : "  ·  " + s.category;
+            labels[i] = heart + s.name + cat;
+            if (cur != null && cur.key.equals(s.key)) checked = i;
+        }
+        showDialog(new AlertDialog.Builder(this).setTitle(title)
+                .setSingleChoiceItems(labels, checked, (d, which) -> {
+                    d.dismiss();
+                    switchWorldSlot(slot, pool.get(which));
+                }));
     }
 
     // ---------- apps ----------

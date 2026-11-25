@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "streams": [
+    {
+      "name": "Port of Newcastle — Harbour & Nobbys",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@portofnewcastle/live",
+      "channelId": "UCTGhjtFloAPlbLy4_yrkoWg"
+    },
+    {
+      "name": "Perisher Ski Resort — NSW",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@perisherwebcams3100/live",
+      "channelId": "UCo_6cLHIqwYqCFhJN5g-j7w"
+    },
+    {
+      "name": "Australian Wildlife Cam Live",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@AustralianWildlifeCamLive/live",
+      "channelId": "UC2fT5OsZ71PBA-jdq68DyWQ"
+    },
+    {
+      "name": "Ōamaru Penguins — New Zealand",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@%C5%8CamaruPenguin/live",
+      "channelId": "UCSlIi8WXERrJUce_les6V6w"
+    },
+    {
+      "name": "Royal Albatross Cam — Otago, NZ",
+      "category": "Australia & NZ",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=Mm_zVDDUeNA",
+      "channelUrl": "https://www.youtube.com/@CornellBirdCams/live",
+      "channelId": "UCZXZQxS3d6NpR-eH_gdDwYA",
+      "match": "Royal Albatross"
+    },
+    {
+      "name": "NASA Official ISS HD Earth",
+      "category": "Space",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=ROboUHfPUrU",
+      "channelUrl": "https://www.youtube.com/@NASA/live",
+      "channelId": "UCLA_DiR1FfKNvjuUpBHmylQ",
+      "match": "International Space Station"
+    },
+    {
+      "name": "Holy Shrine of Imam Hussain — Karbala",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/channel/UC-IYgdWMbKsZI5ZCzK1sk3Q/live",
+      "channelId": "UC-IYgdWMbKsZI5ZCzK1sk3Q"
+    },
+    {
+      "name": "Chaotian Temple Main Hall — Taiwan",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=B12MobI0EGg",
+      "channelUrl": "https://www.youtube.com/@lifemap4423/live",
+      "channelId": "UCfESjY0FHcOWuwU6ZE10v1g",
+      "match": "朝天宮"
+    },
+    {
+      "name": "Norway Train Cab Views (Fall & Winter)",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@RailCowGirl/live",
+      "channelId": "UCj-Xm8j6WBgKY8OG7s9r2vQ"
+    },
+    {
+      "name": "Shibuya Scramble Crossing",
+      "category": "Tokyo & Japan",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=dfVK7ld38Ys",
+      "channelUrl": "https://www.youtube.com/@FNNnewsCH/live",
+      "channelId": "UCoQBJMzcwmXrRSHBFAlTsIw",
+      "match": "渋谷"
+    },
+    {
+      "name": "Kabukicho, Shinjuku",
+      "category": "Tokyo & Japan",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@kabukicho-2/live",
+      "channelId": "UCBFDJXGCOdMjVtg2AnReoXA"
+    },
+    {
+      "name": "Asakusa Sensō-ji Temple",
+      "category": "Tokyo & Japan",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@asakusanakaya/live",
+      "channelId": "UCh1UcGFBIuFo5I-I1WMyclA"
+    },
+    {
+      "name": "Sukhumvit Road — Bangkok, Thailand (4K)",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=Q71sLS8h9a4",
+      "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
+      "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
+      "match": "Sukhumvit"
+    },
+    {
+      "name": "Tower of Peace — Madhuban, India",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@rajyoginidadigulzar/live",
+      "channelId": "UCGWcQnqDci9aHo7-YQ_-big"
+    },
+    {
+      "name": "Western Wall — Jerusalem",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=77akujLn4k8",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Western Wall"
+    },
+    {
+      "name": "Gaza City Skyline",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=VzIReBHx584",
+      "channelUrl": "https://www.youtube.com/@AssociatedPress/live",
+      "channelId": "UC52X5wxOL_s5yw0dQk7NtgA",
+      "match": "Gaza"
+    },
+    {
+      "name": "Swakopmund Beach & Lighthouse — Namibia",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@NamibiaWild/live",
+      "channelId": "UCArs3YQib0gUuv5SVrjjtCQ"
+    },
+    {
+      "name": "Times Square North — New York (4K)",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=ZxCeWQ3Lcig",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Times Square"
+    },
+    {
+      "name": "Bryant Park Ice Rink — New York",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@BryantParkNYC/live",
+      "channelId": "UC6AlfoRUeH4B1an_R5YSSTw"
+    },
+    {
+      "name": "Seaside Heights Boardwalk — New Jersey",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=OBgCrw-IyhE",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Seaside Heights"
+    },
+    {
+      "name": "St. Bruno — Chicago",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@st.brunochicago2398/live",
+      "channelId": "UC_loPZGHjS5_jqF-AwPvCww"
+    },
+    {
+      "name": "Venice Beach — Los Angeles",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=EO_1LWqsCNE",
+      "channelUrl": "https://www.youtube.com/@Teleport.camera/live",
+      "channelId": "UCegzBUd6-PYoO_v7gjJgufg",
+      "match": "Venice Beach"
+    },
+    {
+      "name": "Pier 39 — San Francisco",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=UCQivLGCx9c",
+      "channelUrl": "https://www.youtube.com/@EarthWatchLive1/live",
+      "channelId": "UCdMUgj9aXg5rBjw3ep8R7Pg",
+      "match": "Pier 39"
+    },
+    {
+      "name": "Seine & Notre-Dame — Paris",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@Sondelaterre/live",
+      "channelId": "UC5oMexvQVrM4qNNVFK7M7Yw"
+    },
+    {
+      "name": "Oudenaarde Market Square — Belgium",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@oudenaardestad/live",
+      "channelId": "UCPH1SsIWbdm59B0YVoqw8gQ"
+    },
+    {
+      "name": "RailCam — Netherlands",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@MarioRailcamNL/live",
+      "channelId": "UC2qwiv3R_Dqrp15vh7cpH9Q"
+    },
+    {
+      "name": "Elbe Shipcam — Balje, Germany",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@Capitain-Dennis/live",
+      "channelId": "UCfqaWbu8SOBtKkf7GaLuRkg"
+    }
+  ]
+}

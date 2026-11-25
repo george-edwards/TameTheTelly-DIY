@@ -142,6 +142,15 @@ final class SettingsMenu {
             cfg.set(HomeConfig.K_CAMERAS, on ? "on" : "off");
             changed(on ? "Cameras on" : "Cameras off: apps use the whole screen");
         }));
+        WorldCams wc = new WorldCams(a);
+        int hearts = wc.heartedCount(wc.load());
+        String wcVal = cfg.worldCamsOn() ? (hearts > 0 ? "On (" + hearts + " ♥)" : "On") : "Off";
+        rows.add(new MenuRow("World cams", wcVal, () -> {
+            boolean on = !cfg.worldCamsOn();
+            cfg.set(HomeConfig.K_WORLD_CAMS, on ? "on" : "off");
+            if (on && !cfg.camerasOn()) cfg.set(HomeConfig.K_CAMERAS, "on");
+            changed(on ? "World cams on (hold OK on a card to switch or ♥)" : "World cams off");
+        }));
         rows.add(new MenuRow("Camera setup", null, this::cameras));
         rows.add(new MenuRow("Grown-up code", HomeConfig.dots(cfg.parentCode().length()), this::newCode));
         rows.add(new MenuRow("Family name", cfg.familyName().isEmpty() ? "None" : cfg.familyName(), () ->
