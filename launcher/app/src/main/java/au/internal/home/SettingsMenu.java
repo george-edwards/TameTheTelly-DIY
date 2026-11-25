@@ -660,10 +660,41 @@ final class SettingsMenu {
     // ---------- cameras ----------
 
     private void cameras() {
-        String[] labels = new String[HomeConfig.CAMERAS];
-        for (int i = 0; i < labels.length; i++)
+        boolean anyCam = !cfg.camUrl(0).isEmpty() || !cfg.camUrl(1).isEmpty();
+        String[] labels = new String[HomeConfig.CAMERAS + (anyCam ? 2 : 0)];
+        for (int i = 0; i < HomeConfig.CAMERAS; i++)
             labels[i] = "Camera " + (i + 1) + ": " + cfg.camName(i) + (cfg.camUrl(i).isEmpty() ? " (hidden)" : "");
-        show(dialog("Camera config: names and addresses", this::main).setItems(labels, (d, which) -> camera(which)));
+        if (anyCam) {
+            labels[HomeConfig.CAMERAS] = "Overlay corner: " + HomeConfig.overlayCornerName(cfg.overlayCorner());
+            labels[HomeConfig.CAMERAS + 1] = "Overlay size: " + HomeConfig.overlaySizeName(cfg.overlaySize());
+        }
+        show(dialog(anyCam ? "Camera config: names, addresses & overlay" : "Camera config: names and addresses", this::main).setItems(labels, (d, which) -> {
+            if (which < HomeConfig.CAMERAS) camera(which);
+            else if (which == HomeConfig.CAMERAS) overlayCorner();
+            else overlaySize();
+        }));
+    }
+
+    private void overlayCorner() {
+        int checked = HomeConfig.indexOf(HomeConfig.OVERLAY_CORNERS, cfg.overlayCorner());
+        show(dialog("Camera overlay corner", this::cameras)
+                .setSingleChoiceItems(HomeConfig.OVERLAY_CORNER_NAMES, checked, (d, which) -> {
+                    d.dismiss();
+                    cfg.set(HomeConfig.K_OVERLAY_CORNER, HomeConfig.OVERLAY_CORNERS[which]);
+                    Toast.makeText(a, "Overlay corner: " + HomeConfig.OVERLAY_CORNER_NAMES[which], Toast.LENGTH_SHORT).show();
+                    cameras();
+                }));
+    }
+
+    private void overlaySize() {
+        int checked = HomeConfig.indexOf(HomeConfig.OVERLAY_SIZES, cfg.overlaySize());
+        show(dialog("Camera overlay size", this::cameras)
+                .setSingleChoiceItems(HomeConfig.OVERLAY_SIZE_NAMES, checked, (d, which) -> {
+                    d.dismiss();
+                    cfg.set(HomeConfig.K_OVERLAY_SIZE, HomeConfig.OVERLAY_SIZES[which]);
+                    Toast.makeText(a, "Overlay size: " + HomeConfig.OVERLAY_SIZE_NAMES[which], Toast.LENGTH_SHORT).show();
+                    cameras();
+                }));
     }
 
     private void camera(int i) {
@@ -708,7 +739,7 @@ final class SettingsMenu {
         rows.add(new MenuRow("+ Remap a button", null, this::captureButton));
         for (java.util.Map.Entry<String, String> e : mapped.entrySet()) {
             String id = e.getKey();
-            rows.add(new MenuRow(rk.label(id), RemoteKeys.targetLabel(e.getValue(), installed, ta), () -> editButton(id)));
+            rows.add(new MenuRow(rk.label(id), RemoteKeys.targetLabel(e.getValue(), installed, ta, cfg), () -> editButton(id)));
         }
         if (!mapped.isEmpty() && !RemoteKeyService.isConnected()) {
             rows.add(new MenuRow("Turn on remote buttons…", null, this::enableRemoteService));
@@ -791,7 +822,7 @@ final class SettingsMenu {
     private void editButton(String id) {
         RemoteKeys rk = remoteKeys();
         String target = rk.target(id);
-        String title = rk.label(id) + " → " + RemoteKeys.targetLabel(target, installed, timed());
+        String title = rk.label(id) + " → " + RemoteKeys.targetLabel(target, installed, timed(), cfg);
         String[] items = {"Change what it does", "Rename this button…", "Reset to normal"};
         show(dialog(title, this::remoteButtons).setItems(items, (d, which) -> {
             switch (which) {
@@ -822,8 +853,9 @@ final class SettingsMenu {
         List<String> labels = new ArrayList<>();
 
         for (String t : RemoteKeys.ACTIONS) {
+            if (!RemoteKeys.actionAvailable(t, cfg)) continue;
             targets.add(t);
-            labels.add(RemoteKeys.targetLabel(t, installed, ta));
+            labels.add(RemoteKeys.targetLabel(t, installed, ta, cfg));
         }
         // Favourites first, then visible apps, then hidden apps (familiar order from Home).
         List<AppStore.App> favs = new ArrayList<>(), vis = new ArrayList<>(), hid = new ArrayList<>();

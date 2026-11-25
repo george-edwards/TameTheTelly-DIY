@@ -8,6 +8,10 @@
     <!-- (TV menu) Cameras on Home: on, or off to give the apps the whole screen (the addresses in cameras.xml or
          Config are kept for when they're turned back on). -->
     <string name="cameras" translatable="false">on</string>
+    <!-- (TV menu: Camera setup) Floating camera overlay corner (top_right, top_left, bottom_right, bottom_left)
+         and size (small, medium, large). -->
+    <string name="overlay_corner" translatable="false">top_right</string>
+    <string name="overlay_size" translatable="false">medium</string>
     <!-- SET FOR EACH HOUSEHOLD (AGENTS.md, "Make it theirs"): family name, weather place, bin night, timed apps,
          scene, grown-ups code. Most can also be set later on the TV in Config. -->
     <!-- (TV menu) Greeting: "Good morning, <family_name>" (blank: just "Good morning"). -->

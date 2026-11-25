@@ -54,6 +54,7 @@
                 <action android:name="au.internal.home.DEMO" />
                 <action android:name="au.internal.home.SET" />
                 <action android:name="au.internal.home.KEY" />
+                <action android:name="au.internal.home.CAM_OVERLAY" />
                 <action android:name="au.internal.home.RESTORE_CHECK" />
             </intent-filter>
         </receiver>

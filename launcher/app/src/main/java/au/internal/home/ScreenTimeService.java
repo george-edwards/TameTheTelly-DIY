@@ -46,6 +46,7 @@ import java.util.concurrent.Executors;
 public final class ScreenTimeService extends Service {
     static final String TAG = "HomeScreenTime";
     static final String ACTION_DEV = "au.internal.home.DEV";
+    static final String ACTION_CAM_OVERLAY = "au.internal.home.CAM_OVERLAY";
     private static final long TICK_MS = 1_000, SILENT_GRACE_MS = 90_000, CLOSE_MS = 4_000;
     /** How long the window's density stays after the last timed app goes, so a quick switch doesn't flip it. */
     private static final long DENSITY_HOLD_MS = 3_000;
@@ -64,6 +65,9 @@ public final class ScreenTimeService extends Service {
     private volatile boolean timedDirty, hasRemoteKeys;
     private final SharedPreferences.OnSharedPreferenceChangeListener settingsListener = (p, k) -> {
         if (HomeConfig.K_TIMED.equals(k) || k == null) timedDirty = true;
+        if (HomeConfig.K_OVERLAY_CORNER.equals(k) || HomeConfig.K_OVERLAY_SIZE.equals(k) || k == null) {
+            h.post(() -> { if (this.camOverlay != null) this.camOverlay.reconfigure(); });
+        }
     };
     private final SharedPreferences.OnSharedPreferenceChangeListener remoteKeyListener = (p, k) -> {
         if (RemoteKeys.isMapKey(k)) hasRemoteKeys = !remoteKeys.isEmpty();
@@ -88,6 +92,7 @@ public final class ScreenTimeService extends Service {
     private long lastQuery, lastTick, lastAudio;
     private boolean watching, blueOn, goingToSleep, preview;
     private SceneView overlay;
+    private CameraOverlay camOverlay;
     private long lastGoodnight = -10_000;
 
     // Scrub run (dev): progress animates from -> to over the given time.
@@ -95,7 +100,26 @@ public final class ScreenTimeService extends Service {
     private long runStart = -1, runMs;
 
     private static volatile boolean homeOnTop;
-    static void setHomeOnTop(boolean top) { homeOnTop = top; }
+    private static volatile int pinnedCam = -1;
+    private static volatile String activeOverlayCorner = HomeConfig.CORNER_TR;
+    private static volatile ScreenTimeService running;
+
+    static void setHomeOnTop(boolean top) {
+        homeOnTop = top;
+        ScreenTimeService s = running;
+        if (s != null) s.h.post(s::syncCamOverlay);
+    }
+
+    static int pinnedCam() { return pinnedCam; }
+    static String overlayCorner() { return activeOverlayCorner; }
+
+    /** Toggle, cycle, or set the floating camera overlay (op: "toggle", "cycle", "set", "off"). */
+    static void camOverlay(Context c, String op, int cam) {
+        try {
+            c.startForegroundService(new Intent(c, ScreenTimeService.class)
+                    .setAction(ACTION_CAM_OVERLAY).putExtra("op", op).putExtra("cam", cam));
+        } catch (RuntimeException e) { Log.w(TAG, "camOverlay failed", e); }
+    }
 
     static void start(Context c) {
         try { c.startForegroundService(new Intent(c, ScreenTimeService.class)); }
@@ -114,6 +138,8 @@ public final class ScreenTimeService extends Service {
         audio = getSystemService(AudioManager.class);
         power = getSystemService(PowerManager.class);
         wm = getSystemService(WindowManager.class);
+        camOverlay = new CameraOverlay(this, wm, new HomeConfig(this));
+        running = this;
         vol = getSharedPreferences("screentime_volume", MODE_PRIVATE);
         settings = getApplicationContext().getSharedPreferences("settings", MODE_PRIVATE);
         settings.registerOnSharedPreferenceChangeListener(settingsListener);
@@ -143,8 +169,31 @@ public final class ScreenTimeService extends Service {
 
     @Override public int onStartCommand(Intent i, int flags, int id) {
         goForeground();   // every start: each startForegroundService() call must be answered, not just the first
-        if (i != null && ACTION_DEV.equals(i.getAction())) dev(i);
+        if (i != null) {
+            if (ACTION_DEV.equals(i.getAction())) dev(i);
+            else if (ACTION_CAM_OVERLAY.equals(i.getAction())) handleCamOverlay(i);
+        }
         return START_STICKY;
+    }
+
+    private void handleCamOverlay(Intent i) {
+        if (camOverlay == null) return;
+        String op = i.getStringExtra("op");
+        int cam = i.getIntExtra("cam", -1);
+        if ("toggle".equals(op)) pinnedCam = camOverlay.toggle(cam);
+        else if ("cycle".equals(op)) pinnedCam = camOverlay.cycle();
+        else if ("off".equals(op)) pinnedCam = camOverlay.pin(CameraOverlay.MODE_OFF);
+        else pinnedCam = camOverlay.pin(cam);
+        activeOverlayCorner = camOverlay.activeCorner();
+        syncCamOverlay();
+    }
+
+    private void syncCamOverlay() {
+        if (camOverlay == null) return;
+        boolean canShow = power != null && power.isInteractive() && !homeOnTop && !goingToSleep;
+        camOverlay.sync(canShow);
+        pinnedCam = camOverlay.pinned();
+        activeOverlayCorner = camOverlay.activeCorner();
     }
 
     private void goForeground() {
@@ -162,6 +211,9 @@ public final class ScreenTimeService extends Service {
         remoteKeys.unregister(remoteKeyListener);
         unregisterReceiver(pkgReceiver);
         worker.shutdownNow();
+        running = null;
+        if (camOverlay != null) { camOverlay.destroy(); camOverlay = null; }
+        pinnedCam = -1;
         hideOverlay(false);
         restoreVolume();
         super.onDestroy();
@@ -258,6 +310,7 @@ public final class ScreenTimeService extends Service {
         if (kid && p >= 1f && !goingToSleep && el - lastGoodnight > 5_000) goodnight(overlay != null ? CLOSE_MS : 1_200);
 
         if ((kid || preview) && !goingToSleep) showOverlay(); else if (!goingToSleep) hideOverlay(true);
+        syncCamOverlay();
         setSceneProgress(now, p);
         if (kid && !goingToSleep) { fadeVolume(p); warm(p >= ScreenTime.GOLDEN); }
         else if (!goingToSleep) { restoreVolume(); warm(false); }

@@ -175,6 +175,13 @@ public class MainActivity extends Activity {
                     (TextureView) v.findViewById(R.id.surface), v.findViewById(R.id.state),
                     () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
             v.setOnClickListener(this::toggleFullscreen);
+            v.setOnLongClickListener(x -> {
+                boolean wasPinned = ScreenTimeService.pinnedCam() == idx;
+                ScreenTimeService.camOverlay(this, wasPinned ? "off" : "set", idx);
+                flashStatus(wasPinned ? "Camera overlay off"
+                        : cfg.camName(idx) + " pinned as overlay — open any app", 5_000);
+                return true;
+            });
             v.setOnFocusChangeListener((x, has) -> {
                 if (has) showLabel(label);
                 else if (feeds[idx].isLive()) fadeLabel(label, 2_000);

@@ -104,6 +104,14 @@ public final class DevReceiver extends BroadcastReceiver {
                 runAsync(c, Restore::check);
                 return;
             }
+            case "CAM_OVERLAY": {
+                String op = i.getStringExtra("op");
+                int cam = i.getIntExtra("cam", -1);
+                if (op == null) op = i.hasExtra("cam") ? "set" : "cycle";
+                ScreenTimeService.camOverlay(c, op, cam);
+                setResultData("cam_overlay op=" + op + " cam=" + cam);
+                return;
+            }
             case "STATUS": break;
             default: setResultData("unknown: " + cmd); return;
         }
@@ -117,12 +125,18 @@ public final class DevReceiver extends BroadcastReceiver {
         }
         String recent = RemoteKeyService.recentKeys();
         if (!recent.isEmpty()) keys.append("\nRecent keys:\n").append(recent);
-        String schedText = new HomeConfig(c).adultScheduleText();
+        HomeConfig hcfg = new HomeConfig(c);
+        int pinned = ScreenTimeService.pinnedCam();
+        String camOv = pinned >= 0
+                ? CameraOverlay.modeName(hcfg, pinned) + " (" + ScreenTimeService.overlayCorner() + ", " + hcfg.overlaySize() + ")"
+                : "off";
+        String schedText = hcfg.adultScheduleText();
         String sched = schedText != null ? ", schedule " + schedText : "";
         setResultData(st.describe(now) + String.format(java.util.Locale.ROOT, ", progress %.2f%s%s%s", st.progress(now),
                 st.scrubbing() ? " (scrubbed)" : "",
                 st.adultMode(now) ? ", adult mode" : st.hasPass(now) ? ", grown-up pass" : "",
                 sched)
+                + "\nCamera overlay: " + camOv
                 + "\nFramer:\n" + Framer.notes() + "\n" + keys);
     }
 
