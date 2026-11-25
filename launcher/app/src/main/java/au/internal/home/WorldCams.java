@@ -234,6 +234,33 @@ final class WorldCams {
         return cur;
     }
 
+    /** Advance both slots together as a non-overlapping pair: (0,1) -> (2,3) -> (4,5) -> ... */
+    Stream[] nextPair(List<Stream> pool) {
+        if (pool.isEmpty()) return new Stream[]{null, null};
+        if (pool.size() == 1) {
+            Stream only = pool.get(0);
+            setSlot(0, only);
+            setSlot(1, only);
+            return new Stream[]{only, only};
+        }
+        Stream s0 = slotStream(0, pool);
+        Stream s1 = slotStream(1, pool);
+        int i0 = indexOf(pool, s0), i1 = indexOf(pool, s1);
+        int base = i1 >= 0 ? i1 : i0;
+        int n = pool.size();
+        Stream next0 = pool.get((base + 1) % n);
+        Stream next1 = pool.get((base + 2) % n);
+        setSlot(0, next0);
+        setSlot(1, next1);
+        return new Stream[]{next0, next1};
+    }
+
+    private static int indexOf(List<Stream> pool, Stream s) {
+        if (s == null) return -1;
+        for (int i = 0; i < pool.size(); i++) if (pool.get(i).key.equals(s.key)) return i;
+        return -1;
+    }
+
     /** Pick a random stream in `pool` (avoiding current and `avoidKey` when possible). */
     Stream shuffle(int slot, List<Stream> pool, String avoidKey) {
         if (pool.isEmpty()) return null;

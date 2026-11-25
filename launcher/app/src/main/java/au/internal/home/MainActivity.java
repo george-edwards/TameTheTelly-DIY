@@ -42,6 +42,22 @@ public class MainActivity extends Activity {
     private static final int T_HEADER = 0, T_FAV = 1, T_APP = 2;
     private static final long TICK_MS = 30_000, WEATHER_MS = 15 * 60_000, LABEL_FADE_MS = 5_000;
 
+    private static volatile MainActivity active;
+
+    /** Advance visible World Cam card(s) to the next pair in the catalog (no overlap between top & bottom). */
+    static void nextWorldCams(Context c) {
+        MainActivity a = active;
+        if (a != null) {
+            a.h.post(a::advanceWorldCams);
+            return;
+        }
+        WorldCams wc = new WorldCams(c);
+        List<WorldCams.Stream> all = wc.load();
+        if (all.isEmpty()) return;
+        List<WorldCams.Stream> favs = wc.hearted(all);
+        wc.nextPair(favs.size() > 1 ? favs : all);
+    }
+
     /** This launcher's own Home screen, startable from anywhere. */
     static Intent home(Context c) {
         return new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).setPackage(c.getPackageName())
@@ -131,6 +147,7 @@ public class MainActivity extends Activity {
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
+        active = this;
         setContentView(R.layout.activity_main);
         store = new AppStore(this);
         cfg = new HomeConfig(this);
@@ -290,6 +307,7 @@ public class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        if (active == this) active = null;
         dismissDialogs();
         h.removeCallbacksAndMessages(null);
         unregisterReceiver(pkgReceiver);
@@ -574,6 +592,21 @@ public class MainActivity extends Activity {
         updateWorldLabel(slot);
         showLabel(camLabels[slot]);
         webHost.setSlot(slot, true, s.embedUrl());
+    }
+
+    private void advanceWorldCams() {
+        if (worldCatalog.isEmpty()) return;
+        List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
+        List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
+        if (camIsWorld[0] && camIsWorld[1]) {
+            WorldCams.Stream[] pair = worldCams.nextPair(pool);
+            if (pair[0] != null) switchWorldSlot(0, pair[0]);
+            if (pair[1] != null) switchWorldSlot(1, pair[1]);
+        } else if (camIsWorld[0]) {
+            switchWorldSlot(0, worldCams.next(0, pool, null));
+        } else if (camIsWorld[1]) {
+            switchWorldSlot(1, worldCams.next(1, pool, null));
+        }
     }
 
     private String otherWorldKey(int slot) {

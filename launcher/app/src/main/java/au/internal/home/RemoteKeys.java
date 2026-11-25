@@ -48,10 +48,11 @@ final class RemoteKeys {
     static final String ACTION_CAM_2 = "action:cam2";
     static final String ACTION_CAM_BOTH = "action:cam_both";
     static final String ACTION_CAM_CYCLE = "action:cam_cycle";
+    static final String ACTION_WORLD_NEXT = "action:world_next";
     static final String ACTION_NOOP = "action:noop";
     static final String[] ACTIONS = {
             ACTION_HOME, ACTION_SETTINGS, ACTION_PICTURE, ACTION_SCREENSAVER,
-            ACTION_CAM_1, ACTION_CAM_2, ACTION_CAM_BOTH, ACTION_CAM_CYCLE, ACTION_NOOP
+            ACTION_CAM_1, ACTION_CAM_2, ACTION_CAM_BOTH, ACTION_CAM_CYCLE, ACTION_WORLD_NEXT, ACTION_NOOP
     };
 
     private static final Object CONNECT_LOCK = new Object();
@@ -283,19 +284,24 @@ final class RemoteKeys {
 
     /** Whether a built-in action should be offered in Config > Remote buttons given the current camera setup. */
     static boolean actionAvailable(String target, boolean hasCam1, boolean hasCam2) {
+        return actionAvailable(target, hasCam1, hasCam2, false);
+    }
+
+    static boolean actionAvailable(String target, boolean hasCam1, boolean hasCam2, boolean worldCamsOn) {
         if (target == null) return false;
         switch (target) {
             case ACTION_CAM_1: return hasCam1;
             case ACTION_CAM_2: return hasCam2;
             case ACTION_CAM_BOTH:
             case ACTION_CAM_CYCLE: return hasCam1 && hasCam2;
+            case ACTION_WORLD_NEXT: return worldCamsOn;
             default: return true;
         }
     }
 
     static boolean actionAvailable(String target, HomeConfig cfg) {
-        if (cfg == null) return actionAvailable(target, false, false);
-        return actionAvailable(target, !cfg.camUrl(0).isEmpty(), !cfg.camUrl(1).isEmpty());
+        if (cfg == null) return actionAvailable(target, false, false, false);
+        return actionAvailable(target, !cfg.camUrl(0).isEmpty(), !cfg.camUrl(1).isEmpty(), cfg.worldCamsOn());
     }
 
     /** Human-readable name for a target (app name with Kids' time / Grown-ups hint, or TV action). */
@@ -314,6 +320,7 @@ final class RemoteKeys {
             case ACTION_CAM_2: return (cfg != null ? cfg.camName(1) : "Camera 2") + " overlay";
             case ACTION_CAM_BOTH: return "Both cameras overlay";
             case ACTION_CAM_CYCLE: return "Camera overlay (cycle)";
+            case ACTION_WORLD_NEXT: return "Next World Cams";
             case ACTION_NOOP: return "Do nothing (disabled)";
         }
         if (target.startsWith(APP_PREFIX)) {
@@ -367,6 +374,9 @@ final class RemoteKeys {
                 return;
             case ACTION_CAM_CYCLE:
                 ScreenTimeService.camOverlay(c, "cycle", CameraOverlay.MODE_OFF);
+                return;
+            case ACTION_WORLD_NEXT:
+                MainActivity.nextWorldCams(c);
                 return;
         }
         if (!target.startsWith(APP_PREFIX)) return;
