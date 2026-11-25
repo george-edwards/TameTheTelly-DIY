@@ -185,9 +185,6 @@ final class Look {
         weather.setCompoundDrawableTintList(light ? ColorStateList.valueOf(muted) : null);
         ((TextView) root.findViewById(R.id.binsText)).setTextColor(muted);
         root.findViewById(R.id.divider).setBackgroundColor(divider);
-        TextView status = root.findViewById(R.id.status);
-        status.setBackgroundTintList(ColorStateList.valueOf(pill));
-        status.setTextColor(pillText);
         ((TextView) root.findViewById(R.id.cornerLabel)).setTextColor(text);
         for (int id : new int[]{R.id.camBtn, R.id.modeBtn, R.id.timeBtn, R.id.remoteBtn, R.id.grownups})
             styleCornerIcon(root.findViewById(id), d);
@@ -225,12 +222,13 @@ final class Look {
         gu.setLayoutParams(glp);
     }
 
-    /** A corner icon button: quiet outlined circle when idle, brighter ring when activated (Adult mode), solid fill when focused. */
+    /** A corner icon button: quiet outlined circle when idle, hollow orange tint when activated (Adult mode), solid fill when focused. */
     private void styleCornerIcon(ImageView icon, float d) {
+        int alert = light ? 0xFFD95300 : 0xFFFF9500;
         GradientDrawable focused = new GradientDrawable(), active = new GradientDrawable(), off = new GradientDrawable();
         focused.setShape(GradientDrawable.OVAL); focused.setColor(text);
-        active.setShape(GradientDrawable.OVAL); active.setColor((text & 0xFFFFFF) | 0x26000000);
-        active.setStroke(Math.round(1.5f * d), text);
+        active.setShape(GradientDrawable.OVAL); active.setColor(0);
+        active.setStroke(Math.round(1.5f * d), (alert & 0xFFFFFF) | 0x99000000);
         off.setShape(GradientDrawable.OVAL); off.setColor(0); off.setStroke(Math.round(1 * d), divider);
         StateListDrawable bgd = new StateListDrawable();
         bgd.addState(new int[]{android.R.attr.state_focused}, focused);
@@ -238,7 +236,7 @@ final class Look {
         bgd.addState(new int[0], off);
         icon.setBackground(bgd);
         int[][] states = {{android.R.attr.state_focused}, {android.R.attr.state_activated}, {}};
-        icon.setImageTintList(new ColorStateList(states, new int[]{bg | 0xFF000000, text, muted}));
+        icon.setImageTintList(new ColorStateList(states, new int[]{bg | 0xFF000000, alert, muted}));
     }
 
     /** Hairline ring, brighter when focused (camera cards). */

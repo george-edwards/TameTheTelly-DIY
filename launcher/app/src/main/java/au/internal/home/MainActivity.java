@@ -82,7 +82,7 @@ public class MainActivity extends Activity {
     private int hiddenCount;
 
     private RecyclerView grid;
-    private TextView status, greeting, weather;
+    private TextView greeting, weather;
     private View bins;
     private Sky sky;
     private final Adapter adapter = new Adapter();
@@ -163,7 +163,6 @@ public class MainActivity extends Activity {
         scrim.setVisibility(View.VISIBLE);
         ((ViewGroup) getWindow().getDecorView()).addView(scrim, new ViewGroup.LayoutParams(-1, -1));
         prefs = getSharedPreferences("ui", MODE_PRIVATE);
-        status = findViewById(R.id.status);
         greeting = findViewById(R.id.greeting);
         weather = findViewById(R.id.weather);
         bins = findViewById(R.id.bins);
@@ -283,10 +282,6 @@ public class MainActivity extends Activity {
         root.setAlpha(0f);
         root.animate().alpha(1f).setDuration(350).setStartDelay(50).start();
 
-        if (!prefs.getBoolean("hintShown", false)) {
-            flashStatus("Hold OK on an app to move, favourite or hide it", 8_000);
-            prefs.edit().putBoolean("hintShown", true).apply();
-        }
         String unlockPkg = getIntent().getStringExtra(EXTRA_UNLOCK_PKG);
         if (unlockPkg != null) {
             getIntent().removeExtra(EXTRA_UNLOCK_PKG);
@@ -380,7 +375,6 @@ public class MainActivity extends Activity {
                     refreshRuledTiles();
                 }
             }
-            if (passEnded && !adult) flashStatus("Grown-up time over", 4_000);
         } else {
             if (screenTime.hasPass(now)) leftDuringPass = true;
             stopCams();
@@ -416,7 +410,6 @@ public class MainActivity extends Activity {
 
     @Override protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (intent.getBooleanExtra(EXTRA_LOCKED, false)) flashStatus("That one's for grown-ups", 5_000);
         String unlockPkg = intent.getStringExtra(EXTRA_UNLOCK_PKG);
         // Home pressed: close any open grown-up/Config/app menu, drop out of any mode, and go to the first tile.
         dismissDialogs();
@@ -500,15 +493,6 @@ public class MainActivity extends Activity {
             Row r = rows.get(i);
             if (r.app != null && ruled(r.app.pkg)) adapter.notifyItemChanged(i);
         }
-    }
-
-    private final Runnable hideStatus = () -> { if (movingPkg == null && !showHidden) status.setVisibility(View.GONE); };
-
-    private void flashStatus(String msg, long ms) {
-        status.setText(msg);
-        status.setVisibility(View.VISIBLE);
-        h.removeCallbacks(hideStatus);
-        h.postDelayed(hideStatus, ms);
     }
 
     // ---------- cameras ----------
@@ -641,8 +625,6 @@ public class MainActivity extends Activity {
                 .setItems(items.toArray(new String[0]), (d, which) -> {
                     if (which == 0) {
                         ScreenTimeService.camOverlay(this, wasPinned ? "off" : "set", slot);
-                        flashStatus(wasPinned ? "Camera overlay off"
-                                : cfg.camName(slot) + " pinned as overlay — open any app", 5_000);
                     } else if (which == 1 && canWorld) {
                         setSlotMode(slot, true);
                     }
@@ -711,9 +693,10 @@ public class MainActivity extends Activity {
                     if (which == sIdx) {
                         toggleFullscreenSound(slot);
                     } else if (which == hIdx) {
-                        boolean added = worldCams.toggleHeart(cur);
+                        worldCams.toggleHeart(cur);
                         updateWorldLabel(slot);
-                        flashStatus(added ? "♥ Hearted " + cur.name : "Removed heart", 3_500);
+                        showLabel(camLabels[slot]);
+                        fadeLabel(camLabels[slot], 2_500);
                     } else if (which == nIdx) {
                         List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
                         switchWorldSlot(slot, worldCams.next(slot, pool, otherWorldKey(slot)));
@@ -774,9 +757,6 @@ public class MainActivity extends Activity {
             rows.add(new Row(T_HEADER, "All apps", null));
         }
         rows.addAll(rest);
-        if (movingPkg != null) { status.setText("Moving: use the arrows, then OK to drop"); status.setVisibility(View.VISIBLE); }
-        else if (showHidden) { status.setText("Showing hidden apps. Hold OK to unhide, Back to finish"); status.setVisibility(View.VISIBLE); }
-        else status.setVisibility(View.GONE);
         adapter.notifyDataSetChanged();
     }
 
@@ -872,28 +852,15 @@ public class MainActivity extends Activity {
     }
 
     private void applyAdultMode(boolean adult) {
-        long now = System.currentTimeMillis();
-        long until = screenTime.setAdultMode(now, adult);
-        String msg;
-        if (adult) {
-            if (until > 0) {
-                Calendar c = Calendar.getInstance();
-                c.setTimeInMillis(until);
-                int untilMin = c.get(Calendar.HOUR_OF_DAY) * 60 + c.get(Calendar.MINUTE);
-                msg = "Adult mode on (back to kids' mode at " + HomeConfig.formatTime12(untilMin) + ")";
-            } else {
-                msg = "Adult mode on — timed apps are full screen";
-            }
-        } else {
-            msg = "Kids' mode on";
-        }
-        timeChanged(msg);
+        screenTime.setAdultMode(System.currentTimeMillis(), adult);
+        timeChanged(null);
     }
 
     private void updateModeButton(boolean adult) {
         if (modeBtn == null || (modeBtnAdult != null && modeBtnAdult == adult)) return;
         modeBtnAdult = adult;
         modeBtn.setImageResource(adult ? R.drawable.ic_adult : R.drawable.ic_child);
+        modeBtn.setActivated(adult);
         modeBtn.setContentDescription(adult ? "Adult mode on (OK for kids)" : "Switch to adult mode");
         if (modeBtn.hasFocus()) cornerLabel.setText(modeBtn.getContentDescription());
     }
@@ -926,7 +893,6 @@ public class MainActivity extends Activity {
         updateModeButton(adult);
         lastTimeSig = timeSig(now, adult);
         refreshRuledTiles();
-        flashStatus(msg, 5_000);
     }
 
     // ---------- put the TV back ----------
