@@ -96,6 +96,7 @@ public class MainActivity extends Activity {
     private View[] camViews, camLabels;
     private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
+    private boolean fullscreenSound;
     private long lastWeather;
     private int lastSunDay = -1;
     private double lastSunLat = Double.NaN, lastSunLon = Double.NaN;
@@ -224,6 +225,15 @@ public class MainActivity extends Activity {
                 ((TextView) v.findViewById(R.id.name)).setText(cfg.camName(i));
             }
             v.setOnClickListener(this::toggleFullscreen);
+            v.setOnKeyListener((x, code, ev) -> {
+                if (ev.getAction() == KeyEvent.ACTION_DOWN && fullscreenCam == v && camIsWorld[idx]
+                        && (code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
+                        || code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)) {
+                    toggleFullscreenSound(idx);
+                    return true;
+                }
+                return false;
+            });
             v.setOnLongClickListener(x -> {
                 if (camIsWorld[idx]) worldCamMenu(idx);
                 else localCamMenu(idx);
@@ -538,7 +548,18 @@ public class MainActivity extends Activity {
             }
         }
         if (webHost != null) webHost.setFullscreen(goFull);
+        fullscreenSound = false;
+        for (int i = 0; i < 2; i++) if (camIsWorld[i]) updateWorldLabel(i);
         cam.requestFocus();
+    }
+
+    private void toggleFullscreenSound(int slot) {
+        if (webHost == null || fullscreenCam != camViews[slot] || !camIsWorld[slot]) return;
+        fullscreenSound = !fullscreenSound;
+        webHost.setMuted(slot, !fullscreenSound);
+        updateWorldLabel(slot);
+        showLabel(camLabels[slot]);
+        fadeLabel(camLabels[slot], 2_500);
     }
 
     private void updateCamButton(ImageView camBtn) {
@@ -631,8 +652,9 @@ public class MainActivity extends Activity {
     private void updateWorldLabel(int slot) {
         WorldCams.Stream s = worldSlots[slot];
         if (s == null) return;
+        String sound = (fullscreenCam == camViews[slot] && fullscreenSound) ? "🔊 " : "";
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
-        ((TextView) camViews[slot].findViewById(R.id.name)).setText(prefix + s.name);
+        ((TextView) camViews[slot].findViewById(R.id.name)).setText(sound + prefix + s.name);
     }
 
     private void switchWorldSlot(int slot, WorldCams.Stream s) {
@@ -670,30 +692,35 @@ public class MainActivity extends Activity {
         boolean isH = worldCams.isHearted(cur);
         List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
         boolean hasLocal = !cfg.camUrl(slot).isEmpty();
+        boolean isFull = fullscreenCam == camViews[slot];
         List<String> items = new ArrayList<>();
-        items.add(isH ? "♥ Remove heart" : "♡ Heart this stream");
-        items.add(favs.size() > 1 ? "Next hearted stream" : "Next stream");
-        items.add("Shuffle");
-        items.add("Browse all streams (" + worldCatalog.size() + ")…");
+        int soundIdx = -1;
+        if (isFull) { soundIdx = items.size(); items.add(fullscreenSound ? "Mute sound" : "🔊 Sound on"); }
+        int heartIdx = items.size(); items.add(isH ? "♥ Remove heart" : "♡ Heart this stream");
+        int nextIdx = items.size(); items.add(favs.size() > 1 ? "Next hearted stream" : "Next stream");
+        int shufIdx = items.size(); items.add("Shuffle");
+        int allIdx = items.size(); items.add("Browse all streams (" + worldCatalog.size() + ")…");
         int favIdx = -1, localIdx = -1;
         if (!favs.isEmpty()) { favIdx = items.size(); items.add("♥ Hearted streams (" + favs.size() + ")…"); }
         if (hasLocal) { localIdx = items.size(); items.add("Switch back to " + cfg.camName(slot)); }
 
-        final int fIdx = favIdx, lIdx = localIdx;
+        final int sIdx = soundIdx, hIdx = heartIdx, nIdx = nextIdx, shIdx = shufIdx, aIdx = allIdx, fIdx = favIdx, lIdx = localIdx;
         String title = cur != null ? cur.name : "World Cams";
         showDialog(new AlertDialog.Builder(this).setTitle(title)
                 .setItems(items.toArray(new String[0]), (d, which) -> {
-                    if (which == 0) {
+                    if (which == sIdx) {
+                        toggleFullscreenSound(slot);
+                    } else if (which == hIdx) {
                         boolean added = worldCams.toggleHeart(cur);
                         updateWorldLabel(slot);
                         flashStatus(added ? "♥ Hearted " + cur.name : "Removed heart", 3_500);
-                    } else if (which == 1) {
+                    } else if (which == nIdx) {
                         List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
                         switchWorldSlot(slot, worldCams.next(slot, pool, otherWorldKey(slot)));
-                    } else if (which == 2) {
+                    } else if (which == shIdx) {
                         List<WorldCams.Stream> spool = favs.size() > 1 ? favs : worldCatalog;
                         switchWorldSlot(slot, worldCams.shuffle(slot, spool, otherWorldKey(slot)));
-                    } else if (which == 3) {
+                    } else if (which == aIdx) {
                         pickWorldStream(slot, "All World Cams", worldCatalog);
                     } else if (which == fIdx) {
                         pickWorldStream(slot, "♥ Hearted streams", favs);

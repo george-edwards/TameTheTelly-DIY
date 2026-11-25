@@ -68,7 +68,18 @@ final class WebCamHost {
 
     void setFullscreen(boolean full) {
         fullscreen = full;
+        if (!full) {
+            setMuted(0, true);
+            setMuted(1, true);
+        }
         syncLayout();
+    }
+
+    /** Mute or unmute a YouTube embed slot live via its postMessage JS API (no reload). */
+    void setMuted(int slot, boolean muted) {
+        if (webView == null || !pageReady || slot < 0 || slot > 1) return;
+        String fn = muted ? "mute" : "unMute";
+        webView.evaluateJavascript("ytCmd(" + slot + ",'" + fn + "');", null);
     }
 
     void setSlot(int slot, boolean active, String embedUrl) {
@@ -111,7 +122,7 @@ final class WebCamHost {
             u = "https://www.youtube-nocookie.com/embed/" + u.substring("https://www.youtube.com/embed/".length());
         }
         String sep = u.contains("?") ? "&" : "?";
-        return u + sep + "origin=" + ORIGIN;
+        return u + sep + "enablejsapi=1&origin=" + ORIGIN;
     }
 
     private void sync() {
@@ -202,6 +213,10 @@ final class WebCamHost {
                 + "function setRect(i,l,t,w,h,r){"
                 + "  var d=document.getElementById('s'+i);"
                 + "  d.style.left=l+'px';d.style.top=t+'px';d.style.width=w+'px';d.style.height=h+'px';d.style.borderRadius=r+'px';"
+                + "}"
+                + "function ytCmd(i,fn){"
+                + "  var f=document.getElementById('f'+i);"
+                + "  if(f&&f.contentWindow){f.contentWindow.postMessage(JSON.stringify({event:'command',func:fn,args:[]}),'*');}"
                 + "}"
                 + "</script></body></html>";
         wv.loadDataWithBaseURL(ORIGIN + "/", html, "text/html", "utf-8", null);
