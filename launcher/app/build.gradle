@@ -24,8 +24,8 @@ android {
         applicationId 'au.internal.home'
         minSdk 26
         targetSdk 34
-        versionCode 62
-        versionName "2.20.0"
+        versionCode 63
+        versionName "2.20.1"
     }
     signingConfigs {
         release {

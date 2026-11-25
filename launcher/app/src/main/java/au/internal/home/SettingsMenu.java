@@ -163,7 +163,15 @@ final class SettingsMenu {
         rows.add(new MenuRow("Bin night", cfg.binsDay() >= 1 && cfg.binsDay() <= 7 ? DAYS[cfg.binsDay() - 1] : "Off", this::bins));
         rows.add(new MenuRow(RESET, null, this::reset));
         rows.add(new MenuRow("Put the TV back", null, onRestore));
-        showMenu("Settings", () -> { }, rows);
+        showMenu(settingsTitle(), () -> { }, rows);
+    }
+
+    private String settingsTitle() {
+        try {
+            String v = a.getPackageManager().getPackageInfo(a.getPackageName(), 0).versionName;
+            if (v != null && !v.isEmpty()) return "Settings  ·  v" + v;
+        } catch (android.content.pm.PackageManager.NameNotFoundException ignored) { }
+        return "Settings";
     }
 
     // ---------- parental controls ----------
