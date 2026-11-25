@@ -211,6 +211,41 @@
       "type": "youtube_channel",
       "url": "https://www.youtube.com/@Capitain-Dennis/live",
       "channelId": "UCfqaWbu8SOBtKkf7GaLuRkg"
+    },
+    {
+      "name": "MEGA Lab Underwater Reef — Hawaii",
+      "category": "Wild & Underwater",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@MEGALabCam/live",
+      "channelId": "UCTLF36lXVM7uiR-VolWHv0Q"
+    },
+    {
+      "name": "Africa Wildlife & Birds (Allen Birdcam)",
+      "category": "Wild & Underwater",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@AllenBirdcam/live",
+      "channelId": "UCFzY3MF-rYrexk1be3gnTRw"
+    },
+    {
+      "name": "TinyKittens Rescue Live",
+      "category": "Wild & Underwater",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@TinyKittens/live",
+      "channelId": "UCeL2LSl91k2VccR7XEh5IKg"
+    },
+    {
+      "name": "Nevsky Avenue — St. Petersburg, Russia",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@msbud2/live",
+      "channelId": "UCz1GKiqSoG2DSesCQ3SoFYg"
+    },
+    {
+      "name": "White Bay Beach — Soggy Dollar, BVI",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@SoggyDollar/live",
+      "channelId": "UC-CrxJnHPaM4tm2haTibUZA"
     }
   ]
 }
