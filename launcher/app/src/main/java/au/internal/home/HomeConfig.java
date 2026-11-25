@@ -24,7 +24,8 @@ final class HomeConfig {
             K_THEME = "theme", K_CAMERAS = "cameras", K_TIMED = "timed_apps",
             K_ADULT_START = "adult_start", K_ADULT_END = "adult_end",
             K_OVERLAY_CORNER = "overlay_corner", K_OVERLAY_SIZE = "overlay_size",
-            K_WORLD_CAMS = "world_cams", K_WORLD_CAMS_URL = "world_cams_url";
+            K_WORLD_CAMS = "world_cams", K_WORLD_CAMS_URL = "world_cams_url",
+            K_UPDATE_URL = "update_url";
     static final String CORNER_TR = "top_right", CORNER_TL = "top_left", CORNER_BR = "bottom_right", CORNER_BL = "bottom_left";
     static final String[] OVERLAY_CORNERS = {CORNER_TR, CORNER_TL, CORNER_BR, CORNER_BL};
     static final String[] OVERLAY_CORNER_NAMES = {"Top right", "Top left", "Bottom right", "Bottom left"};
@@ -62,6 +63,7 @@ final class HomeConfig {
     /** Public live streams ("World Cams") in empty camera slots ("on"/"off"). */
     boolean worldCamsOn() { return str(K_WORLD_CAMS, R.string.world_cams).equals("on"); }
     String worldCamsUrl() { return str(K_WORLD_CAMS_URL, R.string.world_cams_url).trim(); }
+    String updateUrl() { return str(K_UPDATE_URL, R.string.update_url).trim(); }
     String overlayCorner() { return oneOf(str(K_OVERLAY_CORNER, R.string.overlay_corner), OVERLAY_CORNERS, CORNER_TR); }
     String overlaySize() { return oneOf(str(K_OVERLAY_SIZE, R.string.overlay_size), OVERLAY_SIZES, OVERLAY_MEDIUM); }
     static String overlayCornerName(String id) { int i = indexOf(OVERLAY_CORNERS, id); return i < 0 ? id : OVERLAY_CORNER_NAMES[i]; }

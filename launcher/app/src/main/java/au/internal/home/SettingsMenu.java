@@ -161,9 +161,57 @@ final class SettingsMenu {
                 })));
         rows.add(new MenuRow("Weather", cfg.place().isEmpty() ? "Off" : cfg.place(), () -> postcode(cfg.postcode())));
         rows.add(new MenuRow("Bin night", cfg.binsDay() >= 1 && cfg.binsDay() <= 7 ? DAYS[cfg.binsDay() - 1] : "Off", this::bins));
+        if (!cfg.updateUrl().isEmpty()) rows.add(new MenuRow("Check for updates", "v" + Updater.currentVersionName(a), this::checkUpdate));
         rows.add(new MenuRow(RESET, null, this::reset));
         rows.add(new MenuRow("Put the TV back", null, onRestore));
         showMenu(settingsTitle(), () -> { }, rows);
+    }
+
+    private void checkUpdate() {
+        String url = cfg.updateUrl();
+        Toast.makeText(a, "Checking for updates…", Toast.LENGTH_SHORT).show();
+        android.content.Context app = a.getApplicationContext();
+        int curCode = Updater.currentVersionCode(a);
+        String curName = Updater.currentVersionName(a);
+        new Thread(() -> {
+            try {
+                Updater.Release r = Updater.fetch(url);
+                a.runOnUiThread(() -> {
+                    if (r.versionCode <= curCode) {
+                        show(dialog("Up to date", this::main)
+                                .setMessage("Home v" + curName + " is the latest version.")
+                                .setPositiveButton("OK", (d, w) -> main()));
+                        return;
+                    }
+                    String msg = "Current: v" + curName + "\nLatest: v" + r.versionName
+                            + (r.notes.isEmpty() ? "" : "\n\n" + r.notes);
+                    show(dialog("Update available: v" + r.versionName, this::main)
+                            .setMessage(msg)
+                            .setPositiveButton("Install update", (d, w) -> installUpdate(app, r))
+                            .setNegativeButton("Later", (d, w) -> main()));
+                });
+            } catch (Exception e) {
+                a.runOnUiThread(() -> {
+                    Toast.makeText(a, "Couldn't check for updates: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    main();
+                });
+            }
+        }, "home-update-check").start();
+    }
+
+    private void installUpdate(android.content.Context app, Updater.Release r) {
+        Toast.makeText(a, "Downloading v" + r.versionName + "…", Toast.LENGTH_LONG).show();
+        new Thread(() -> {
+            try {
+                Updater.downloadAndInstall(app, r);
+                a.runOnUiThread(() -> Toast.makeText(a, "Installing v" + r.versionName + " — Home will restart", Toast.LENGTH_LONG).show());
+            } catch (Exception e) {
+                a.runOnUiThread(() -> {
+                    Toast.makeText(a, "Update failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    main();
+                });
+            }
+        }, "home-update-install").start();
     }
 
     private String settingsTitle() {
