@@ -111,7 +111,7 @@ final class WebCamHost {
             u = "https://www.youtube-nocookie.com/embed/" + u.substring("https://www.youtube.com/embed/".length());
         }
         String sep = u.contains("?") ? "&" : "?";
-        return u + sep + "vq=small&origin=" + ORIGIN;
+        return u + sep + "origin=" + ORIGIN;
     }
 
     private void sync() {
@@ -262,12 +262,16 @@ final class WebCamHost {
         if (js.length() > 0) webView.evaluateJavascript(js.toString(), null);
     }
 
+    private static final java.util.regex.Pattern CANONICAL_VID =
+            java.util.regex.Pattern.compile("rel=\"canonical\"[^>]+watch\\?v=([A-Za-z0-9_-]{11})");
     private static final java.util.regex.Pattern LIVE_VID =
             java.util.regex.Pattern.compile("\"videoId\":\"([A-Za-z0-9_-]{11})\"");
 
     /**
      * Resolve a channel's /live page to its current live videoId (YouTube's /embed/live_stream?channel=
      * endpoint often returns "Stream unavailable" even when /channel/<id>/live is live and embeddable).
+     * Checks <link rel="canonical"> first (around byte ~2 KB, so it finishes in one chunk) and falls
+     * back to scanning for "videoId".
      */
     private static String resolveChannelLiveId(String channelId, String ua) {
         HttpURLConnection conn = null;
@@ -284,10 +288,17 @@ final class WebCamHost {
                 int n;
                 while ((n = in.read(buf)) >= 0) {
                     bos.write(buf, 0, n);
-                    if (bos.size() > 512 * 1024) break;
+                    if (bos.size() <= 32 * 1024) {
+                        java.util.regex.Matcher cm = CANONICAL_VID.matcher(bos.toString("UTF-8"));
+                        if (cm.find()) return cm.group(1);
+                    }
+                    if (bos.size() > 1536 * 1024) break;
                 }
             }
-            java.util.regex.Matcher m = LIVE_VID.matcher(bos.toString("UTF-8"));
+            String body = bos.toString("UTF-8");
+            java.util.regex.Matcher cm = CANONICAL_VID.matcher(body);
+            if (cm.find()) return cm.group(1);
+            java.util.regex.Matcher m = LIVE_VID.matcher(body);
             return m.find() ? m.group(1) : null;
         } catch (Exception e) {
             return null;
