@@ -361,6 +361,9 @@ public class MainActivity extends Activity {
                 screenTime.setDemo(false);
                 startService(ScreenTimeService.dev(this, "LIVE"));
             }
+            if (cfg.camerasOn() && cfg.worldCamsOn()) {
+                worldCams.refreshIfDue(cfg.worldCamsUrl(), () -> worldCatalog = worldCams.load());
+            }
             boolean adult = screenTime.adultMode(now);
             boolean passEnded = leftDuringPass && screenTime.hasPass(now);
             if (passEnded) screenTime.setGrownUp(0);
@@ -468,6 +471,9 @@ public class MainActivity extends Activity {
                             weather.setCompoundDrawablesRelativeWithIntrinsicBounds(Weather.icon(w.code, w.day), 0, 0, 0);
                             sky.setMood(Sky.moodFor(w.code));
                         });
+            }
+            if (cfg.camerasOn() && cfg.worldCamsOn()) {
+                worldCams.refreshIfDue(cfg.worldCamsUrl(), () -> worldCatalog = worldCams.load());
             }
             boolean adult = screenTime.adultMode(now);
             updateModeButton(adult);

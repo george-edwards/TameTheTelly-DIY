@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 /**
  * Dynamic catalog of public live streams ("World Cams") for households without local RTSP cameras.
  *
- * Loads a cached remote streams.json (refreshed at most once every 24h from GitHub), falling back
+ * Loads a cached remote streams.json (refreshed asynchronously every 5 minutes from GitHub), falling back
  * to the copy bundled in assets/streams.json. Tracks per-slot selection and user-hearted bookmarks
  * in SharedPreferences("world_cams").
  */
@@ -39,10 +39,11 @@ final class WorldCams {
     private static final String PREFS = "world_cams";
     private static final String K_JSON = "catalog_json";
     private static final String K_FETCHED = "catalog_fetched_at";
+    private static final String K_ETAG = "catalog_etag";
     private static final String K_HEARTS = "hearted";
     private static final String K_SLOT = "slot_";
     private static final String K_SLOT_WORLD = "slot_world_";
-    private static final long REFRESH_MS = 24 * 3_600_000L;
+    private static final long REFRESH_MS = 5 * 60_000L;
     private static final Pattern YT_ID = Pattern.compile("(?:v=|youtu\\.be/|embed/|live/)([A-Za-z0-9_-]{11})");
 
     static final class Stream {
@@ -84,6 +85,7 @@ final class WorldCams {
     private final Context ctx;
     private final SharedPreferences p;
     private final Random rng = new Random();
+    private volatile boolean refreshing;
 
     WorldCams(Context c) {
         ctx = c.getApplicationContext();
@@ -133,11 +135,12 @@ final class WorldCams {
         return parse(readAsset("streams.json"));
     }
 
-    /** Refresh remote streams.json at most once every 24h in a background thread. */
+    /** Refresh remote streams.json at most once every 5 minutes in a background thread (ETag-aware). */
     void refreshIfDue(String remoteUrl, Runnable onUpdated) {
-        if (remoteUrl == null || remoteUrl.trim().isEmpty()) return;
+        if (remoteUrl == null || remoteUrl.trim().isEmpty() || refreshing) return;
         long now = System.currentTimeMillis();
         if (now - p.getLong(K_FETCHED, 0L) < REFRESH_MS) return;
+        refreshing = true;
         Handler main = new Handler(Looper.getMainLooper());
         new Thread(() -> {
             HttpURLConnection conn = null;
@@ -146,15 +149,28 @@ final class WorldCams {
                 conn.setConnectTimeout(6_000);
                 conn.setReadTimeout(8_000);
                 conn.setRequestProperty("User-Agent", "HomeTV/2.20");
-                if (conn.getResponseCode() != 200) return;
+                String etag = p.getString(K_ETAG, null);
+                if (etag != null && !etag.isEmpty()) conn.setRequestProperty("If-None-Match", etag);
+                int code = conn.getResponseCode();
+                if (code == 304) {
+                    p.edit().putLong(K_FETCHED, System.currentTimeMillis()).apply();
+                    return;
+                }
+                if (code != 200) return;
                 String body = readStream(conn.getInputStream());
                 List<Stream> parsed = parse(body);
                 if (parsed.isEmpty()) return;
-                p.edit().putString(K_JSON, body).putLong(K_FETCHED, System.currentTimeMillis()).apply();
+                SharedPreferences.Editor ed = p.edit()
+                        .putString(K_JSON, body)
+                        .putLong(K_FETCHED, System.currentTimeMillis());
+                String newEtag = conn.getHeaderField("ETag");
+                if (newEtag != null && !newEtag.isEmpty()) ed.putString(K_ETAG, newEtag);
+                ed.apply();
                 if (onUpdated != null) main.post(onUpdated);
             } catch (IOException | RuntimeException e) {
                 Log.w(TAG, "catalog refresh failed: " + e.getMessage());
             } finally {
+                refreshing = false;
                 if (conn != null) conn.disconnect();
             }
         }, "world-cams-refresh").start();
