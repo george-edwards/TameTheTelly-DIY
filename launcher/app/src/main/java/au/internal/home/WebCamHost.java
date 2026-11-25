@@ -262,6 +262,40 @@ final class WebCamHost {
         if (js.length() > 0) webView.evaluateJavascript(js.toString(), null);
     }
 
+    private static final java.util.regex.Pattern LIVE_VID =
+            java.util.regex.Pattern.compile("\"videoId\":\"([A-Za-z0-9_-]{11})\"");
+
+    /**
+     * Resolve a channel's /live page to its current live videoId (YouTube's /embed/live_stream?channel=
+     * endpoint often returns "Stream unavailable" even when /channel/<id>/live is live and embeddable).
+     */
+    private static String resolveChannelLiveId(String channelId, String ua) {
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new URL("https://www.youtube.com/channel/" + channelId + "/live").openConnection();
+            conn.setInstanceFollowRedirects(true);
+            conn.setConnectTimeout(6_000);
+            conn.setReadTimeout(8_000);
+            if (ua != null) conn.setRequestProperty("User-Agent", ua);
+            if (conn.getResponseCode() != 200) return null;
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            try (InputStream in = conn.getInputStream()) {
+                int n;
+                while ((n = in.read(buf)) >= 0) {
+                    bos.write(buf, 0, n);
+                    if (bos.size() > 512 * 1024) break;
+                }
+            }
+            java.util.regex.Matcher m = LIVE_VID.matcher(bos.toString("UTF-8"));
+            return m.find() ? m.group(1) : null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
+    }
+
     /**
      * Fetch a YouTube /embed/ HTML document and inject a tiny script at the top of <head> that
      * hides AV1/VP9 from MediaSource.isTypeSupported(), forcing YouTube to serve H.264 (AVC).
@@ -270,6 +304,17 @@ final class WebCamHost {
      * decodes multiple simultaneous streams cleanly.
      */
     private static WebResourceResponse fetchWithoutAv1(String urlStr, Map<String, String> reqHeaders, String ua) {
+        if (urlStr.contains("/embed/live_stream")) {
+            android.net.Uri u = android.net.Uri.parse(urlStr);
+            String ch = u.getQueryParameter("channel");
+            if (ch != null && !ch.isEmpty()) {
+                String vid = resolveChannelLiveId(ch, ua);
+                if (vid != null) {
+                    String q = u.getEncodedQuery();
+                    urlStr = "https://" + u.getHost() + "/embed/" + vid + (q != null ? "?" + q : "");
+                }
+            }
+        }
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) new URL(urlStr).openConnection();
