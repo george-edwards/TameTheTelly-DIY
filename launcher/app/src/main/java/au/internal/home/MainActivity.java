@@ -97,6 +97,7 @@ public class MainActivity extends Activity {
     private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
     private boolean fullscreenSound;
+    private boolean leftHome;
     private long lastWeather;
     private int lastSunDay = -1;
     private double lastSunLat = Double.NaN, lastSunLon = Double.NaN;
@@ -222,7 +223,13 @@ public class MainActivity extends Activity {
                         () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
             }
             if (useWorld) {
-                worldSlots[i] = worldCams.slotStream(i, worldCatalog);
+                if (worldCams.isPinned(i)) {
+                    worldSlots[i] = worldCams.slotStream(i, worldCatalog);
+                } else {
+                    List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
+                    List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
+                    worldSlots[i] = worldCams.shuffle(i, pool, otherWorldKey(i));
+                }
                 v.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                 v.findViewById(R.id.surface).setVisibility(View.GONE);
                 updateWorldLabel(i);
@@ -376,6 +383,23 @@ public class MainActivity extends Activity {
                 });
                 if (!worldCatalog.isEmpty()) WorldCams.startChecker(worldCatalog);
             }
+            if (leftHome) {
+                leftHome = false;
+                if (!worldCatalog.isEmpty()) {
+                    List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
+                    List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
+                    for (int i = 0; i < 2; i++) {
+                        if (camIsWorld[i] && !worldCams.isPinned(i)) {
+                            WorldCams.Stream pick = worldCams.shuffle(i, pool, otherWorldKey(i));
+                            if (pick != null) {
+                                worldSlots[i] = pick;
+                                updateWorldLabel(i);
+                                webHost.setSlot(i, true, pick.embedUrl());
+                            }
+                        }
+                    }
+                }
+            }
             boolean adult = screenTime.adultMode(now);
             boolean passEnded = leftDuringPass && screenTime.hasPass(now);
             if (passEnded) screenTime.setGrownUp(0);
@@ -391,6 +415,7 @@ public class MainActivity extends Activity {
                 }
             }
         } else {
+            leftHome = true;
             if (screenTime.hasPass(now)) leftDuringPass = true;
             WorldCams.stopChecker();
             stopCams();
@@ -646,8 +671,9 @@ public class MainActivity extends Activity {
         WorldCams.Stream s = worldSlots[slot];
         if (s == null) return;
         String sound = (fullscreenCam == camViews[slot] && fullscreenSound) ? "🔊 " : "";
+        String pin = worldCams.isPinned(slot) ? "📌 " : "";
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
-        ((TextView) camViews[slot].findViewById(R.id.name)).setText(sound + prefix + s.name);
+        ((TextView) camViews[slot].findViewById(R.id.name)).setText(sound + pin + prefix + s.name);
     }
 
     private void switchWorldSlot(int slot, WorldCams.Stream s) {
@@ -688,9 +714,11 @@ public class MainActivity extends Activity {
         boolean hasLocal1 = !cfg.camUrl(1).isEmpty();
         boolean hasLocal = hasLocal0 || hasLocal1;
         boolean isFull = fullscreenCam == camViews[slot];
+        boolean isPinned = worldCams.isPinned(slot);
         List<String> items = new ArrayList<>();
         int soundIdx = -1;
         if (isFull) { soundIdx = items.size(); items.add(fullscreenSound ? "Mute sound" : "🔊 Sound on"); }
+        int pinIdx = items.size(); items.add(isPinned ? "📌 Unpin from Home (random on return)" : "📌 Pin to Home (always show this cam)");
         int heartIdx = items.size(); items.add(isH ? "♥ Remove heart" : "♡ Heart this stream");
         int nextIdx = items.size(); items.add(favs.size() > 1 ? "Next hearted stream" : "Next stream");
         int shufIdx = items.size(); items.add("Shuffle");
@@ -705,12 +733,17 @@ public class MainActivity extends Activity {
             items.add("Switch back to " + localLabel);
         }
 
-        final int sIdx = soundIdx, hIdx = heartIdx, nIdx = nextIdx, shIdx = shufIdx, aIdx = allIdx, fIdx = favIdx, lIdx = localIdx;
+        final int sIdx = soundIdx, pIdx = pinIdx, hIdx = heartIdx, nIdx = nextIdx, shIdx = shufIdx, aIdx = allIdx, fIdx = favIdx, lIdx = localIdx;
         String title = cur != null ? cur.name : "World Cams";
         showDialog(new AlertDialog.Builder(this).setTitle(title)
                 .setItems(items.toArray(new String[0]), (d, which) -> {
                     if (which == sIdx) {
                         toggleFullscreenSound(slot);
+                    } else if (which == pIdx) {
+                        worldCams.setPinned(slot, !isPinned);
+                        updateWorldLabel(slot);
+                        showLabel(camLabels[slot]);
+                        fadeLabel(camLabels[slot], 2_500);
                     } else if (which == hIdx) {
                         worldCams.toggleHeart(cur);
                         updateWorldLabel(slot);
@@ -736,23 +769,7 @@ public class MainActivity extends Activity {
 
     private void pickWorldStream(int slot, String title, List<WorldCams.Stream> pool) {
         if (pool.isEmpty()) return;
-        WorldCams.Stream cur = worldSlots[slot];
-        String[] labels = new String[pool.size()];
-        int checked = -1;
-        for (int i = 0; i < pool.size(); i++) {
-            WorldCams.Stream s = pool.get(i);
-            Boolean st = WorldCams.onlineStatus(s);
-            String dot = Boolean.TRUE.equals(st) ? "🟢 " : (Boolean.FALSE.equals(st) ? "○ " : "");
-            String heart = worldCams.isHearted(s) ? "♥ " : "";
-            String cat = s.category.isEmpty() ? "" : "  ·  " + s.category;
-            labels[i] = dot + heart + s.name + cat;
-            if (cur != null && cur.key.equals(s.key)) checked = i;
-        }
-        showDialog(new AlertDialog.Builder(this).setTitle(title)
-                .setSingleChoiceItems(labels, checked, (d, which) -> {
-                    d.dismiss();
-                    switchWorldSlot(slot, pool.get(which));
-                }));
+        WorldCamPicker.show(this, title, pool, worldCams, worldSlots[slot], s -> switchWorldSlot(slot, s));
     }
 
     // ---------- apps ----------

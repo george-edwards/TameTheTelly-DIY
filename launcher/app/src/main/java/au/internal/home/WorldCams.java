@@ -12,7 +12,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,11 +20,13 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,20 +46,23 @@ final class WorldCams {
     private static final String K_HEARTS = "hearted";
     private static final String K_SLOT = "slot_";
     private static final String K_SLOT_WORLD = "slot_world_";
+    private static final String K_SLOT_PINNED = "slot_pinned_";
     private static final long REFRESH_MS = 5 * 60_000L;
-    private static final long PROBE_GAP_MS = 1_500L;
+    private static final long PROBE_GAP_MS = 250L;
     private static final long PROBE_CYCLE_MS = 10 * 60_000L;
+    private static final int PROBE_WORKERS = 3;
     private static final Pattern YT_ID = Pattern.compile("(?:v=|youtu\\.be/|embed/|live/)([A-Za-z0-9_-]{11})");
     private static final Pattern CANONICAL_HREF = Pattern.compile("rel=\"canonical\"[^>]+href=\"([^\"]+)\"");
     private static final String PROBE_UA = "Mozilla/5.0 (Linux; Android 11; TV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
     private static final ConcurrentHashMap<String, Boolean> ONLINE = new ConcurrentHashMap<>();
     private static final Object CHECKER_LOCK = new Object();
+    private static final AtomicInteger CHECKER_CURSOR = new AtomicInteger(0);
     private static volatile boolean checkerRunning;
     private static volatile List<Stream> checkerStreams = Collections.emptyList();
-    private static Thread checkerThread;
-    private static int checkerCursor;
-    private static long checkerCycleDoneAt;
+    private static volatile Runnable statusListener;
+    private static final List<Thread> CHECKER_THREADS = new ArrayList<>();
+    private static volatile long checkerCycleDoneAt;
 
     static final class Stream {
         final String key;
@@ -68,14 +72,25 @@ final class WorldCams {
         final String url;
         final String channelId;
         final String match;
+        final double lat;
+        final double lon;
+        final boolean hasCoords;
 
         Stream(String name, String category, String type, String url, String channelId, String match) {
+            this(name, category, type, url, channelId, match, Double.NaN, Double.NaN);
+        }
+
+        Stream(String name, String category, String type, String url, String channelId, String match,
+               double lat, double lon) {
             this.name = name;
             this.category = category;
             this.type = type;
             this.url = url;
             this.channelId = channelId;
             this.match = match;
+            this.lat = lat;
+            this.lon = lon;
+            this.hasCoords = !Double.isNaN(lat) && !Double.isNaN(lon);
             this.key = "youtube_channel".equals(type) && !channelId.isEmpty() ? "ch:" + channelId : url;
         }
 
@@ -126,13 +141,17 @@ final class WorldCams {
                 String name = o.optString("name", "").trim();
                 String url = o.optString("url", "").trim();
                 if (name.isEmpty() || url.isEmpty()) continue;
+                double lat = o.has("lat") && !o.isNull("lat") ? o.optDouble("lat", Double.NaN) : Double.NaN;
+                double lon = o.has("lon") && !o.isNull("lon") ? o.optDouble("lon", Double.NaN) : Double.NaN;
                 out.add(new Stream(
                         name,
                         o.optString("category", "").trim(),
                         o.optString("type", "youtube_channel").trim(),
                         url,
                         o.optString("channelId", "").trim(),
-                        o.optString("match", "").trim()
+                        o.optString("match", "").trim(),
+                        lat,
+                        lon
                 ));
             }
             return out;
@@ -221,56 +240,92 @@ final class WorldCams {
         ONLINE.clear();
     }
 
+    /** Sort earthbound streams West (-180°) -> East (+180°), with roving/orbital streams at the end. */
+    static List<Stream> sortedByLongitude(List<Stream> list) {
+        List<Stream> out = new ArrayList<>(list);
+        Collections.sort(out, (a, b) -> {
+            if (a.hasCoords != b.hasCoords) return a.hasCoords ? -1 : 1;
+            if (a.hasCoords) {
+                int c = Double.compare(a.lon, b.lon);
+                if (c != 0) return c;
+            }
+            return a.name.compareToIgnoreCase(b.name);
+        });
+        return out;
+    }
+
+    static void setStatusListener(Runnable listener) {
+        statusListener = listener;
+    }
+
     /**
-     * Start (or update) the low-priority background probe that gently cycles through all feeds
-     * one at a time while Home is on top. Pauses between feeds and between full cycles so TV
-     * UI and playback performance are unaffected.
+     * Start (or update) the low-priority background probe pool (3 MIN_PRIORITY daemon threads)
+     * that gently cycles through all feeds while Home is on top.
      */
     static void startChecker(List<Stream> streams) {
         if (streams == null || streams.isEmpty()) return;
         List<Stream> snapshot = new ArrayList<>(streams);
         synchronized (CHECKER_LOCK) {
             checkerStreams = snapshot;
-            if (checkerRunning && checkerThread != null && checkerThread.isAlive()) return;
+            boolean anyAlive = false;
+            for (Thread t : CHECKER_THREADS) if (t.isAlive()) { anyAlive = true; break; }
+            if (checkerRunning && anyAlive) return;
+            CHECKER_THREADS.clear();
             checkerRunning = true;
-            Thread t = new Thread(WorldCams::runCheckerLoop, "world-cams-probe");
-            t.setDaemon(true);
-            t.setPriority(Thread.MIN_PRIORITY);
-            checkerThread = t;
-            t.start();
+            for (int w = 0; w < PROBE_WORKERS; w++) {
+                Thread t = new Thread(WorldCams::runCheckerLoop, "world-cams-probe-" + w);
+                t.setDaemon(true);
+                t.setPriority(Thread.MIN_PRIORITY);
+                CHECKER_THREADS.add(t);
+                t.start();
+            }
         }
     }
 
-    /** Stop the background probe (e.g. when leaving Home). Preserves cursor & cached results. */
+    /** Stop the background probe pool (e.g. when leaving Home). Preserves cursor & cached results. */
     static void stopChecker() {
         synchronized (CHECKER_LOCK) {
             checkerRunning = false;
-            if (checkerThread != null) {
-                checkerThread.interrupt();
-                checkerThread = null;
-            }
+            for (Thread t : CHECKER_THREADS) t.interrupt();
+            CHECKER_THREADS.clear();
         }
     }
 
     private static void runCheckerLoop() {
+        Handler main = new Handler(Looper.getMainLooper());
         while (checkerRunning) {
             List<Stream> list = checkerStreams;
             if (list.isEmpty()) break;
-            if (checkerCursor >= list.size()) {
-                checkerCursor = 0;
-                checkerCycleDoneAt = System.currentTimeMillis();
-            }
-            if (checkerCursor == 0 && checkerCycleDoneAt > 0L) {
+            int idx = CHECKER_CURSOR.getAndIncrement();
+            if (idx >= list.size()) {
+                synchronized (CHECKER_LOCK) {
+                    if (CHECKER_CURSOR.get() >= list.size()) {
+                        if (checkerCycleDoneAt == 0L || System.currentTimeMillis() - checkerCycleDoneAt >= PROBE_CYCLE_MS) {
+                            checkerCycleDoneAt = System.currentTimeMillis();
+                        }
+                    }
+                }
                 long rem = PROBE_CYCLE_MS - (System.currentTimeMillis() - checkerCycleDoneAt);
                 if (rem > 0L) {
                     try { Thread.sleep(rem); }
                     catch (InterruptedException e) { break; }
-                    continue;
+                }
+                synchronized (CHECKER_LOCK) {
+                    if (CHECKER_CURSOR.get() >= list.size()) {
+                        CHECKER_CURSOR.set(0);
+                    }
+                }
+                continue;
+            }
+            Stream s = list.get(idx);
+            Boolean live = probeStream(s);
+            if (live != null) {
+                Boolean prev = ONLINE.put(s.key, live);
+                if (!live.equals(prev)) {
+                    Runnable l = statusListener;
+                    if (l != null) main.post(l);
                 }
             }
-            Stream s = list.get(checkerCursor++);
-            Boolean live = probeStream(s);
-            if (live != null) ONLINE.put(s.key, live);
             if (!checkerRunning) break;
             try { Thread.sleep(PROBE_GAP_MS); }
             catch (InterruptedException e) { break; }
@@ -307,33 +362,40 @@ final class WorldCams {
         }
     }
 
+    /**
+     * Stream-scan YouTube HTML with a tiny sliding overlap window (16 KB RAM) up to 2 MB so
+     * watch?v= pages whose ytInitialPlayerResponse appears around 500–900 KB are detected reliably.
+     */
     private static Boolean probeYouTubeHtml(String urlStr, boolean isChannelLive) {
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) new URL(urlStr).openConnection();
             conn.setInstanceFollowRedirects(true);
-            conn.setConnectTimeout(5_000);
-            conn.setReadTimeout(6_000);
+            conn.setConnectTimeout(6_000);
+            conn.setReadTimeout(8_000);
             conn.setRequestProperty("User-Agent", PROBE_UA);
             conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
             int code = conn.getResponseCode();
             if (code == 404 || code == 410) return Boolean.FALSE;
             if (code != 200) return null;
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
             byte[] buf = new byte[8192];
+            String tail = "";
+            int total = 0;
             boolean sawWatchCanonical = false;
             try (InputStream in = conn.getInputStream()) {
                 int n;
                 while (checkerRunning && (n = in.read(buf)) >= 0) {
-                    bos.write(buf, 0, n);
-                    String chunk = bos.toString("UTF-8");
+                    total += n;
+                    String chunk = tail + new String(buf, 0, n, StandardCharsets.UTF_8);
                     if (chunk.contains("\"isLiveNow\":true")) return Boolean.TRUE;
                     if (chunk.contains("\"isLiveNow\":false")
                             || chunk.contains("\"LIVE_STREAM_OFFLINE\"")
-                            || chunk.contains("\"isUpcoming\":true")) {
+                            || chunk.contains("\"isUpcoming\":true")
+                            || chunk.contains("\"status\":\"ERROR\"")
+                            || chunk.contains("\"status\":\"UNPLAYABLE\"")) {
                         return Boolean.FALSE;
                     }
-                    if (isChannelLive && !sawWatchCanonical && bos.size() <= 48 * 1024) {
+                    if (isChannelLive && !sawWatchCanonical && total <= 64 * 1024) {
                         Matcher cm = CANONICAL_HREF.matcher(chunk);
                         if (cm.find()) {
                             String href = cm.group(1);
@@ -341,11 +403,13 @@ final class WorldCams {
                             else return Boolean.FALSE;
                         }
                     }
-                    if (bos.size() >= 384 * 1024) break;
+                    tail = chunk.length() > 128 ? chunk.substring(chunk.length() - 128) : chunk;
+                    if (total >= 2 * 1024 * 1024) break;
                 }
             }
+            if (!checkerRunning) return null;
             if (isChannelLive) return sawWatchCanonical ? Boolean.TRUE : Boolean.FALSE;
-            return null;
+            return Boolean.FALSE;
         } catch (IOException | RuntimeException e) {
             return null;
         } finally {
@@ -389,6 +453,9 @@ final class WorldCams {
 
     boolean slotUsesWorld(int slot) { return p.getBoolean(K_SLOT_WORLD + slot, false); }
     void setSlotUsesWorld(int slot, boolean on) { p.edit().putBoolean(K_SLOT_WORLD + slot, on).apply(); }
+
+    boolean isPinned(int slot) { return p.getBoolean(K_SLOT_PINNED + slot, false); }
+    void setPinned(int slot, boolean pinned) { p.edit().putBoolean(K_SLOT_PINNED + slot, pinned).apply(); }
 
     Stream slotStream(int slot, List<Stream> all) {
         if (all.isEmpty()) return null;

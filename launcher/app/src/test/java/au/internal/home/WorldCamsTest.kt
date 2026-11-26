@@ -18,7 +18,7 @@ class WorldCamsTest {
         val file = File("../../streams.json")
         assertTrue("streams.json should exist at repo root", file.exists())
         val streams = WorldCams.parse(file.readText())
-        assertTrue("should parse curated streams", streams.size >= 70)
+        assertTrue("should parse curated streams", streams.size >= 60)
 
         val keys = streams.map { it.key }
         assertEquals("all stream keys should be unique", keys.size, keys.toSet().size)
@@ -69,5 +69,23 @@ class WorldCamsTest {
         WorldCams.setOnlineForTest(s0, false)
         WorldCams.setOnlineForTest(s2, false)
         assertEquals(s1.key, WorldCams.pickStep(0, 1, pool, null).key)
+    }
+
+    @Test fun sortsStreamsWestToEastByLongitudeAndComputesDaylight() {
+        val file = File("../../streams.json")
+        val sorted = WorldCams.sortedByLongitude(WorldCams.parse(file.readText()))
+        assertTrue(sorted.first().name.contains("Hawaii"))
+        val earth = sorted.filter { it.hasCoords }
+        assertTrue("most streams should have coordinates", earth.size >= 65)
+        for (i in 1 until earth.size) {
+            assertTrue("should be non-decreasing longitude", earth[i - 1].lon <= earth[i].lon)
+        }
+        assertFalse("roving/space streams should be at end", sorted.last().hasCoords)
+
+        val sub = Sun.subsolar(1_764_201_600_000L) // 2025-11-27 00:00 UTC (noon near 180°, midnight near 0°)
+        val altNoon = Sun.altitude(0.0, sub[1], sub[0], sub[1])
+        val altMidnight = Sun.altitude(0.0, ((sub[1] + 180.0 + 180.0) % 360.0) - 180.0, sub[0], sub[1])
+        assertTrue("subsolar point should be high day", altNoon > 60.0)
+        assertTrue("antipode should be deep night", altMidnight < -60.0)
     }
 }

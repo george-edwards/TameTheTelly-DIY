@@ -121,12 +121,20 @@ final class LocalAdb {
 
     /** Open the TV's Developer options (if unlocked) or About screen (to tap Build 7 times), falling back to Settings. */
     static void openAdbSettings(Context c) {
-        String[] actions = isDevOptionsEnabled(c)
+        boolean devOn = isDevOptionsEnabled(c);
+        String[] actions = devOn
                 ? new String[]{Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS, Settings.ACTION_DEVICE_INFO_SETTINGS, Settings.ACTION_SETTINGS}
                 : new String[]{Settings.ACTION_DEVICE_INFO_SETTINGS, Settings.ACTION_SETTINGS};
+        String highlightKey = devOn ? "enable_adb" : "build";
         for (String action : actions) {
             try {
-                c.startActivity(new Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                Intent i = new Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                // Hint Settings to scroll/focus directly on USB debugging or Build number where supported.
+                android.os.Bundle args = new android.os.Bundle();
+                args.putString(":settings:fragment_args_key", highlightKey);
+                i.putExtra(":settings:fragment_args_key", highlightKey);
+                i.putExtra(":settings:show_fragment_args", args);
+                c.startActivity(i);
                 return;
             } catch (ActivityNotFoundException | SecurityException ignored) { }
         }

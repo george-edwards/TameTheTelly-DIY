@@ -37,8 +37,8 @@ android {
         minSdk 26
         targetSdk 34
         // CalVer: YY.MM.DD.N (versionCode = YYMMDDNN, strictly increasing)
-        versionCode 26112601
-        versionName "26.11.26.1"
+        versionCode 26112701
+        versionName "26.11.27.1"
     }
     signingConfigs {
         release {

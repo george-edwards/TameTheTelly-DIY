@@ -36,4 +36,38 @@ final class Sun {
     private static long toMillis(double julian) {
         return Math.round((julian - 2440587.5) * 86_400_000L);
     }
+
+    /**
+     * Subsolar point {declinationDeg, subsolarLonDeg} at `epochMs` (UTC).
+     * Good to ~0.3°, plenty for a live world day/night terminator plot.
+     */
+    static double[] subsolar(long epochMs) {
+        double jd = epochMs / 86_400_000.0 + 2440587.5;
+        double n = jd - 2451545.0;
+        double l = (280.460 + 0.9856474 * n) % 360.0;
+        if (l < 0) l += 360.0;
+        double g = Math.toRadians((357.528 + 0.9856003 * n) % 360.0);
+        double lambda = Math.toRadians(l + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g));
+        double eps = Math.toRadians(23.439 - 0.0000004 * n);
+        double declDeg = Math.toDegrees(Math.asin(Math.sin(eps) * Math.sin(lambda)));
+
+        // Greenwich Mean Sidereal Time / Equation of Time approximation via UTC hours
+        double utcHours = ((epochMs % 86_400_000L) + 86_400_000L) % 86_400_000L / 3_600_000.0;
+        double ra = Math.toDegrees(Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda)));
+        double eotDeg = ((l - ra + 540.0) % 360.0) - 180.0;
+        double subLon = 180.0 - utcHours * 15.0 - eotDeg;
+        subLon = ((subLon + 540.0) % 360.0) - 180.0;
+        return new double[]{declDeg, subLon};
+    }
+
+    /** Solar altitude in degrees [-90, +90] at (latDeg, lonDeg) given subsolar (declDeg, subLonDeg). */
+    static double altitude(double latDeg, double lonDeg, double declDeg, double subLonDeg) {
+        double lat = Math.toRadians(latDeg);
+        double decl = Math.toRadians(declDeg);
+        double dLon = Math.toRadians(lonDeg - subLonDeg);
+        double sinAlt = Math.sin(lat) * Math.sin(decl) + Math.cos(lat) * Math.cos(decl) * Math.cos(dLon);
+        if (sinAlt > 1.0) sinAlt = 1.0;
+        else if (sinAlt < -1.0) sinAlt = -1.0;
+        return Math.toDegrees(Math.asin(sinAlt));
+    }
 }
