@@ -34,8 +34,8 @@ final class HomeConfig {
     static final String[] OVERLAY_SIZE_NAMES = {"Small", "Medium", "Large"};
     /** Timed apps: every app on Home (TimedApps). */
     static final String TIMED_ALL = "all";
-    /** Camera keys: K_CAM_NAME + "1" etc. A blank SD address hides that camera. */
-    static final String K_CAM_NAME = "cam_name", K_CAM_URL = "cam_url", K_CAM_HD = "cam_url_hd";
+    /** Camera keys: K_CAM_NAME + "1" etc. K_CAM_HIDDEN + "1" hides a camera while keeping its address. */
+    static final String K_CAM_NAME = "cam_name", K_CAM_URL = "cam_url", K_CAM_HD = "cam_url_hd", K_CAM_HIDDEN = "cam_hidden";
     static final int CAMERAS = 2;
 
     private static final Object UNSET = new Object();
@@ -125,11 +125,34 @@ final class HomeConfig {
     private static final int[] CAM_NAMES = {R.string.cam1_name, R.string.cam2_name};
     private static final int[] CAM_URLS = {R.string.cam1_url, R.string.cam2_url};
     private static final int[] CAM_HDS = {R.string.cam1_url_hd, R.string.cam2_url_hd};
-    /** Camera i (0-based): name, low-res address, 1080p address (falls back to the low-res one). */
+    /** Camera i (0-based): name, low-res address (empty when hidden), 1080p address (falls back to the low-res one). */
     String camName(int i) { return str(K_CAM_NAME + (i + 1), CAM_NAMES[i]); }
-    String camUrl(int i) { return str(K_CAM_URL + (i + 1), CAM_URLS[i]).trim(); }
+    /** Saved RTSP address even when hidden (falls back to cameras.xml if hidden under an older version with ""). */
+    String camRawUrl(int i) {
+        String v = p.getString(K_CAM_URL + (i + 1), null);
+        if (v != null && !v.trim().isEmpty()) return v.trim();
+        return r.getString(CAM_URLS[i]).trim();
+    }
+    boolean camHidden(int i) {
+        String n = Integer.toString(i + 1);
+        String h = p.getString(K_CAM_HIDDEN + n, null);
+        if (h != null) return h.equals("on");
+        String v = p.getString(K_CAM_URL + n, null);
+        return v != null && v.trim().isEmpty() && !r.getString(CAM_URLS[i]).trim().isEmpty();
+    }
+    void setCamHidden(int i, boolean hidden) {
+        String n = Integer.toString(i + 1);
+        SharedPreferences.Editor ed = p.edit().putString(K_CAM_HIDDEN + n, hidden ? "on" : "off");
+        if (!hidden) {
+            String v = p.getString(K_CAM_URL + n, null);
+            if (v != null && v.trim().isEmpty()) ed.remove(K_CAM_URL + n);
+        }
+        ed.apply();
+    }
+    String camUrl(int i) { return camHidden(i) ? "" : camRawUrl(i); }
+    String camRawHdUrl(int i) { return str(K_CAM_HD + (i + 1), CAM_HDS[i]).trim(); }
     String camHdUrl(int i) {
-        String hd = str(K_CAM_HD + (i + 1), CAM_HDS[i]).trim();
+        String hd = camRawHdUrl(i);
         return hd.isEmpty() ? camUrl(i) : hd;
     }
 
@@ -173,6 +196,11 @@ final class HomeConfig {
                 break;
             case "reset": reset(); return null;
             default:
+                if (key.matches("cam_hidden[12]")) {
+                    if (!value.equals("on") && !value.equals("off")) return key + ": on or off";
+                    setCamHidden(key.charAt(key.length() - 1) - '1', value.equals("on"));
+                    return null;
+                }
                 if (!key.equals(K_FAMILY) && !key.equals(K_PLACE) && !key.equals(K_TIMED) && !key.equals(K_TZ)
                         && !key.matches("cam_(name|url|url_hd)[12]")) return "unknown key " + key;
         }

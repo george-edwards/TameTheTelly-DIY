@@ -44,7 +44,7 @@ public class MainActivity extends Activity {
 
     private static volatile MainActivity active;
 
-    /** Step visible World Cam card(s) forward (dir > 0) or backward (dir < 0) by a non-overlapping pair. */
+    /** Step the visible World Cam card forward (dir > 0) or backward (dir < 0). */
     static void stepWorldCams(Context c, int dir) {
         MainActivity a = active;
         if (a != null) {
@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
         if (all.isEmpty()) return;
         List<WorldCams.Stream> favs = wc.hearted(all);
         List<WorldCams.Stream> pool = favs.size() > 1 ? favs : all;
-        if (dir < 0) wc.prevPair(pool); else wc.nextPair(pool);
+        if (dir < 0) wc.prev(0, pool, null); else wc.next(0, pool, null);
     }
 
     /** This launcher's own Home screen, startable from anywhere. */
@@ -199,23 +199,25 @@ public class MainActivity extends Activity {
             webOnLive[i] = () -> { if (!camViews[idx].hasFocus()) fadeLabel(camLabels[idx], LABEL_FADE_MS); };
         }
         webHost = new WebCamHost(this, findViewById(R.id.webBackdrop), camViews, webOnLive);
+        boolean hasAnyLocal = !cfg.camUrl(0).isEmpty() || !cfg.camUrl(1).isEmpty();
+        boolean worldMode = cfg.camerasOn() && cfg.worldCamsOn() && !worldCatalog.isEmpty()
+                && (!hasAnyLocal || worldCams.slotUsesWorld(0));
         for (int i = 0; i < 2; i++) {
             View v = camViews[i];
             View label = camLabels[i];
             boolean hasLocal = !cfg.camUrl(i).isEmpty();
-            boolean useWorld = cfg.camerasOn() && cfg.worldCamsOn() && !worldCatalog.isEmpty()
-                    && (!hasLocal || worldCams.slotUsesWorld(i));
+            boolean useWorld = worldMode && i == 0;
             camIsWorld[i] = useWorld;
-            camOn[i] = cfg.camerasOn() && (hasLocal || useWorld);
+            camOn[i] = cfg.camerasOn() && (worldMode ? useWorld : hasLocal);
             v.setVisibility(camOn[i] ? View.VISIBLE : View.GONE);
             final int idx = i;
-            if (hasLocal) {
+            if (hasLocal && !worldMode) {
                 feeds[i] = new CameraFeed(this, cfg.camUrl(i), cfg.camHdUrl(i),
                         (TextureView) v.findViewById(R.id.surface), v.findViewById(R.id.state),
                         () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
             }
-            if (!worldCatalog.isEmpty()) worldSlots[i] = worldCams.slotStream(i, worldCatalog);
             if (useWorld) {
+                worldSlots[i] = worldCams.slotStream(i, worldCatalog);
                 v.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                 v.findViewById(R.id.surface).setVisibility(View.GONE);
                 updateWorldLabel(i);
@@ -560,19 +562,19 @@ public class MainActivity extends Activity {
         String desc;
         if (!anyOn) {
             icon = R.drawable.ic_cam_off;
-            desc = hasLocal ? "Show cameras" : "Show World cams";
+            desc = hasLocal ? "Show cameras" : "Show World cam";
         } else if (allWorld) {
             icon = R.drawable.ic_world;
             desc = "Hide cameras (full-width apps)";
         } else {
             icon = R.drawable.ic_cam;
-            desc = "Switch to World cams";
+            desc = "Switch to World cam";
         }
         camBtn.setImageResource(icon);
         camBtn.setContentDescription(desc);
     }
 
-    /** Cycle right-hand panel: Local RTSP -> World Cams -> Off (full-width apps) -> Local RTSP. */
+    /** Cycle right-hand panel: Local RTSP (if any) -> 1x World Cam -> Off (full-width apps) -> repeat. */
     private void cycleCameraPanel() {
         boolean anyOn = camOn[0] || camOn[1];
         boolean allWorld = anyOn && (!camOn[0] || camIsWorld[0]) && (!camOn[1] || camIsWorld[1]);
@@ -585,7 +587,7 @@ public class MainActivity extends Activity {
             } else {
                 cfg.set(HomeConfig.K_WORLD_CAMS, "on");
                 worldCams.setSlotUsesWorld(0, true);
-                worldCams.setSlotUsesWorld(1, true);
+                worldCams.setSlotUsesWorld(1, false);
             }
         } else if (allWorld) {
             cfg.set(HomeConfig.K_CAMERAS, "off");
@@ -593,32 +595,9 @@ public class MainActivity extends Activity {
             cfg.set(HomeConfig.K_CAMERAS, "on");
             cfg.set(HomeConfig.K_WORLD_CAMS, "on");
             worldCams.setSlotUsesWorld(0, true);
-            worldCams.setSlotUsesWorld(1, true);
+            worldCams.setSlotUsesWorld(1, false);
         }
         recreate();
-    }
-
-    private void setSlotMode(int slot, boolean toWorld) {
-        if (camIsWorld[slot] == toWorld) return;
-        camIsWorld[slot] = toWorld;
-        worldCams.setSlotUsesWorld(slot, toWorld);
-        if (toWorld) {
-            if (feeds[slot] != null) feeds[slot].stop();
-            camViews[slot].setBackgroundColor(android.graphics.Color.TRANSPARENT);
-            camViews[slot].findViewById(R.id.surface).setVisibility(View.GONE);
-            if (worldSlots[slot] == null && !worldCatalog.isEmpty()) worldSlots[slot] = worldCams.slotStream(slot, worldCatalog);
-            updateWorldLabel(slot);
-            showLabel(camLabels[slot]);
-            webHost.setSlot(slot, true, worldSlots[slot] != null ? worldSlots[slot].embedUrl() : null);
-            webHost.start();
-        } else {
-            webHost.setSlot(slot, false, null);
-            camViews[slot].setBackgroundResource(R.drawable.cam_bg);
-            camViews[slot].findViewById(R.id.surface).setVisibility(View.VISIBLE);
-            ((TextView) camViews[slot].findViewById(R.id.name)).setText(cfg.camName(slot));
-            showLabel(camLabels[slot]);
-            if (feeds[slot] != null) feeds[slot].start();
-        }
     }
 
     private void localCamMenu(int slot) {
@@ -632,7 +611,10 @@ public class MainActivity extends Activity {
                     if (which == 0) {
                         ScreenTimeService.camOverlay(this, wasPinned ? "off" : "set", slot);
                     } else if (which == 1 && canWorld) {
-                        setSlotMode(slot, true);
+                        cfg.set(HomeConfig.K_WORLD_CAMS, "on");
+                        worldCams.setSlotUsesWorld(0, true);
+                        worldCams.setSlotUsesWorld(1, false);
+                        recreate();
                     }
                 }));
     }
@@ -679,7 +661,9 @@ public class MainActivity extends Activity {
         WorldCams.Stream cur = worldSlots[slot];
         boolean isH = worldCams.isHearted(cur);
         List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
-        boolean hasLocal = !cfg.camUrl(slot).isEmpty();
+        boolean hasLocal0 = !cfg.camUrl(0).isEmpty();
+        boolean hasLocal1 = !cfg.camUrl(1).isEmpty();
+        boolean hasLocal = hasLocal0 || hasLocal1;
         boolean isFull = fullscreenCam == camViews[slot];
         List<String> items = new ArrayList<>();
         int soundIdx = -1;
@@ -690,7 +674,11 @@ public class MainActivity extends Activity {
         int allIdx = items.size(); items.add("Browse all streams (" + worldCatalog.size() + ")…");
         int favIdx = -1, localIdx = -1;
         if (!favs.isEmpty()) { favIdx = items.size(); items.add("♥ Hearted streams (" + favs.size() + ")…"); }
-        if (hasLocal) { localIdx = items.size(); items.add("Switch back to " + cfg.camName(slot)); }
+        if (hasLocal) {
+            localIdx = items.size();
+            String localLabel = (hasLocal0 && hasLocal1) ? "cameras" : (hasLocal0 ? cfg.camName(0) : cfg.camName(1));
+            items.add("Switch back to " + localLabel);
+        }
 
         final int sIdx = soundIdx, hIdx = heartIdx, nIdx = nextIdx, shIdx = shufIdx, aIdx = allIdx, fIdx = favIdx, lIdx = localIdx;
         String title = cur != null ? cur.name : "World Cams";
@@ -714,7 +702,9 @@ public class MainActivity extends Activity {
                     } else if (which == fIdx) {
                         pickWorldStream(slot, "♥ Hearted streams", favs);
                     } else if (which == lIdx) {
-                        setSlotMode(slot, false);
+                        worldCams.setSlotUsesWorld(0, false);
+                        worldCams.setSlotUsesWorld(1, false);
+                        recreate();
                     }
                 }));
     }

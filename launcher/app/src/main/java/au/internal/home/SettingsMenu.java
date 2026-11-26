@@ -145,11 +145,13 @@ final class SettingsMenu {
         WorldCams wc = new WorldCams(a);
         int hearts = wc.heartedCount(wc.load());
         String wcVal = cfg.worldCamsOn() ? (hearts > 0 ? "On (" + hearts + " ♥)" : "On") : "Off";
-        rows.add(new MenuRow("World cams", wcVal, () -> {
+        rows.add(new MenuRow("World cam", wcVal, () -> {
             boolean on = !cfg.worldCamsOn();
             cfg.set(HomeConfig.K_WORLD_CAMS, on ? "on" : "off");
+            wc.setSlotUsesWorld(0, on);
+            wc.setSlotUsesWorld(1, false);
             if (on && !cfg.camerasOn()) cfg.set(HomeConfig.K_CAMERAS, "on");
-            changed(on ? "World cams on (hold OK on a card to switch or ♥)" : "World cams off");
+            changed(on ? "World cam on (hold OK on the card to switch or ♥)" : "World cam off");
         }));
         rows.add(new MenuRow("Camera setup", null, this::cameras));
         rows.add(new MenuRow("Grown-up code", HomeConfig.dots(cfg.parentCode().length()), this::newCode));
@@ -727,8 +729,10 @@ final class SettingsMenu {
     private void cameras() {
         boolean anyCam = !cfg.camUrl(0).isEmpty() || !cfg.camUrl(1).isEmpty();
         String[] labels = new String[HomeConfig.CAMERAS + (anyCam ? 2 : 0)];
-        for (int i = 0; i < HomeConfig.CAMERAS; i++)
-            labels[i] = "Camera " + (i + 1) + ": " + cfg.camName(i) + (cfg.camUrl(i).isEmpty() ? " (hidden)" : "");
+        for (int i = 0; i < HomeConfig.CAMERAS; i++) {
+            String suffix = cfg.camHidden(i) ? " (hidden)" : (cfg.camRawUrl(i).isEmpty() ? " (not set)" : "");
+            labels[i] = "Camera " + (i + 1) + ": " + cfg.camName(i) + suffix;
+        }
         if (anyCam) {
             labels[HomeConfig.CAMERAS] = "Overlay corner: " + HomeConfig.overlayCornerName(cfg.overlayCorner());
             labels[HomeConfig.CAMERAS + 1] = "Overlay size: " + HomeConfig.overlaySizeName(cfg.overlaySize());
@@ -764,16 +768,31 @@ final class SettingsMenu {
 
     private void camera(int i) {
         String n = Integer.toString(i + 1);
-        String[] items = {"Name: " + cfg.camName(i), "Address (rtsp://…)", "Full-screen address (optional)", "Hide this camera"};
-        show(dialog("Camera " + n, this::cameras).setItems(items, (d, which) -> {
+        boolean hidden = cfg.camHidden(i);
+        boolean hasAddr = !cfg.camRawUrl(i).isEmpty();
+        List<String> items = new ArrayList<>();
+        items.add("Name: " + cfg.camName(i));
+        items.add("Address (rtsp://…)");
+        items.add("Full-screen address (optional)");
+        if (hidden) items.add("Show this camera");
+        else if (hasAddr) items.add("Hide this camera");
+        show(dialog("Camera " + n, this::cameras).setItems(items.toArray(new String[0]), (d, which) -> {
             switch (which) {
                 case 0: text("Camera " + n + " name", cfg.camName(i), false, () -> camera(i), v -> save(HomeConfig.K_CAM_NAME + n, v)); break;
-                case 1: text("Camera " + n + " address", cfg.camUrl(i), true, () -> camera(i), v -> save(HomeConfig.K_CAM_URL + n, v)); break;
-                case 2: text("Camera " + n + " full-screen address (blank: same as above)", cfg.camHdUrl(i).equals(cfg.camUrl(i)) ? "" : cfg.camHdUrl(i), true, () -> camera(i), v -> {
+                case 1: text("Camera " + n + " address", cfg.camRawUrl(i), true, () -> camera(i), v -> {
+                    if (v.trim().isEmpty()) return;
+                    cfg.set(HomeConfig.K_CAM_URL + n, v.trim());
+                    cfg.setCamHidden(i, false);
+                    changed("Saved");
+                }); break;
+                case 2: text("Camera " + n + " full-screen address (blank: same as above)", cfg.camRawHdUrl(i).equals(cfg.camRawUrl(i)) ? "" : cfg.camRawHdUrl(i), true, () -> camera(i), v -> {
                     cfg.set(HomeConfig.K_CAM_HD + n, v.trim());
                     changed("Saved");
                 }); break;
-                case 3: cfg.set(HomeConfig.K_CAM_URL + n, ""); changed("Camera " + n + " hidden"); break;
+                case 3:
+                    cfg.setCamHidden(i, !hidden);
+                    changed("Camera " + n + (hidden ? " shown" : " hidden"));
+                    break;
             }
         }));
     }
@@ -922,7 +941,7 @@ final class SettingsMenu {
             targets.add(t);
             String lbl = RemoteKeys.targetLabel(t, installed, ta, cfg);
             if ((RemoteKeys.ACTION_WORLD_NEXT.equals(t) || RemoteKeys.ACTION_WORLD_PREV.equals(t)) && !cfg.worldCamsOn()) {
-                lbl += " (turn on World cams first)";
+                lbl += " (turn on World cam first)";
             }
             labels.add(lbl);
         }
@@ -948,10 +967,14 @@ final class SettingsMenu {
                     String chosen = targets.get(which);
                     if ((RemoteKeys.ACTION_WORLD_NEXT.equals(chosen) || RemoteKeys.ACTION_WORLD_PREV.equals(chosen))
                             && !cfg.worldCamsOn()) {
-                        show(dialog("Turn on World cams first", () -> pickTarget(id, back))
-                                .setMessage("This action steps through World Cams. Turn on World cams in Settings (or tap the camera icon in Home's top corner) first.")
+                        show(dialog("Turn on World cam first", () -> pickTarget(id, back))
+                                .setMessage("This action steps through World Cams. Turn on World cam in Settings (or tap the camera icon in Home's top corner) first.")
                                 .setPositiveButton("Turn on & map", (x, w) -> {
                                     cfg.set(HomeConfig.K_WORLD_CAMS, "on");
+                                    WorldCams wc = new WorldCams(a);
+                                    wc.setSlotUsesWorld(0, true);
+                                    wc.setSlotUsesWorld(1, false);
+                                    if (!cfg.camerasOn()) cfg.set(HomeConfig.K_CAMERAS, "on");
                                     rk.set(id, chosen);
                                     changed(rk.label(id) + " → " + RemoteKeys.targetLabel(chosen, installed, ta, cfg));
                                 })

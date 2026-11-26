@@ -323,8 +323,8 @@ final class RemoteKeys {
             case ACTION_CAM_2: return (cfg != null ? cfg.camName(1) : "Camera 2") + " overlay";
             case ACTION_CAM_BOTH: return "Both cameras overlay";
             case ACTION_CAM_CYCLE: return "Camera overlay (cycle)";
-            case ACTION_WORLD_NEXT: return "Next World Cams";
-            case ACTION_WORLD_PREV: return "Previous World Cams";
+            case ACTION_WORLD_NEXT: return "Next World Cam";
+            case ACTION_WORLD_PREV: return "Previous World Cam";
             case ACTION_NOOP: return "Do nothing (disabled)";
         }
         if (target.startsWith(APP_PREFIX)) {
