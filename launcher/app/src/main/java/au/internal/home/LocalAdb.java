@@ -173,8 +173,7 @@ final class LocalAdb {
                 : new String[]{
                         "Select \"" + settingsButtonLabel(a) + "\" below",
                         "Scroll down to Android TV OS build and press OK 7 times",
-                        "Press Back → open Developer options → turn USB debugging ON",
-                        "Press Home on the remote to come back"
+                        "Press Home and try again for one final step"
                 };
 
         for (int i = 0; i < steps.length; i++) {
@@ -211,7 +210,7 @@ final class LocalAdb {
         }
 
         AlertDialog.Builder b = new AlertDialog.Builder(a)
-                .setTitle(devOn ? "Turn on USB debugging" : "Enable Developer options & USB debugging")
+                .setTitle(devOn ? "Turn on USB debugging" : "Step 1 of 2: Unlock Developer options")
                 .setView(body)
                 .setPositiveButton(settingsButtonLabel(a), (dialog, w) -> {
                     openAdbSettings(a);
