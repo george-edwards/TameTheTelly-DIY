@@ -141,29 +141,94 @@ final class LocalAdb {
     }
 
     /**
-     * Tell the user USB debugging is off and offer a direct shortcut to Developer options / About.
-     * Optional `onOpenAnyway` adds an "Open anyway" button (used when opening a restricted app so kids aren't locked out).
+     * Tell the user USB debugging is off with clear, numbered TV-remote steps and a direct shortcut
+     * to Developer options / About. Optional `onOpenAnyway` adds an "Open anyway" button (used when
+     * opening a restricted app so kids aren't locked out).
      */
     static void showAdbRequiredDialog(Activity a, String reason, Runnable onOpenAnyway, Runnable onDone) {
+        boolean devOn = isDevOptionsEnabled(a);
+        float d = a.getResources().getDisplayMetrics().density;
+
+        android.widget.LinearLayout body = new android.widget.LinearLayout(a);
+        body.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int padH = Math.round(22 * d), padV = Math.round(12 * d);
+        body.setPadding(padH, padV, padH, Math.round(6 * d));
+
+        android.widget.TextView intro = new android.widget.TextView(a);
+        intro.setText(reason);
+        intro.setTextColor(0xFFE2E8F0);
+        intro.setTextSize(14.5f);
+        android.widget.LinearLayout.LayoutParams ilp = new android.widget.LinearLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        ilp.bottomMargin = Math.round(12 * d);
+        body.addView(intro, ilp);
+
+        String[] steps = devOn
+                ? new String[]{
+                        "Select \"" + settingsButtonLabel(a) + "\" below",
+                        "Scroll down to Debugging → USB debugging",
+                        "Turn USB debugging ON and confirm OK",
+                        "Press Home on the remote to come back"
+                }
+                : new String[]{
+                        "Select \"" + settingsButtonLabel(a) + "\" below",
+                        "Scroll down to Android TV OS build and press OK 7 times",
+                        "Press Back → open Developer options → turn USB debugging ON",
+                        "Press Home on the remote to come back"
+                };
+
+        for (int i = 0; i < steps.length; i++) {
+            android.widget.LinearLayout row = new android.widget.LinearLayout(a);
+            row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            android.widget.LinearLayout.LayoutParams rlp = new android.widget.LinearLayout.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            rlp.bottomMargin = Math.round(8 * d);
+
+            android.widget.TextView badge = new android.widget.TextView(a);
+            badge.setText(String.valueOf(i + 1));
+            badge.setTextColor(0xFF0F172A);
+            badge.setTextSize(12.5f);
+            badge.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            badge.setGravity(android.view.Gravity.CENTER);
+            android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+            pill.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            pill.setColor(0xFFFFD166);
+            badge.setBackground(pill);
+            int sz = Math.round(22 * d);
+            android.widget.LinearLayout.LayoutParams blp = new android.widget.LinearLayout.LayoutParams(sz, sz);
+            blp.rightMargin = Math.round(10 * d);
+            row.addView(badge, blp);
+
+            android.widget.TextView txt = new android.widget.TextView(a);
+            txt.setText(steps[i]);
+            txt.setTextColor(0xFFF8FAFC);
+            txt.setTextSize(14f);
+            row.addView(txt, new android.widget.LinearLayout.LayoutParams(
+                    0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+            body.addView(row, rlp);
+        }
+
         AlertDialog.Builder b = new AlertDialog.Builder(a)
-                .setTitle("USB debugging is off")
-                .setMessage(reason + "\n\n" + enableInstructions(a))
-                .setPositiveButton(settingsButtonLabel(a), (d, w) -> {
+                .setTitle(devOn ? "Turn on USB debugging" : "Enable Developer options & USB debugging")
+                .setView(body)
+                .setPositiveButton(settingsButtonLabel(a), (dialog, w) -> {
                     openAdbSettings(a);
                     if (onDone != null) onDone.run();
                 })
-                .setNegativeButton("Cancel", (d, w) -> {
+                .setNegativeButton("Cancel", (dialog, w) -> {
                     if (onDone != null) onDone.run();
                 })
-                .setOnCancelListener(d -> {
+                .setOnCancelListener(dialog -> {
                     if (onDone != null) onDone.run();
                 });
         if (onOpenAnyway != null) {
-            b.setNeutralButton("Open anyway", (d, w) -> onOpenAnyway.run());
+            b.setNeutralButton("Open anyway", (dialog, w) -> onOpenAnyway.run());
         }
-        AlertDialog d = b.create();
-        if (a instanceof MainActivity) MainActivity.showDialog(d);
-        else d.show();
+        AlertDialog dialog = b.create();
+        if (a instanceof MainActivity) MainActivity.showDialog(dialog);
+        else dialog.show();
     }
 
     // ---------- wire format ----------

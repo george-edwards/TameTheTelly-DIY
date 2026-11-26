@@ -29,35 +29,6 @@
       "lon": 151.21
     },
     {
-      "name": "Australia: Melbourne Backyard Bird Bath",
-      "category": "Australia & NZ",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@BackyardWildAU/live",
-      "channelId": "UCZ07qwVzCZrksSbDR_B8XLQ",
-      "lat": -37.81,
-      "lon": 144.96
-    },
-    {
-      "name": "Australia: Parliament House of Representatives (Financial Express)",
-      "category": "Australia & NZ",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@FinancialExpress/live",
-      "channelId": "UCmk6ZFMy1CT80orXca4tKew",
-      "lat": -35.31,
-      "lon": 149.12
-    },
-    {
-      "name": "Australia: Parliament Senate Live",
-      "category": "Australia & NZ",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=UkvrzG2qXDI",
-      "channelUrl": "https://www.youtube.com/@FinancialExpress/live",
-      "channelId": "UCmk6ZFMy1CT80orXca4tKew",
-      "match": "Australia Senate",
-      "lat": -35.31,
-      "lon": 149.12
-    },
-    {
       "name": "New Zealand: Ōamaru Penguins",
       "category": "Australia & NZ",
       "type": "youtube_channel",

@@ -35,6 +35,7 @@ class WorldCamsTest {
         val sydney = streams.first { it.name.contains("Sydney Harbour") }
         assertEquals("youtube_channel", sydney.type)
         assertEquals("UCLav_kTu9PmAEChvGyrPbhQ", sydney.channelId)
+        assertTrue(sydney.displayName().startsWith("🇦🇺 "))
     }
 
     @Test fun extractsVideoIdsFromAllYoutubeFormats() {
@@ -76,7 +77,7 @@ class WorldCamsTest {
         val sorted = WorldCams.sortedByLongitude(WorldCams.parse(file.readText()))
         assertTrue(sorted.first().name.contains("Hawaii"))
         val earth = sorted.filter { it.hasCoords }
-        assertTrue("most streams should have coordinates", earth.size >= 65)
+        assertTrue("most streams should have coordinates", earth.size >= 50)
         for (i in 1 until earth.size) {
             assertTrue("should be non-decreasing longitude", earth[i - 1].lon <= earth[i].lon)
         }

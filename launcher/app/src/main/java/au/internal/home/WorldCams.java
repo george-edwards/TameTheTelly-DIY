@@ -94,6 +94,12 @@ final class WorldCams {
             this.key = "youtube_channel".equals(type) && !channelId.isEmpty() ? "ch:" + channelId : url;
         }
 
+        /** Name prefixed with its country/origin flag emoji, e.g. "🇦🇺 Australia: Port of Newcastle". */
+        String displayName() {
+            String f = flagFor(name);
+            return f.isEmpty() ? name : f + " " + name;
+        }
+
         /** Embeddable HTTPS URL for WebView playback (muted, autoplay, no controls). */
         String embedUrl() {
             if ("youtube_channel".equals(type) && !channelId.isEmpty()) {
@@ -119,6 +125,48 @@ final class WorldCams {
     WorldCams(Context c) {
         ctx = c.getApplicationContext();
         p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    static String flagFor(String name) {
+        if (name == null || name.isEmpty()) return "";
+        String prefix = name;
+        int colon = name.indexOf(':');
+        int dash = name.indexOf('—');
+        int cut = -1;
+        if (colon > 0 && dash > 0) cut = Math.min(colon, dash);
+        else if (colon > 0) cut = colon;
+        else if (dash > 0) cut = dash;
+        if (cut > 0) prefix = name.substring(0, cut).trim();
+        switch (prefix) {
+            case "Australia": return "🇦🇺";
+            case "New Zealand": return "🇳🇿";
+            case "USA": return "🇺🇸";
+            case "UK": return "🇬🇧";
+            case "Ireland": return "🇮🇪";
+            case "Canada": return "🇨🇦";
+            case "Japan": return "🇯🇵";
+            case "Thailand": return "🇹🇭";
+            case "Philippines": return "🇵🇭";
+            case "Taiwan": return "🇹🇼";
+            case "India": return "🇮🇳";
+            case "Israel": return "🇮🇱";
+            case "Palestine": return "🇵🇸";
+            case "Iraq": return "🇮🇶";
+            case "Saudi Arabia": return "🇸🇦";
+            case "Italy": return "🇮🇹";
+            case "France": return "🇫🇷";
+            case "Belgium": return "🇧🇪";
+            case "Netherlands": return "🇳🇱";
+            case "Germany": return "🇩🇪";
+            case "Norway": return "🇳🇴";
+            case "Russia": return "🇷🇺";
+            case "Namibia": return "🇳🇦";
+            case "South Africa": return "🇿🇦";
+            case "British Virgin Islands": return "🇻🇬";
+            case "Space": return "🛰️";
+            case "Ocean": return "🌊";
+            default: return "";
+        }
     }
 
     static String extractVideoId(String url) {

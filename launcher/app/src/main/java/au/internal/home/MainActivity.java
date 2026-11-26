@@ -673,7 +673,7 @@ public class MainActivity extends Activity {
         String sound = (fullscreenCam == camViews[slot] && fullscreenSound) ? "🔊 " : "";
         String pin = worldCams.isPinned(slot) ? "📌 " : "";
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
-        ((TextView) camViews[slot].findViewById(R.id.name)).setText(sound + pin + prefix + s.name);
+        ((TextView) camViews[slot].findViewById(R.id.name)).setText(sound + pin + prefix + s.displayName());
     }
 
     private void switchWorldSlot(int slot, WorldCams.Stream s) {
@@ -734,7 +734,7 @@ public class MainActivity extends Activity {
         }
 
         final int sIdx = soundIdx, pIdx = pinIdx, hIdx = heartIdx, nIdx = nextIdx, shIdx = shufIdx, aIdx = allIdx, fIdx = favIdx, lIdx = localIdx;
-        String title = cur != null ? cur.name : "World Cams";
+        String title = cur != null ? cur.displayName() : "World Cams";
         showDialog(new AlertDialog.Builder(this).setTitle(title)
                 .setItems(items.toArray(new String[0]), (d, which) -> {
                     if (which == sIdx) {

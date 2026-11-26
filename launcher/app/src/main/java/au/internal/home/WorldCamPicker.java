@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
@@ -155,7 +156,7 @@ final class WorldCamPicker {
                 String dot = Boolean.TRUE.equals(st) ? "🟢 " : (Boolean.FALSE.equals(st) ? "○ " : "   ");
                 String heart = worldCams.isHearted(s) ? "♥ " : "";
                 String curMark = (current != null && current.key.equals(s.key)) ? "✓ " : "";
-                left.setText(dot + curMark + heart + s.name);
+                left.setText(dot + curMark + heart + s.displayName());
                 left.setAlpha(Boolean.FALSE.equals(st) ? 0.55f : 1f);
 
                 if (s.hasCoords) {
@@ -236,9 +237,58 @@ final class WorldCamPicker {
         private final Paint dotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint sunPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint landFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint landStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path landPath = new Path();
         private final Rect srcRect;
         private final RectF dstRect = new RectF();
         private int selectedIdx = -1;
+
+        /** Simplified continent/island outlines in (lon, lat) pairs for the equirectangular daylight plot. */
+        private static final float[][] LAND_POLYS = {
+                // North & Central America
+                {-168, 65, -158, 70, -140, 70, -125, 70, -110, 68, -95, 68, -80, 63, -64, 59, -55, 52,
+                        -60, 46, -67, 45, -70, 42, -76, 35, -81, 30, -80, 25, -83, 29, -90, 29, -97, 26,
+                        -97, 19, -90, 21, -87, 21, -88, 16, -83, 10, -78, 8, -80, 7, -85, 10, -92, 15,
+                        -105, 19, -110, 24, -117, 32, -123, 38, -125, 48, -135, 57, -150, 60, -162, 55, -166, 60},
+                // Greenland
+                {-52, 60, -42, 60, -35, 66, -22, 70, -18, 78, -32, 82, -55, 81, -70, 76, -56, 68},
+                // South America
+                {-78, 9, -72, 12, -62, 10, -50, 1, -35, -6, -38, -13, -41, -22, -48, -26, -54, -34,
+                        -62, -39, -66, -46, -68, -55, -73, -53, -74, -42, -71, -30, -70, -18, -81, -5, -79, 2},
+                // Eurasia (Europe + Asia)
+                {-9, 37, -9, 43, -2, 43, -5, 48, 2, 51, 9, 54, 12, 56, 5, 60, 12, 66, 20, 70, 31, 70,
+                        42, 67, 60, 70, 75, 73, 105, 76, 135, 72, 170, 66, 178, 65, 162, 56, 156, 51,
+                        142, 54, 135, 44, 129, 35, 126, 38, 122, 37, 121, 31, 120, 24, 110, 20, 108, 12,
+                        103, 2, 100, 14, 95, 16, 88, 22, 80, 10, 77, 8, 72, 20, 66, 25, 56, 27, 48, 30,
+                        51, 24, 59, 22, 53, 16, 44, 13, 35, 29, 36, 36, 27, 37, 23, 38, 18, 40, 13, 45,
+                        8, 44, 3, 42, -5, 36},
+                // UK & Ireland
+                {-6, 50, 1, 51, -1, 55, -3, 58, -6, 57, -5, 53},
+                {-10, 52, -6, 52, -6, 55, -9, 55},
+                // Africa
+                {-17, 15, -13, 28, -6, 36, 10, 37, 11, 33, 25, 32, 33, 31, 37, 22, 43, 12, 51, 11,
+                        41, -2, 40, -15, 35, -25, 28, -33, 18, -34, 15, -26, 12, -16, 9, -2, 9, 4,
+                        2, 6, -8, 5, -16, 11},
+                // Madagascar
+                {44, -25, 47, -25, 50, -15, 49, -12, 45, -16},
+                // Japan
+                {130, 31, 136, 34, 141, 36, 141, 41, 145, 44, 141, 45, 139, 39, 135, 35, 130, 33},
+                // Philippines
+                {120, 18, 123, 15, 126, 7, 122, 7, 120, 14},
+                // Indonesia (Sumatra/Java/Borneo)
+                {95, 5, 105, -6, 115, -8, 106, -7, 98, 1},
+                {109, 2, 118, 5, 118, -3, 111, -3},
+                // New Guinea
+                {131, -2, 141, -3, 150, -10, 141, -8, 134, -4},
+                // Australia
+                {114, -22, 122, -18, 130, -12, 136, -12, 136, -15, 141, -17, 143, -11, 146, -18,
+                        153, -27, 150, -37, 141, -38, 136, -35, 131, -32, 122, -34, 115, -34, 113, -26},
+                // Tasmania
+                {145, -41, 148, -41, 147, -43.5f, 145.5f, -43},
+                // New Zealand
+                {173, -35, 178, -38, 175, -41, 173, -41, 170, -46, 167, -46, 172, -41}
+        };
 
         DaylightMapView(Context c, List<WorldCams.Stream> streams, double decl, double subLon) {
             super(c);
@@ -249,8 +299,15 @@ final class WorldCamPicker {
             this.srcRect = new Rect(0, 0, bgBitmap.getWidth(), bgBitmap.getHeight());
 
             float d = c.getResources().getDisplayMetrics().density;
-            gridPaint.setColor(0x2AFFFFFF);
+            gridPaint.setColor(0x26FFFFFF);
             gridPaint.setStrokeWidth(Math.max(1f, 0.75f * d));
+
+            landFillPaint.setStyle(Paint.Style.FILL);
+            landFillPaint.setColor(0x1CFFFFFF);
+            landStrokePaint.setStyle(Paint.Style.STROKE);
+            landStrokePaint.setColor(0x52FFFFFF);
+            landStrokePaint.setStrokeWidth(Math.max(1f, 0.85f * d));
+            landStrokePaint.setStrokeJoin(Paint.Join.ROUND);
 
             textPaint.setColor(0xAAFFFFFF);
             textPaint.setTextSize(9.5f * d);
@@ -280,6 +337,19 @@ final class WorldCamPicker {
             dstRect.set(0, 0, w, mapH);
 
             canvas.drawBitmap(bgBitmap, srcRect, dstRect, bmpPaint);
+
+            // Subtle world coastline / continent silhouettes
+            landPath.rewind();
+            for (float[] poly : LAND_POLYS) {
+                if (poly.length < 4) continue;
+                landPath.moveTo(lonToX(poly[0], w), latToY(poly[1], mapH));
+                for (int i = 2; i < poly.length; i += 2) {
+                    landPath.lineTo(lonToX(poly[i], w), latToY(poly[i + 1], mapH));
+                }
+                landPath.close();
+            }
+            canvas.drawPath(landPath, landFillPaint);
+            canvas.drawPath(landPath, landStrokePaint);
 
             // Subtle latitude/longitude gridlines
             canvas.drawLine(0, mapH * 0.5f, w, mapH * 0.5f, gridPaint); // Equator
