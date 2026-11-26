@@ -175,6 +175,21 @@ final class WorldCamPicker {
         };
         lv.setAdapter(adapter);
         lv.setSelection(initialIdx);
+        lv.setOnKeyListener((v, keyCode, ev) -> {
+            if (ev.getAction() != android.view.KeyEvent.ACTION_DOWN || pool.size() < 2) return false;
+            int pos = lv.getSelectedItemPosition();
+            if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP && pos == 0) {
+                lv.setSelection(pool.size() - 1);
+                mapView.setSelectedIndex(pool.size() - 1);
+                return true;
+            }
+            if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_DOWN && pos == pool.size() - 1) {
+                lv.setSelection(0);
+                mapView.setSelectedIndex(0);
+                return true;
+            }
+            return false;
+        });
         lv.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
                 mapView.setSelectedIndex(pos);
