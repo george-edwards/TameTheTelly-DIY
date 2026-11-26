@@ -23,6 +23,50 @@
       "channelId": "UC2fT5OsZ71PBA-jdq68DyWQ"
     },
     {
+      "name": "Australia — Sydney Harbour",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@webcamsydney/live",
+      "channelId": "UCLav_kTu9PmAEChvGyrPbhQ"
+    },
+    {
+      "name": "Australia — Melbourne City Street Watch",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@CityscapeLive/live",
+      "channelId": "UC6Au7oIglvHInniXAQSW7iQ"
+    },
+    {
+      "name": "Australia — Port Lincoln Osprey",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@PortLincolnOsprey/live",
+      "channelId": "UCK_BLeXdJeHqA1SlC79CruQ"
+    },
+    {
+      "name": "Australia — Melbourne Backyard Bird Bath",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@BackyardWildAU/live",
+      "channelId": "UCZ07qwVzCZrksSbDR_B8XLQ"
+    },
+    {
+      "name": "Australia — Parliament House of Representatives (Financial Express)",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@FinancialExpress/live",
+      "channelId": "UCmk6ZFMy1CT80orXca4tKew"
+    },
+    {
+      "name": "Australia — Parliament Senate Live",
+      "category": "Australia & NZ",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=UkvrzG2qXDI",
+      "channelUrl": "https://www.youtube.com/@FinancialExpress/live",
+      "channelId": "UCmk6ZFMy1CT80orXca4tKew",
+      "match": "Australia Senate"
+    },
+    {
       "name": "New Zealand — Ōamaru Penguins",
       "category": "Australia & NZ",
       "type": "youtube_channel",
@@ -76,6 +120,59 @@
       "type": "youtube_channel",
       "url": "https://www.youtube.com/@RailCowGirl/live",
       "channelId": "UCj-Xm8j6WBgKY8OG7s9r2vQ"
+    },
+    {
+      "name": "Saudi Arabia — Makkah Live (Al-Haram)",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@TheSpiritualQuran/live",
+      "channelId": "UCllTh8Qy9Z6cFF4VNtuwdcQ"
+    },
+    {
+      "name": "Italy — Basilica di San Francesco, Assisi",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=5ka3YhVZgME",
+      "channelUrl": "https://www.youtube.com/@UmbriaWebcam/live",
+      "channelId": "UC_FuR9GFVJE2A8H02sQmHWw",
+      "match": "Assisi"
+    },
+    {
+      "name": "Netherlands — Tram Driver's View",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@TramMeneer/live",
+      "channelId": "UCcLb3AIOPBnXxY7qFqHS2NQ"
+    },
+    {
+      "name": "Netherlands — Dutch Railway Cab Rides (NS)",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@MachinistMart/live",
+      "channelId": "UCSkyUYnY4R4PdrziyW9-QjA"
+    },
+    {
+      "name": "UK — Narrowboat Onboard AmyJo",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@LIVEOnboardAmyJo/live",
+      "channelId": "UCmgkM64CYwai838pNaC0fnA"
+    },
+    {
+      "name": "Ocean — Golden Globe Race",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@Goldengloberace/live",
+      "channelId": "UCHAanPHup_V8JHJLSwQbKmQ"
+    },
+    {
+      "name": "USA — Disney Skyliner, Walt Disney World",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=riv7X6qSfdo",
+      "channelUrl": "https://www.youtube.com/@magicalescapesofficial/live",
+      "channelId": "UCkEV7fsdW_J75LoofnhUb7A",
+      "match": "Disney Skyliner"
     },
     {
       "name": "Japan — Shibuya Scramble Crossing, Tokyo",
@@ -241,6 +338,22 @@
       "channelId": "UCeL2LSl91k2VccR7XEh5IKg"
     },
     {
+      "name": "USA — Friends of Felines Rescue Center",
+      "category": "Wild & Underwater",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@FOFRescueCenter/live",
+      "channelId": "UClB2FZ7Qvwq0Ons_6jN1lAQ"
+    },
+    {
+      "name": "USA — Tarpon Feeding Dock, Islamorada",
+      "category": "Wild & Underwater",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=zfSst64NFcE",
+      "channelUrl": "https://www.youtube.com/@RobbiesIslamorada/live",
+      "channelId": "UC87uKTXV7je0G6h3eUqMaNQ",
+      "match": "Tarpon Feeding"
+    },
+    {
       "name": "Russia — Nevsky Avenue, St. Petersburg",
       "category": "World Cams",
       "type": "youtube_channel",
@@ -253,6 +366,202 @@
       "type": "youtube_channel",
       "url": "https://www.youtube.com/@SoggyDollar/live",
       "channelId": "UC-CrxJnHPaM4tm2haTibUZA"
+    },
+    {
+      "name": "UK — Abbey Road Crossing, London",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=zMCea32gpmg",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Abbey Road"
+    },
+    {
+      "name": "Ireland — Dublin",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=3nyPER2kzqk",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Dublin"
+    },
+    {
+      "name": "Italy — Dorsoduro, Venice",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=gzgrofStPJ0",
+      "channelUrl": "https://www.youtube.com/@iloveyouvenice/live",
+      "channelId": "UCMpn1qLudF-zb4M4bqxLIbw",
+      "match": "Dorsoduro"
+    },
+    {
+      "name": "Italy — Grand Canal, Venice",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=r8N6IsoIkTk",
+      "channelUrl": "https://www.youtube.com/@iloveyouvenice/live",
+      "channelId": "UCMpn1qLudF-zb4M4bqxLIbw",
+      "match": "Grand Canal"
+    },
+    {
+      "name": "USA — New Orleans Balcony View",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=QxFFjXu_zqs",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "New Orleans Balcony"
+    },
+    {
+      "name": "USA — New Orleans Street View",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=xqdukYhcGEU",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "New Orleans Street"
+    },
+    {
+      "name": "USA — Irish Kevin's, Duval Street, Key West",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=lcVm-Izrpa0",
+      "channelUrl": "https://www.youtube.com/@SeekFloridaKeys/live",
+      "channelId": "UC-KS6AGW3J43aFF-KOQ6VAw",
+      "match": "Irish Kevin"
+    },
+    {
+      "name": "USA — Elbo Room Beach Bar, Fort Lauderdale",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=wVNt3l657X0",
+      "channelUrl": "https://www.youtube.com/@elboroom/live",
+      "channelId": "UCUkUjr4syovc3NbLWtuVfYw",
+      "match": "BAR CAM"
+    },
+    {
+      "name": "USA — Strawberry General Store, CA",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@StrawberryGeneralStore/live",
+      "channelId": "UCqsvqJ5glbznXUMs1_XxeXg"
+    },
+    {
+      "name": "USA — Garbage Dump Transfer Station",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=hxPUs-7etYg",
+      "channelUrl": "https://www.youtube.com/@CamNomad/live",
+      "channelId": "UCshAvRBdyJDbYhAVsqi_v8w",
+      "match": "Transfer Station"
+    },
+    {
+      "name": "USA — Universal Studios Hollywood Rides & Shows",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=v99dNIuFBKo",
+      "channelUrl": "https://www.youtube.com/@WorldscapeScenery/live",
+      "channelId": "UCyDRWDDc9aEC2fQRYlpDj4g",
+      "match": "Universal Studios"
+    },
+    {
+      "name": "USA — Walt Disney World Ride POV",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=85gsov__yQ8",
+      "channelUrl": "https://www.youtube.com/@ResortTV24-7/live",
+      "channelId": "UCDcUWSm2qu9uJpCONxCSC8w",
+      "match": "Disney World Ride POV"
+    },
+    {
+      "name": "USA — Disneyland & California Adventure Rides",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=xFkN2cjFPiQ",
+      "channelUrl": "https://www.youtube.com/@WorldscapeScenery/live",
+      "channelId": "UCyDRWDDc9aEC2fQRYlpDj4g",
+      "match": "Disneyland"
+    },
+    {
+      "name": "Thailand — El Gaucho, Soi 11 Sukhumvit, Bangkok",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=UemFRPrl1hk",
+      "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
+      "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
+      "match": "El Gaucho"
+    },
+    {
+      "name": "Thailand — Bondi Aussie Bar, Chaweng, Koh Samui",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=Jv_2vPCbZUo",
+      "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
+      "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
+      "match": "Bondi Aussie"
+    },
+    {
+      "name": "Thailand — Henry Africa's, Soi Green Mango, Koh Samui",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=Ajo0iFkX3EY",
+      "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
+      "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
+      "match": "Henry Africa"
+    },
+    {
+      "name": "Thailand — Fisherman's Village, Bophut, Koh Samui",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=54qgxiqQQb8",
+      "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
+      "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
+      "match": "Fisherman's Village"
+    },
+    {
+      "name": "Philippines — Agdao Tyre Repair Shop, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=1rWzQP_ZYxc",
+      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
+      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
+      "match": "Tyre Repair"
+    },
+    {
+      "name": "Philippines — Bankerohan Lyn's Food Haus, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=6kX0K9u3NTQ",
+      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
+      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
+      "match": "Lyn's Food Haus"
+    },
+    {
+      "name": "Philippines — Lyn's Sisig Beef BBQ, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=vnniDOWtM3Q",
+      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
+      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
+      "match": "Sisig Beef"
+    },
+    {
+      "name": "Philippines — Dodong Barber Shop, Agdao, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=0Kaji9GHl68",
+      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
+      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
+      "match": "Dodong Barber"
+    },
+    {
+      "name": "Philippines — Bankerohan Fish Sellers, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=xOGUzy6CMAg",
+      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
+      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
+      "match": "Fish sellers"
     }
   ]
 }

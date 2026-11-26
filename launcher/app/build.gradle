@@ -36,8 +36,9 @@ android {
         applicationId 'au.internal.home'
         minSdk 26
         targetSdk 34
-        versionCode 76
-        versionName "2.21.12"
+        // CalVer: YY.MM.DD.N (versionCode = YYMMDDNN, strictly increasing)
+        versionCode 26112601
+        versionName "26.11.26.1"
     }
     signingConfigs {
         release {

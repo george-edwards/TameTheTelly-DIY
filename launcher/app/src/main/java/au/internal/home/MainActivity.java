@@ -342,6 +342,7 @@ public class MainActivity extends Activity {
     @Override protected void onStop() {
         ScreenTimeService.setHomeOnTop(false);
         h.removeCallbacks(tick);
+        WorldCams.stopChecker();
         stopCams();   // free the decoders for whatever app is opened
         if (movingPkg != null) endMove();
         super.onStop();
@@ -369,7 +370,11 @@ public class MainActivity extends Activity {
                 startService(ScreenTimeService.dev(this, "LIVE"));
             }
             if (cfg.camerasOn() && cfg.worldCamsOn()) {
-                worldCams.refreshIfDue(cfg.worldCamsUrl(), () -> worldCatalog = worldCams.load());
+                worldCams.refreshIfDue(cfg.worldCamsUrl(), () -> {
+                    worldCatalog = worldCams.load();
+                    if (hasWindowFocus()) WorldCams.startChecker(worldCatalog);
+                });
+                if (!worldCatalog.isEmpty()) WorldCams.startChecker(worldCatalog);
             }
             boolean adult = screenTime.adultMode(now);
             boolean passEnded = leftDuringPass && screenTime.hasPass(now);
@@ -387,6 +392,7 @@ public class MainActivity extends Activity {
             }
         } else {
             if (screenTime.hasPass(now)) leftDuringPass = true;
+            WorldCams.stopChecker();
             stopCams();
         }
     }
@@ -480,7 +486,10 @@ public class MainActivity extends Activity {
                         });
             }
             if (cfg.camerasOn() && cfg.worldCamsOn()) {
-                worldCams.refreshIfDue(cfg.worldCamsUrl(), () -> worldCatalog = worldCams.load());
+                worldCams.refreshIfDue(cfg.worldCamsUrl(), () -> {
+                    worldCatalog = worldCams.load();
+                    if (hasWindowFocus()) WorldCams.startChecker(worldCatalog);
+                });
             }
             boolean adult = screenTime.adultMode(now);
             updateModeButton(adult);
@@ -530,8 +539,10 @@ public class MainActivity extends Activity {
         float d = getResources().getDisplayMetrics().density;
         right.setPadding(goFull ? 0 : (int) (10 * d), 0, goFull ? 0 : (int) (12 * d), 0);
         cam.setClipToOutline(!goFull);   // square corners when it fills the screen
+        int fullSlot = -1;
         for (int i = 0; i < camViews.length; i++) {
             if (camViews[i] == cam) {
+                fullSlot = i;
                 if (!camIsWorld[i] && feeds[i] != null) feeds[i].setHd(goFull); // 1080p only when RTSP fills the screen
             } else if (camOn[i]) {
                 camViews[i].setVisibility(vis);
@@ -545,7 +556,14 @@ public class MainActivity extends Activity {
             }
         }
         if (webHost != null) webHost.setFullscreen(goFull);
-        fullscreenSound = false;
+        if (goFull && fullSlot >= 0 && camIsWorld[fullSlot]) {
+            fullscreenSound = true;
+            if (webHost != null) webHost.setMuted(fullSlot, false);
+            showLabel(camLabels[fullSlot]);
+            fadeLabel(camLabels[fullSlot], 2_500);
+        } else {
+            fullscreenSound = false;
+        }
         for (int i = 0; i < 2; i++) if (camIsWorld[i]) updateWorldLabel(i);
         cam.requestFocus();
     }
@@ -676,7 +694,9 @@ public class MainActivity extends Activity {
         int heartIdx = items.size(); items.add(isH ? "♥ Remove heart" : "♡ Heart this stream");
         int nextIdx = items.size(); items.add(favs.size() > 1 ? "Next hearted stream" : "Next stream");
         int shufIdx = items.size(); items.add("Shuffle");
-        int allIdx = items.size(); items.add("Browse all streams (" + worldCatalog.size() + ")…");
+        int onlineAll = WorldCams.onlineCount(worldCatalog);
+        String onlineTag = onlineAll > 0 ? " · " + onlineAll + " online" : "";
+        int allIdx = items.size(); items.add("Browse all streams (" + worldCatalog.size() + onlineTag + ")…");
         int favIdx = -1, localIdx = -1;
         if (!favs.isEmpty()) { favIdx = items.size(); items.add("♥ Hearted streams (" + favs.size() + ")…"); }
         if (hasLocal) {
@@ -721,9 +741,11 @@ public class MainActivity extends Activity {
         int checked = -1;
         for (int i = 0; i < pool.size(); i++) {
             WorldCams.Stream s = pool.get(i);
+            Boolean st = WorldCams.onlineStatus(s);
+            String dot = Boolean.TRUE.equals(st) ? "🟢 " : (Boolean.FALSE.equals(st) ? "○ " : "");
             String heart = worldCams.isHearted(s) ? "♥ " : "";
             String cat = s.category.isEmpty() ? "" : "  ·  " + s.category;
-            labels[i] = heart + s.name + cat;
+            labels[i] = dot + heart + s.name + cat;
             if (cur != null && cur.key.equals(s.key)) checked = i;
         }
         showDialog(new AlertDialog.Builder(this).setTitle(title)
@@ -900,6 +922,10 @@ public class MainActivity extends Activity {
 
     /** Past the arrow code: say plainly what's about to happen, with Cancel first. */
     private void confirmRestore() {
+        if (!LocalAdb.isAdbEnabled(this)) {
+            LocalAdb.showAdbRequiredDialog(this, "Put the TV back needs USB debugging turned on temporarily.", null, null);
+            return;
+        }
         AlertDialog d = new AlertDialog.Builder(this)
                 .setTitle("Put the TV back how it came?")
                 .setMessage("This undoes everything that was set up on this TV: the TV's own home screen comes back, "

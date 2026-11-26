@@ -45,6 +45,7 @@ final class WebCamHost {
     private final String[] urls = new String[2];
     private final boolean[] enabled = new boolean[2];
     private final boolean[] live = new boolean[2];
+    private final boolean[] wantMuted = {true, true};
     private final String[] loadedUrls = new String[2];
 
     private WebView webView;
@@ -75,11 +76,12 @@ final class WebCamHost {
         syncLayout();
     }
 
-    /** Mute or unmute a YouTube embed slot live via its postMessage JS API (no reload). */
+    /** Mute or unmute a YouTube embed slot live via its postMessage JS API + injected video shim (no reload). */
     void setMuted(int slot, boolean muted) {
-        if (webView == null || !pageReady || slot < 0 || slot > 1) return;
-        String fn = muted ? "mute" : "unMute";
-        webView.evaluateJavascript("ytCmd(" + slot + ",'" + fn + "');", null);
+        if (slot < 0 || slot > 1) return;
+        wantMuted[slot] = muted;
+        if (webView == null || !pageReady) return;
+        webView.evaluateJavascript("ytMute(" + slot + "," + muted + ");", null);
     }
 
     void setSlot(int slot, boolean active, String embedUrl) {
@@ -120,6 +122,9 @@ final class WebCamHost {
         // YouTube's embed JS can't see or pause its sibling via localStorage / BroadcastChannel.
         if (slot == 1 && u.startsWith("https://www.youtube.com/embed/")) {
             u = "https://www.youtube-nocookie.com/embed/" + u.substring("https://www.youtube.com/embed/".length());
+        }
+        if (!wantMuted[slot]) {
+            u = u.replace("mute=1", "mute=0");
         }
         String sep = u.contains("?") ? "&" : "?";
         return u + sep + "enablejsapi=1&origin=" + ORIGIN;
@@ -214,9 +219,16 @@ final class WebCamHost {
                 + "  var d=document.getElementById('s'+i);"
                 + "  d.style.left=l+'px';d.style.top=t+'px';d.style.width=w+'px';d.style.height=h+'px';d.style.borderRadius=r+'px';"
                 + "}"
-                + "function ytCmd(i,fn){"
+                + "function ytCmd(i,fn,args){"
                 + "  var f=document.getElementById('f'+i);"
-                + "  if(f&&f.contentWindow){f.contentWindow.postMessage(JSON.stringify({event:'command',func:fn,args:[]}),'*');}"
+                + "  if(f&&f.contentWindow){f.contentWindow.postMessage(JSON.stringify({event:'command',func:fn,args:args||[]}),'*');}"
+                + "}"
+                + "function ytMute(i,m){"
+                + "  var f=document.getElementById('f'+i);"
+                + "  if(!f||!f.contentWindow)return;"
+                + "  ytCmd(i,m?'mute':'unMute',[]);"
+                + "  if(!m)ytCmd(i,'setVolume',[100]);"
+                + "  f.contentWindow.postMessage({homeMute:!!m},'*');"
                 + "}"
                 + "</script></body></html>";
         wv.loadDataWithBaseURL(ORIGIN + "/", html, "text/html", "utf-8", null);
@@ -243,6 +255,9 @@ final class WebCamHost {
                     if (!running || !expected.equals(loadedUrls[slot])) return;
                     live[slot] = true;
                     st.setVisibility(View.GONE);
+                    if (webView != null && pageReady) {
+                        webView.evaluateJavascript("ytMute(" + slot + "," + wantMuted[slot] + ");", null);
+                    }
                     if (onLive[slot] != null) onLive[slot].run();
                 }, 1_400);
             } else {
@@ -365,7 +380,17 @@ final class WebCamHost {
                 while ((n = in.read(buf)) >= 0) bos.write(buf, 0, n);
             }
             String html = bos.toString("UTF-8");
-            String shim = "<script>(function(){"
+            String shim = "<style>"
+                    + ".html5-video-player{background:#000!important}"
+                    + ".ytp-chrome-top,.ytp-chrome-bottom,.ytp-gradient-top,.ytp-gradient-bottom,"
+                    + ".ytp-pause-overlay,.ytp-cued-thumbnail-overlay,.ytp-cued-thumbnail-overlay-image,"
+                    + ".ytp-large-play-button,.ytp-watermark,.ytp-bezel,.ytp-bezel-text-wrapper,"
+                    + ".ytp-ce-element,.ytp-cards-teaser,.ytp-paid-content-overlay,.ytp-impression-link,"
+                    + ".ytp-title,.ytp-title-channel,.ytp-show-cards-title,.ytp-player-content,"
+                    + ".ytp-suggested-action,.ytp-spinner,.ytp-muting-overlay,.ytp-unmute{"
+                    + "opacity:0!important;visibility:hidden!important;pointer-events:none!important}"
+                    + "</style>"
+                    + "<script>(function(){"
                     + "function b(t){return /av01|vp0?9|webm/i.test(String(t||''));}"
                     + "if(window.MediaSource&&MediaSource.isTypeSupported){"
                     + "var o=MediaSource.isTypeSupported.bind(MediaSource);"
@@ -377,6 +402,21 @@ final class WebCamHost {
                     + "navigator.mediaCapabilities.decodingInfo=function(cfg){"
                     + "if(cfg&&cfg.video&&b(cfg.video.contentType))return Promise.resolve({supported:false,smooth:false,powerEfficient:false});"
                     + "return d(cfg);};}"
+                    + "var hm=null;"
+                    + "function applyMute(){"
+                    + "if(hm===null)return;"
+                    + "var vs=document.querySelectorAll('video');"
+                    + "for(var i=0;i<vs.length;i++){"
+                    + "var v=vs[i];"
+                    + "if(v.muted!==hm)v.muted=hm;"
+                    + "if(!hm&&v.volume<0.99)v.volume=1;"
+                    + "}}"
+                    + "window.addEventListener('message',function(e){"
+                    + "if(e&&e.data&&typeof e.data.homeMute==='boolean'){hm=e.data.homeMute;applyMute();}"
+                    + "});"
+                    + "document.addEventListener('playing',applyMute,true);"
+                    + "document.addEventListener('loadedmetadata',applyMute,true);"
+                    + "document.addEventListener('volumechange',applyMute,true);"
                     + "})();</script>";
             int headIdx = html.indexOf("<head>");
             if (headIdx >= 0) {
