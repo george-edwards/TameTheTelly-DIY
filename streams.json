@@ -62,7 +62,8 @@
       "category": "Space",
       "type": "youtube_channel",
       "url": "https://www.youtube.com/channel/UCkvW_7kp9LJrztmgA4q4bJQ/live",
-      "channelId": "UCkvW_7kp9LJrztmgA4q4bJQ"
+      "channelId": "UCkvW_7kp9LJrztmgA4q4bJQ",
+      "labelOffsetLines": 1.75
     },
     {
       "name": "Iraq: Holy Shrine of Imam Hussain, Karbala",

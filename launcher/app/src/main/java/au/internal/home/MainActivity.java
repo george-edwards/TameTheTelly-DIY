@@ -673,7 +673,9 @@ public class MainActivity extends Activity {
         String sound = (fullscreenCam == camViews[slot] && fullscreenSound) ? "🔊 " : "";
         String pin = worldCams.isPinned(slot) ? "📌 " : "";
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
-        ((TextView) camViews[slot].findViewById(R.id.name)).setText(sound + pin + prefix + s.displayName());
+        TextView nameTv = camViews[slot].findViewById(R.id.name);
+        nameTv.setText(sound + pin + prefix + s.displayName());
+        camLabels[slot].setTranslationY(s.labelOffsetLines > 0f ? s.labelOffsetLines * nameTv.getTextSize() : 0f);
     }
 
     private void switchWorldSlot(int slot, WorldCams.Stream s) {
