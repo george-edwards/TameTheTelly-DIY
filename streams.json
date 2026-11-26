@@ -2,293 +2,22 @@
   "version": 1,
   "streams": [
     {
-      "name": "Australia: Port of Newcastle (Harbour & Nobbys)",
-      "category": "Australia & NZ",
+      "name": "USA: MEGA Lab Underwater Reef, Hawaii",
+      "category": "Wild & Underwater",
       "type": "youtube_channel",
-      "url": "https://www.youtube.com/@portofnewcastle/live",
-      "channelId": "UCTGhjtFloAPlbLy4_yrkoWg",
-      "lat": -32.92,
-      "lon": 151.79
+      "url": "https://www.youtube.com/@MEGALabCam/live",
+      "channelId": "UCTLF36lXVM7uiR-VolWHv0Q",
+      "lat": 19.64,
+      "lon": -155.99
     },
     {
-      "name": "Australia: Wildlife Cam",
-      "category": "Australia & NZ",
+      "name": "Canada: TinyKittens Rescue",
+      "category": "Wild & Underwater",
       "type": "youtube_channel",
-      "url": "https://www.youtube.com/@AustralianWildlifeCamLive/live",
-      "channelId": "UC2fT5OsZ71PBA-jdq68DyWQ",
-      "lat": -33.87,
-      "lon": 151.21
-    },
-    {
-      "name": "Australia: Sydney Harbour",
-      "category": "Australia & NZ",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@webcamsydney/live",
-      "channelId": "UCLav_kTu9PmAEChvGyrPbhQ",
-      "lat": -33.86,
-      "lon": 151.21
-    },
-    {
-      "name": "New Zealand: Ōamaru Penguins",
-      "category": "Australia & NZ",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@%C5%8CamaruPenguin/live",
-      "channelId": "UCSlIi8WXERrJUce_les6V6w",
-      "lat": -45.11,
-      "lon": 170.98
-    },
-    {
-      "name": "New Zealand: Royal Albatross Cam, Otago",
-      "category": "Australia & NZ",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=Mm_zVDDUeNA",
-      "channelUrl": "https://www.youtube.com/@CornellBirdCams/live",
-      "channelId": "UCZXZQxS3d6NpR-eH_gdDwYA",
-      "match": "Royal Albatross",
-      "lat": -45.77,
-      "lon": 170.73
-    },
-    {
-      "name": "Space: NASA ISS HD Earth",
-      "category": "Space",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=ROboUHfPUrU",
-      "channelUrl": "https://www.youtube.com/@NASA/live",
-      "channelId": "UCLA_DiR1FfKNvjuUpBHmylQ",
-      "match": "International Space Station"
-    },
-    {
-      "name": "Space: Sen 4K ISS Earth",
-      "category": "Space",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/channel/UCkvW_7kp9LJrztmgA4q4bJQ/live",
-      "channelId": "UCkvW_7kp9LJrztmgA4q4bJQ",
-      "labelOffsetLines": 1.75
-    },
-    {
-      "name": "Iraq: Holy Shrine of Imam Hussain, Karbala",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/channel/UC-IYgdWMbKsZI5ZCzK1sk3Q/live",
-      "channelId": "UC-IYgdWMbKsZI5ZCzK1sk3Q",
-      "lat": 32.62,
-      "lon": 44.03
-    },
-    {
-      "name": "Taiwan: Chaotian Temple Main Hall",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=B12MobI0EGg",
-      "channelUrl": "https://www.youtube.com/@lifemap4423/live",
-      "channelId": "UCfESjY0FHcOWuwU6ZE10v1g",
-      "match": "朝天宮",
-      "lat": 23.57,
-      "lon": 120.3
-    },
-    {
-      "name": "Norway: Train Cab Views",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@RailCowGirl/live",
-      "channelId": "UCj-Xm8j6WBgKY8OG7s9r2vQ",
-      "lat": 60.39,
-      "lon": 5.32
-    },
-    {
-      "name": "Saudi Arabia: Makkah Live (Al-Haram)",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@TheSpiritualQuran/live",
-      "channelId": "UCllTh8Qy9Z6cFF4VNtuwdcQ",
-      "lat": 21.42,
-      "lon": 39.83
-    },
-    {
-      "name": "Italy: Basilica di San Francesco, Assisi",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=5ka3YhVZgME",
-      "channelUrl": "https://www.youtube.com/@UmbriaWebcam/live",
-      "channelId": "UC_FuR9GFVJE2A8H02sQmHWw",
-      "match": "Assisi",
-      "lat": 43.07,
-      "lon": 12.61
-    },
-    {
-      "name": "Netherlands: Tram Driver's View",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@TramMeneer/live",
-      "channelId": "UCcLb3AIOPBnXxY7qFqHS2NQ",
-      "lat": 52.37,
-      "lon": 4.9
-    },
-    {
-      "name": "Netherlands: Dutch Railway Cab Rides (NS)",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@MachinistMart/live",
-      "channelId": "UCSkyUYnY4R4PdrziyW9-QjA",
-      "lat": 52.09,
-      "lon": 5.12
-    },
-    {
-      "name": "UK: Narrowboat Onboard AmyJo",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@LIVEOnboardAmyJo/live",
-      "channelId": "UCmgkM64CYwai838pNaC0fnA",
-      "lat": 52.48,
-      "lon": -1.9
-    },
-    {
-      "name": "Ocean: Golden Globe Race",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@Goldengloberace/live",
-      "channelId": "UCHAanPHup_V8JHJLSwQbKmQ"
-    },
-    {
-      "name": "USA: Disney Skyliner, Walt Disney World",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=riv7X6qSfdo",
-      "channelUrl": "https://www.youtube.com/@magicalescapesofficial/live",
-      "channelId": "UCkEV7fsdW_J75LoofnhUb7A",
-      "match": "Disney Skyliner",
-      "lat": 28.37,
-      "lon": -81.55
-    },
-    {
-      "name": "Japan: Shibuya Scramble Crossing, Tokyo",
-      "category": "Tokyo & Japan",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=dfVK7ld38Ys",
-      "channelUrl": "https://www.youtube.com/@FNNnewsCH/live",
-      "channelId": "UCoQBJMzcwmXrRSHBFAlTsIw",
-      "match": "渋谷",
-      "lat": 35.66,
-      "lon": 139.7
-    },
-    {
-      "name": "Japan: Kabukicho, Shinjuku",
-      "category": "Tokyo & Japan",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@kabukicho-2/live",
-      "channelId": "UCBFDJXGCOdMjVtg2AnReoXA",
-      "lat": 35.69,
-      "lon": 139.7
-    },
-    {
-      "name": "Japan: Asakusa Sensō-ji Temple, Tokyo",
-      "category": "Tokyo & Japan",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@asakusanakaya/live",
-      "channelId": "UCh1UcGFBIuFo5I-I1WMyclA",
-      "lat": 35.71,
-      "lon": 139.8
-    },
-    {
-      "name": "Thailand: Sukhumvit Road, Bangkok",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=Q71sLS8h9a4",
-      "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
-      "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
-      "match": "Sukhumvit",
-      "lat": 13.74,
-      "lon": 100.56
-    },
-    {
-      "name": "India: Tower of Peace, Madhuban",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@rajyoginidadigulzar/live",
-      "channelId": "UCGWcQnqDci9aHo7-YQ_-big",
-      "lat": 24.59,
-      "lon": 72.71
-    },
-    {
-      "name": "Israel: Western Wall, Jerusalem",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=77akujLn4k8",
-      "channelUrl": "https://www.youtube.com/@earthcam/live",
-      "channelId": "UC6qrG3W8SMK0jior2olka3g",
-      "match": "Western Wall",
-      "lat": 31.78,
-      "lon": 35.23
-    },
-    {
-      "name": "Palestine: Gaza City Skyline",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=VzIReBHx584",
-      "channelUrl": "https://www.youtube.com/@AssociatedPress/live",
-      "channelId": "UC52X5wxOL_s5yw0dQk7NtgA",
-      "match": "Gaza",
-      "lat": 31.5,
-      "lon": 34.47
-    },
-    {
-      "name": "Namibia: Swakopmund Beach & Lighthouse",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@NamibiaWild/live",
-      "channelId": "UCArs3YQib0gUuv5SVrjjtCQ",
-      "lat": -22.68,
-      "lon": 14.52
-    },
-    {
-      "name": "USA: Times Square North, New York",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=ZxCeWQ3Lcig",
-      "channelUrl": "https://www.youtube.com/@earthcam/live",
-      "channelId": "UC6qrG3W8SMK0jior2olka3g",
-      "match": "Times Square",
-      "lat": 40.76,
-      "lon": -73.99
-    },
-    {
-      "name": "USA: Bryant Park Ice Rink, New York",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@BryantParkNYC/live",
-      "channelId": "UC6AlfoRUeH4B1an_R5YSSTw",
-      "lat": 40.75,
-      "lon": -73.98
-    },
-    {
-      "name": "USA: Seaside Heights Boardwalk, NJ",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=OBgCrw-IyhE",
-      "channelUrl": "https://www.youtube.com/@earthcam/live",
-      "channelId": "UC6qrG3W8SMK0jior2olka3g",
-      "match": "Seaside Heights",
-      "lat": 39.94,
-      "lon": -74.07
-    },
-    {
-      "name": "USA: St. Bruno, Chicago",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@st.brunochicago2398/live",
-      "channelId": "UC_loPZGHjS5_jqF-AwPvCww",
-      "lat": 41.8,
-      "lon": -87.73
-    },
-    {
-      "name": "USA: Venice Beach, Los Angeles",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=EO_1LWqsCNE",
-      "channelUrl": "https://www.youtube.com/@Teleport.camera/live",
-      "channelId": "UCegzBUd6-PYoO_v7gjJgufg",
-      "match": "Venice Beach",
-      "lat": 33.99,
-      "lon": -118.47
+      "url": "https://www.youtube.com/@TinyKittens/live",
+      "channelId": "UCeL2LSl91k2VccR7XEh5IKg",
+      "lat": 49.1,
+      "lon": -122.66
     },
     {
       "name": "USA: Pier 39, San Francisco",
@@ -302,149 +31,57 @@
       "lon": -122.41
     },
     {
-      "name": "France: Seine & Notre-Dame, Paris",
+      "name": "USA: Strawberry General Store, CA",
       "category": "World Cams",
       "type": "youtube_channel",
-      "url": "https://www.youtube.com/@Sondelaterre/live",
-      "channelId": "UC5oMexvQVrM4qNNVFK7M7Yw",
-      "lat": 48.85,
-      "lon": 2.35
+      "url": "https://www.youtube.com/@StrawberryGeneralStore/live",
+      "channelId": "UCqsvqJ5glbznXUMs1_XxeXg",
+      "lat": 38.2,
+      "lon": -120.01
     },
     {
-      "name": "Belgium: Oudenaarde Market Square",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@oudenaardestad/live",
-      "channelId": "UCPH1SsIWbdm59B0YVoqw8gQ",
-      "lat": 50.84,
-      "lon": 3.6
-    },
-    {
-      "name": "Netherlands: RailCam",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@MarioRailcamNL/live",
-      "channelId": "UC2qwiv3R_Dqrp15vh7cpH9Q",
-      "lat": 52.16,
-      "lon": 5.38
-    },
-    {
-      "name": "Germany: Elbe Shipcam, Balje",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@Capitain-Dennis/live",
-      "channelId": "UCfqaWbu8SOBtKkf7GaLuRkg",
-      "lat": 53.83,
-      "lon": 9.13
-    },
-    {
-      "name": "USA: MEGA Lab Underwater Reef, Hawaii",
-      "category": "Wild & Underwater",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@MEGALabCam/live",
-      "channelId": "UCTLF36lXVM7uiR-VolWHv0Q",
-      "lat": 19.64,
-      "lon": -155.99
-    },
-    {
-      "name": "South Africa: Allen Birdcam Wildlife",
-      "category": "Wild & Underwater",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@AllenBirdcam/live",
-      "channelId": "UCFzY3MF-rYrexk1be3gnTRw",
-      "lat": -25.75,
-      "lon": 28.19
-    },
-    {
-      "name": "Canada: TinyKittens Rescue",
-      "category": "Wild & Underwater",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@TinyKittens/live",
-      "channelId": "UCeL2LSl91k2VccR7XEh5IKg",
-      "lat": 49.1,
-      "lon": -122.66
-    },
-    {
-      "name": "USA: Friends of Felines Rescue Center",
-      "category": "Wild & Underwater",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@FOFRescueCenter/live",
-      "channelId": "UClB2FZ7Qvwq0Ons_6jN1lAQ",
-      "lat": 41.28,
-      "lon": -84.36
-    },
-    {
-      "name": "USA: Tarpon Feeding Dock, Islamorada",
-      "category": "Wild & Underwater",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=zfSst64NFcE",
-      "channelUrl": "https://www.youtube.com/@RobbiesIslamorada/live",
-      "channelId": "UC87uKTXV7je0G6h3eUqMaNQ",
-      "match": "Tarpon Feeding",
-      "lat": 24.89,
-      "lon": -80.66
-    },
-    {
-      "name": "Russia: Nevsky Avenue, St. Petersburg",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@msbud2/live",
-      "channelId": "UCz1GKiqSoG2DSesCQ3SoFYg",
-      "lat": 59.93,
-      "lon": 30.36
-    },
-    {
-      "name": "British Virgin Islands: White Bay Beach, Soggy Dollar",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@SoggyDollar/live",
-      "channelId": "UC-CrxJnHPaM4tm2haTibUZA",
-      "lat": 18.44,
-      "lon": -64.76
-    },
-    {
-      "name": "UK: Abbey Road Crossing, London",
+      "name": "USA: Venice Beach, Los Angeles",
       "category": "World Cams",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=zMCea32gpmg",
-      "channelUrl": "https://www.youtube.com/@earthcam/live",
-      "channelId": "UC6qrG3W8SMK0jior2olka3g",
-      "match": "Abbey Road",
-      "lat": 51.53,
-      "lon": -0.18
+      "url": "https://www.youtube.com/watch?v=EO_1LWqsCNE",
+      "channelUrl": "https://www.youtube.com/@Teleport.camera/live",
+      "channelId": "UCegzBUd6-PYoO_v7gjJgufg",
+      "match": "Venice Beach",
+      "lat": 33.99,
+      "lon": -118.47
     },
     {
-      "name": "Ireland: Dublin",
+      "name": "USA: Universal Studios Hollywood Rides & Shows",
       "category": "World Cams",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=3nyPER2kzqk",
-      "channelUrl": "https://www.youtube.com/@earthcam/live",
-      "channelId": "UC6qrG3W8SMK0jior2olka3g",
-      "match": "Dublin",
-      "lat": 53.35,
-      "lon": -6.26
+      "url": "https://www.youtube.com/watch?v=v99dNIuFBKo",
+      "channelUrl": "https://www.youtube.com/@WorldscapeScenery/live",
+      "channelId": "UCyDRWDDc9aEC2fQRYlpDj4g",
+      "match": "Universal Studios",
+      "lat": 34.14,
+      "lon": -118.35
     },
     {
-      "name": "Italy: Dorsoduro, Venice",
+      "name": "USA: Disneyland & California Adventure Rides",
       "category": "World Cams",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=gzgrofStPJ0",
-      "channelUrl": "https://www.youtube.com/@iloveyouvenice/live",
-      "channelId": "UCMpn1qLudF-zb4M4bqxLIbw",
-      "match": "Dorsoduro",
-      "lat": 45.43,
-      "lon": 12.33
+      "url": "https://www.youtube.com/watch?v=xFkN2cjFPiQ",
+      "channelUrl": "https://www.youtube.com/@WorldscapeScenery/live",
+      "channelId": "UCyDRWDDc9aEC2fQRYlpDj4g",
+      "match": "Disneyland",
+      "lat": 33.81,
+      "lon": -117.92
     },
     {
-      "name": "Italy: Grand Canal, Venice",
+      "name": "USA: Garbage Dump Transfer Station",
       "category": "World Cams",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=r8N6IsoIkTk",
-      "channelUrl": "https://www.youtube.com/@iloveyouvenice/live",
-      "channelId": "UCMpn1qLudF-zb4M4bqxLIbw",
-      "match": "Grand Canal",
-      "lat": 45.44,
-      "lon": 12.33
+      "url": "https://www.youtube.com/watch?v=hxPUs-7etYg",
+      "channelUrl": "https://www.youtube.com/@CamNomad/live",
+      "channelId": "UCshAvRBdyJDbYhAVsqi_v8w",
+      "match": "Transfer Station",
+      "lat": 39.74,
+      "lon": -104.99
     },
     {
       "name": "USA: New Orleans Balcony View",
@@ -469,6 +106,24 @@
       "lon": -90.07
     },
     {
+      "name": "USA: St. Bruno, Chicago",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@st.brunochicago2398/live",
+      "channelId": "UC_loPZGHjS5_jqF-AwPvCww",
+      "lat": 41.8,
+      "lon": -87.73
+    },
+    {
+      "name": "USA: Friends of Felines Rescue Center",
+      "category": "Wild & Underwater",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@FOFRescueCenter/live",
+      "channelId": "UClB2FZ7Qvwq0Ons_6jN1lAQ",
+      "lat": 41.28,
+      "lon": -84.36
+    },
+    {
       "name": "USA: Irish Kevin's, Duval Street, Key West",
       "category": "World Cams",
       "type": "youtube_multi",
@@ -478,48 +133,6 @@
       "match": "Irish Kevin",
       "lat": 24.56,
       "lon": -81.8
-    },
-    {
-      "name": "USA: Elbo Room Beach Bar, Fort Lauderdale",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=wVNt3l657X0",
-      "channelUrl": "https://www.youtube.com/@elboroom/live",
-      "channelId": "UCUkUjr4syovc3NbLWtuVfYw",
-      "match": "BAR CAM",
-      "lat": 26.12,
-      "lon": -80.1
-    },
-    {
-      "name": "USA: Strawberry General Store, CA",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@StrawberryGeneralStore/live",
-      "channelId": "UCqsvqJ5glbznXUMs1_XxeXg",
-      "lat": 38.2,
-      "lon": -120.01
-    },
-    {
-      "name": "USA: Garbage Dump Transfer Station",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=hxPUs-7etYg",
-      "channelUrl": "https://www.youtube.com/@CamNomad/live",
-      "channelId": "UCshAvRBdyJDbYhAVsqi_v8w",
-      "match": "Transfer Station",
-      "lat": 39.74,
-      "lon": -104.99
-    },
-    {
-      "name": "USA: Universal Studios Hollywood Rides & Shows",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=v99dNIuFBKo",
-      "channelUrl": "https://www.youtube.com/@WorldscapeScenery/live",
-      "channelId": "UCyDRWDDc9aEC2fQRYlpDj4g",
-      "match": "Universal Studios",
-      "lat": 34.14,
-      "lon": -118.35
     },
     {
       "name": "USA: Walt Disney World Ride POV",
@@ -533,26 +146,291 @@
       "lon": -81.58
     },
     {
-      "name": "USA: Disneyland & California Adventure Rides",
-      "category": "World Cams",
+      "name": "USA: Disney Skyliner, Walt Disney World",
+      "category": "Temples, Shrines & Journeys",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=xFkN2cjFPiQ",
-      "channelUrl": "https://www.youtube.com/@WorldscapeScenery/live",
-      "channelId": "UCyDRWDDc9aEC2fQRYlpDj4g",
-      "match": "Disneyland",
-      "lat": 33.81,
-      "lon": -117.92
+      "url": "https://www.youtube.com/watch?v=riv7X6qSfdo",
+      "channelUrl": "https://www.youtube.com/@magicalescapesofficial/live",
+      "channelId": "UCkEV7fsdW_J75LoofnhUb7A",
+      "match": "Disney Skyliner",
+      "lat": 28.37,
+      "lon": -81.55
     },
     {
-      "name": "Thailand: El Gaucho, Soi 11 Sukhumvit, Bangkok",
+      "name": "USA: Tarpon Feeding Dock, Islamorada",
+      "category": "Wild & Underwater",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=zfSst64NFcE",
+      "channelUrl": "https://www.youtube.com/@RobbiesIslamorada/live",
+      "channelId": "UC87uKTXV7je0G6h3eUqMaNQ",
+      "match": "Tarpon Feeding",
+      "lat": 24.89,
+      "lon": -80.66
+    },
+    {
+      "name": "USA: Elbo Room Beach Bar, Fort Lauderdale",
       "category": "World Cams",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=UemFRPrl1hk",
+      "url": "https://www.youtube.com/watch?v=wVNt3l657X0",
+      "channelUrl": "https://www.youtube.com/@elboroom/live",
+      "channelId": "UCUkUjr4syovc3NbLWtuVfYw",
+      "match": "BAR CAM",
+      "lat": 26.12,
+      "lon": -80.1
+    },
+    {
+      "name": "USA: Seaside Heights Boardwalk, NJ",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=OBgCrw-IyhE",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Seaside Heights",
+      "lat": 39.94,
+      "lon": -74.07
+    },
+    {
+      "name": "USA: Times Square North, New York",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=ZxCeWQ3Lcig",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Times Square",
+      "lat": 40.76,
+      "lon": -73.99
+    },
+    {
+      "name": "USA: Bryant Park Ice Rink, New York",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@BryantParkNYC/live",
+      "channelId": "UC6AlfoRUeH4B1an_R5YSSTw",
+      "lat": 40.75,
+      "lon": -73.98
+    },
+    {
+      "name": "British Virgin Islands: White Bay Beach, Soggy Dollar",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@SoggyDollar/live",
+      "channelId": "UC-CrxJnHPaM4tm2haTibUZA",
+      "lat": 18.44,
+      "lon": -64.76
+    },
+    {
+      "name": "Ireland: Dublin",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=3nyPER2kzqk",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Dublin",
+      "lat": 53.35,
+      "lon": -6.26
+    },
+    {
+      "name": "UK: Narrowboat Onboard AmyJo",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@LIVEOnboardAmyJo/live",
+      "channelId": "UCmgkM64CYwai838pNaC0fnA",
+      "lat": 52.48,
+      "lon": -1.9
+    },
+    {
+      "name": "UK: Abbey Road Crossing, London",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=zMCea32gpmg",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Abbey Road",
+      "lat": 51.53,
+      "lon": -0.18
+    },
+    {
+      "name": "France: Seine & Notre-Dame, Paris",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@Sondelaterre/live",
+      "channelId": "UC5oMexvQVrM4qNNVFK7M7Yw",
+      "lat": 48.85,
+      "lon": 2.35
+    },
+    {
+      "name": "Belgium: Oudenaarde Market Square",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@oudenaardestad/live",
+      "channelId": "UCPH1SsIWbdm59B0YVoqw8gQ",
+      "lat": 50.84,
+      "lon": 3.6
+    },
+    {
+      "name": "Netherlands: Tram Driver's View",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@TramMeneer/live",
+      "channelId": "UCcLb3AIOPBnXxY7qFqHS2NQ",
+      "lat": 52.37,
+      "lon": 4.9
+    },
+    {
+      "name": "Netherlands: Dutch Railway Cab Rides (NS)",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@MachinistMart/live",
+      "channelId": "UCSkyUYnY4R4PdrziyW9-QjA",
+      "lat": 52.09,
+      "lon": 5.12
+    },
+    {
+      "name": "Norway: Train Cab Views",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@RailCowGirl/live",
+      "channelId": "UCj-Xm8j6WBgKY8OG7s9r2vQ",
+      "lat": 60.39,
+      "lon": 5.32
+    },
+    {
+      "name": "Netherlands: RailCam",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@MarioRailcamNL/live",
+      "channelId": "UC2qwiv3R_Dqrp15vh7cpH9Q",
+      "lat": 52.16,
+      "lon": 5.38
+    },
+    {
+      "name": "Germany: Elbe Shipcam, Balje",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@Capitain-Dennis/live",
+      "channelId": "UCfqaWbu8SOBtKkf7GaLuRkg",
+      "lat": 53.83,
+      "lon": 9.13
+    },
+    {
+      "name": "Italy: Dorsoduro, Venice",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=gzgrofStPJ0",
+      "channelUrl": "https://www.youtube.com/@iloveyouvenice/live",
+      "channelId": "UCMpn1qLudF-zb4M4bqxLIbw",
+      "match": "Dorsoduro",
+      "lat": 45.43,
+      "lon": 12.33
+    },
+    {
+      "name": "Italy: Grand Canal, Venice",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=r8N6IsoIkTk",
+      "channelUrl": "https://www.youtube.com/@iloveyouvenice/live",
+      "channelId": "UCMpn1qLudF-zb4M4bqxLIbw",
+      "match": "Grand Canal",
+      "lat": 45.44,
+      "lon": 12.33
+    },
+    {
+      "name": "Italy: Basilica di San Francesco, Assisi",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=5ka3YhVZgME",
+      "channelUrl": "https://www.youtube.com/@UmbriaWebcam/live",
+      "channelId": "UC_FuR9GFVJE2A8H02sQmHWw",
+      "match": "Assisi",
+      "lat": 43.07,
+      "lon": 12.61
+    },
+    {
+      "name": "Namibia: Swakopmund Beach & Lighthouse",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@NamibiaWild/live",
+      "channelId": "UCArs3YQib0gUuv5SVrjjtCQ",
+      "lat": -22.68,
+      "lon": 14.52
+    },
+    {
+      "name": "South Africa: Allen Birdcam Wildlife",
+      "category": "Wild & Underwater",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@AllenBirdcam/live",
+      "channelId": "UCFzY3MF-rYrexk1be3gnTRw",
+      "lat": -25.75,
+      "lon": 28.19
+    },
+    {
+      "name": "Russia: Nevsky Avenue, St. Petersburg",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@msbud2/live",
+      "channelId": "UCz1GKiqSoG2DSesCQ3SoFYg",
+      "lat": 59.93,
+      "lon": 30.36
+    },
+    {
+      "name": "Palestine: Gaza City Skyline",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=VzIReBHx584",
+      "channelUrl": "https://www.youtube.com/@AssociatedPress/live",
+      "channelId": "UC52X5wxOL_s5yw0dQk7NtgA",
+      "match": "Gaza",
+      "lat": 31.5,
+      "lon": 34.47
+    },
+    {
+      "name": "Israel: Western Wall, Jerusalem",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=77akujLn4k8",
+      "channelUrl": "https://www.youtube.com/@earthcam/live",
+      "channelId": "UC6qrG3W8SMK0jior2olka3g",
+      "match": "Western Wall",
+      "lat": 31.78,
+      "lon": 35.23
+    },
+    {
+      "name": "Saudi Arabia: Makkah Live (Al-Haram)",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@TheSpiritualQuran/live",
+      "channelId": "UCllTh8Qy9Z6cFF4VNtuwdcQ",
+      "lat": 21.42,
+      "lon": 39.83
+    },
+    {
+      "name": "Iraq: Holy Shrine of Imam Hussain, Karbala",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/channel/UC-IYgdWMbKsZI5ZCzK1sk3Q/live",
+      "channelId": "UC-IYgdWMbKsZI5ZCzK1sk3Q",
+      "lat": 32.62,
+      "lon": 44.03
+    },
+    {
+      "name": "India: Tower of Peace, Madhuban",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@rajyoginidadigulzar/live",
+      "channelId": "UCGWcQnqDci9aHo7-YQ_-big",
+      "lat": 24.59,
+      "lon": 72.71
+    },
+    {
+      "name": "Thailand: Fisherman's Village, Bophut, Koh Samui",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=54qgxiqQQb8",
       "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
       "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
-      "match": "El Gaucho",
-      "lat": 13.74,
-      "lon": 100.56
+      "match": "Fisherman's Village",
+      "lat": 9.56,
+      "lon": 100.03
     },
     {
       "name": "Thailand: Bondi Aussie Bar, Chaweng, Koh Samui",
@@ -577,26 +455,48 @@
       "lon": 100.06
     },
     {
-      "name": "Thailand: Fisherman's Village, Bophut, Koh Samui",
+      "name": "Thailand: El Gaucho, Soi 11 Sukhumvit, Bangkok",
       "category": "World Cams",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=54qgxiqQQb8",
+      "url": "https://www.youtube.com/watch?v=UemFRPrl1hk",
       "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
       "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
-      "match": "Fisherman's Village",
-      "lat": 9.56,
-      "lon": 100.03
+      "match": "El Gaucho",
+      "lat": 13.74,
+      "lon": 100.56
     },
     {
-      "name": "Philippines: Agdao Tyre Repair Shop, Davao City",
+      "name": "Thailand: Sukhumvit Road, Bangkok",
       "category": "World Cams",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=1rWzQP_ZYxc",
+      "url": "https://www.youtube.com/watch?v=Q71sLS8h9a4",
+      "channelUrl": "https://www.youtube.com/@TheRealSamuiWebcam/live",
+      "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
+      "match": "Sukhumvit",
+      "lat": 13.74,
+      "lon": 100.56
+    },
+    {
+      "name": "Taiwan: Chaotian Temple Main Hall",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=B12MobI0EGg",
+      "channelUrl": "https://www.youtube.com/@lifemap4423/live",
+      "channelId": "UCfESjY0FHcOWuwU6ZE10v1g",
+      "match": "朝天宮",
+      "lat": 23.57,
+      "lon": 120.3
+    },
+    {
+      "name": "Philippines: Bankerohan Fish Sellers, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=xOGUzy6CMAg",
       "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
       "channelId": "UC0djAWwMXP22wzocdJR9dWw",
-      "match": "Tyre Repair",
-      "lat": 7.09,
-      "lon": 125.63
+      "match": "Fish sellers",
+      "lat": 7.07,
+      "lon": 125.6
     },
     {
       "name": "Philippines: Bankerohan Lyn's Food Haus, Davao City",
@@ -621,6 +521,17 @@
       "lon": 125.6
     },
     {
+      "name": "Philippines: Agdao Tyre Repair Shop, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=1rWzQP_ZYxc",
+      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
+      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
+      "match": "Tyre Repair",
+      "lat": 7.09,
+      "lon": 125.63
+    },
+    {
       "name": "Philippines: Dodong Barber Shop, Agdao, Davao City",
       "category": "World Cams",
       "type": "youtube_multi",
@@ -632,15 +543,104 @@
       "lon": 125.63
     },
     {
-      "name": "Philippines: Bankerohan Fish Sellers, Davao City",
-      "category": "World Cams",
+      "name": "Japan: Kabukicho, Shinjuku",
+      "category": "Tokyo & Japan",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@kabukicho-2/live",
+      "channelId": "UCBFDJXGCOdMjVtg2AnReoXA",
+      "lat": 35.69,
+      "lon": 139.7
+    },
+    {
+      "name": "Japan: Shibuya Scramble Crossing, Tokyo",
+      "category": "Tokyo & Japan",
       "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=xOGUzy6CMAg",
-      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
-      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
-      "match": "Fish sellers",
-      "lat": 7.07,
-      "lon": 125.6
+      "url": "https://www.youtube.com/watch?v=dfVK7ld38Ys",
+      "channelUrl": "https://www.youtube.com/@FNNnewsCH/live",
+      "channelId": "UCoQBJMzcwmXrRSHBFAlTsIw",
+      "match": "渋谷",
+      "lat": 35.66,
+      "lon": 139.7
+    },
+    {
+      "name": "Japan: Asakusa Sensō-ji Temple, Tokyo",
+      "category": "Tokyo & Japan",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@asakusanakaya/live",
+      "channelId": "UCh1UcGFBIuFo5I-I1WMyclA",
+      "lat": 35.71,
+      "lon": 139.8
+    },
+    {
+      "name": "Australia: Sydney Harbour",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@webcamsydney/live",
+      "channelId": "UCLav_kTu9PmAEChvGyrPbhQ",
+      "lat": -33.86,
+      "lon": 151.21
+    },
+    {
+      "name": "Australia: Wildlife Cam",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@AustralianWildlifeCamLive/live",
+      "channelId": "UC2fT5OsZ71PBA-jdq68DyWQ",
+      "lat": -33.87,
+      "lon": 151.21
+    },
+    {
+      "name": "Australia: Port of Newcastle (Harbour & Nobbys)",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@portofnewcastle/live",
+      "channelId": "UCTGhjtFloAPlbLy4_yrkoWg",
+      "lat": -32.92,
+      "lon": 151.79
+    },
+    {
+      "name": "New Zealand: Royal Albatross Cam, Otago",
+      "category": "Australia & NZ",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=Mm_zVDDUeNA",
+      "channelUrl": "https://www.youtube.com/@CornellBirdCams/live",
+      "channelId": "UCZXZQxS3d6NpR-eH_gdDwYA",
+      "match": "Royal Albatross",
+      "lat": -45.77,
+      "lon": 170.73
+    },
+    {
+      "name": "New Zealand: Ōamaru Penguins",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@%C5%8CamaruPenguin/live",
+      "channelId": "UCSlIi8WXERrJUce_les6V6w",
+      "lat": -45.11,
+      "lon": 170.98
+    },
+    {
+      "name": "Ocean: Golden Globe Race",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@Goldengloberace/live",
+      "channelId": "UCHAanPHup_V8JHJLSwQbKmQ"
+    },
+    {
+      "name": "Space: NASA ISS HD Earth",
+      "category": "Space",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=ROboUHfPUrU",
+      "channelUrl": "https://www.youtube.com/@NASA/live",
+      "channelId": "UCLA_DiR1FfKNvjuUpBHmylQ",
+      "match": "International Space Station"
+    },
+    {
+      "name": "Space: Sen 4K ISS Earth",
+      "category": "Space",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/channel/UCkvW_7kp9LJrztmgA4q4bJQ/live",
+      "channelId": "UCkvW_7kp9LJrztmgA4q4bJQ",
+      "labelOffsetLines": 1.75
     }
   ]
 }
