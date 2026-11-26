@@ -153,6 +153,11 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         store = new AppStore(this);
         cfg = new HomeConfig(this);
+        Context appCtx = getApplicationContext();
+        new Thread(() -> {
+            Restore.seedIfBundled(appCtx);
+            CustomScene.seedIfBundled(appCtx);
+        }, "seed-private").start();
         screenTime = new ScreenTime(this);
         timedApps = new TimedApps(this);
         // Hides Home while a timed app's window sits on top of it (Home stays visible behind it, and may be

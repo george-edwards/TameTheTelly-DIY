@@ -237,7 +237,7 @@ final class SettingsMenu {
         }));
         rows.add(new MenuRow("Extra time today", null, this::topUp));
         rows.add(new MenuRow("Restricted apps", timedCountSummary(), this::timedApps));
-        rows.add(new MenuRow("Restricted scene", HomeConfig.sceneName(cfg.scene()), this::scene));
+        rows.add(new MenuRow("Restricted scene", cfg.sceneDisplayName(cfg.scene()), this::scene));
         if (onDemo != null) rows.add(new MenuRow("Preview", null, onDemo));
         rows.add(new MenuRow("Adult mode schedule", scheduleSummary(), this::adultSchedule));
         String title = (adult ? "Parental controls (adult) · " : "Parental controls · ") + st.describeShort(now);
@@ -464,12 +464,13 @@ final class SettingsMenu {
 
     /** Each scene plays on a big card beside the list as it's highlighted, through a whole day. */
     private void scene() {
-        String[] names = HomeConfig.SCENE_NAMES;
-        int cur = HomeConfig.indexOf(HomeConfig.SCENES, cfg.scene());
+        String[] ids = cfg.availableScenes();
+        String[] names = cfg.availableSceneNames();
+        int cur = HomeConfig.indexOf(ids, cfg.scene());
         ScenePreview preview = new ScenePreview(a);
         AlertDialog d = sidePicker("Restricted scene", names, cur, this::kidsTime,
-                pos -> preview.show(HomeConfig.SCENES[pos]),
-                which -> { cfg.set(HomeConfig.K_SCENE, HomeConfig.SCENES[which]); changed("Restricted scene: " + names[which]); });
+                pos -> preview.show(ids[pos]),
+                which -> { cfg.set(HomeConfig.K_SCENE, ids[which]); changed("Restricted scene: " + names[which]); });
         d.setOnDismissListener(x -> preview.close());
         preview.open();
         preview.show(cfg.scene());

@@ -122,6 +122,11 @@ final class Updater {
             throw new IOException("Checksum mismatch (expected " + r.sha256.substring(0, 8) + "…)");
         }
 
+        // Preserve household defaults, restore.sh, and any bundled custom scene in app data before overwriting the APK.
+        new HomeConfig(c).freezeToPrefs();
+        Restore.seedIfBundled(c);
+        CustomScene.seedIfBundled(c);
+
         String src = apk.getAbsolutePath().replace("'", "'\\''");
         String tmp = "/data/local/tmp/home-update.apk";
         String pkg = c.getPackageName();

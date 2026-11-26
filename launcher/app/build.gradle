@@ -4,10 +4,22 @@ plugins {
     id 'app.cash.paparazzi'
 }
 
+def household = project.hasProperty('household') ? project.property('household').toString().trim() : ''
+def privDir = household ? rootProject.file("../private/${household}") : null
+if (privDir != null && !privDir.exists()) {
+    throw new GradleException("Household folder not found: ${privDir}")
+}
+
 def restoreAssets = file("${rootProject.ext.outDir}/restore-assets")
-def copyRestore = tasks.register('copyRestoreScript', Copy) {
-    from rootProject.file('../restore.sh')
+def copyRestore = tasks.register('copyRestoreScript', Sync) {
+    def privRestore = privDir != null ? new File(privDir, 'restore.sh') : null
+    from (privRestore != null && privRestore.exists() ? privRestore : rootProject.file('../restore.sh'))
     from rootProject.file('../streams.json')
+    if (privDir != null && new File(privDir, 'custom_scene').exists()) {
+        from(new File(privDir, 'custom_scene')) {
+            into 'custom_scene'
+        }
+    }
     into restoreAssets
 }
 tasks.matching { it.name == 'preBuild' }.configureEach { dependsOn copyRestore }
@@ -47,7 +59,14 @@ android {
     }
     kotlinOptions { jvmTarget = '17' }
     // The repo's restore.sh is built in as an asset: Home's "Put the TV back" button runs the very same file.
-    sourceSets { main { assets.srcDir restoreAssets } }
+    sourceSets {
+        main { assets.srcDir restoreAssets }
+        if (privDir != null && new File(privDir, 'res').exists()) {
+            def privRes = new File(privDir, 'res')
+            release { res.srcDir privRes }
+            debug { res.srcDir privRes }
+        }
+    }
 }
 
 dependencies {

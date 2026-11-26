@@ -6,34 +6,67 @@ import android.util.Base64;
 import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
  * "Put the TV back": undo everything done to this TV, from the TV itself. The undo list is the repo's
- * restore.sh, built into the app as an asset (launcher/app/build.gradle), so the button and `./restore.sh` from a
- * computer always do exactly the same thing. Home copies the script to the TV over its own adb connection
- * (LocalAdb: apps can't re-enable packages or change the home screen themselves) and runs it with shell rights.
- * The script ends by uninstalling Home and restarting the TV, in the background, so it can finish after Home
- * has gone.
+ * restore.sh, built into the app as an asset (launcher/app/build.gradle), and mirrored into filesDir/restore.sh
+ * when a household-specific script is bundled so generic in-app self-updates never clobber it. Home copies
+ * the script to the TV over its own adb connection (LocalAdb: apps can't re-enable packages or change the home
+ * screen themselves) and runs it with shell rights. The script ends by uninstalling Home and restarting the TV,
+ * in the background, so it can finish after Home has gone.
  *
  * Before the script, Home puts back what only it can reach: the TV picture settings it changes through TCL's
- * API (config.xml restore_backlight, restore_blue_light).
+ * API (HomeConfig restore_backlight / restore_blue_light).
  */
 final class Restore {
     private static final String TAG = "HomeRestore";
     static final String ON_TV = "/data/local/tmp/home-restore.sh";
+    private static final String TEMPLATE_MARKER = "# Examples of the shape each entry takes";
     private static final int CHUNK = 3_000;
 
-    /** The script, as built into the app. */
-    static String script(Context c) throws IOException {
-        try (InputStream in = c.getAssets().open("restore.sh")) {
+    private static File savedFile(Context c) {
+        return new File(c.getApplicationContext().getFilesDir(), "restore.sh");
+    }
+
+    private static String readAll(InputStream in) throws IOException {
+        try (InputStream s = in) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buf = new byte[8192];
-            for (int n; (n = in.read(buf)) > 0; ) out.write(buf, 0, n);
+            for (int n; (n = s.read(buf)) > 0; ) out.write(buf, 0, n);
             return out.toString("UTF-8");
         }
+    }
+
+    /**
+     * If the APK bundles a household-specific restore.sh (i.e. not the generic template), persist it in
+     * filesDir/restore.sh so later generic self-updates keep this TV's real undo list intact.
+     */
+    static void seedIfBundled(Context c) {
+        try {
+            String bundled = readAll(c.getAssets().open("restore.sh"));
+            if (bundled.trim().isEmpty() || bundled.contains(TEMPLATE_MARKER)) return;
+            File dst = savedFile(c);
+            try (FileOutputStream out = new FileOutputStream(dst)) {
+                out.write(bundled.getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (IOException | RuntimeException e) {
+            Log.w(TAG, "seed restore.sh failed: " + e.getMessage());
+        }
+    }
+
+    /** The TV's saved restore.sh if present, otherwise the script built into the APK. */
+    static String script(Context c) throws IOException {
+        File saved = savedFile(c);
+        if (saved.isFile() && saved.length() > 0) {
+            return readAll(new FileInputStream(saved));
+        }
+        return readAll(c.getAssets().open("restore.sh"));
     }
 
     /** Copy the script onto the TV (base64 in chunks, so no command gets long), ready to run. */
@@ -67,8 +100,9 @@ final class Restore {
     /** Puts the TV back. Blocking (a minute or so); call off the main thread. Returns the script's output. */
     static String run(Context c) throws IOException {
         try { push(c); } catch (IOException e) { throw new NotStarted(e); }
-        int backlight = c.getResources().getInteger(R.integer.restore_backlight);
-        int blue = c.getResources().getInteger(R.integer.restore_blue_light);
+        HomeConfig cfg = new HomeConfig(c);
+        int backlight = cfg.restoreBacklight();
+        int blue = cfg.restoreBlueLight();
         if (blue >= 0) TvBlueLight.set(c, blue == 1);
         if (backlight >= 0) TvBacklight.fadeTo(c, null, backlight);
         Log.i(TAG, "running " + ON_TV);

@@ -56,9 +56,12 @@ abstract class Scene {
     /** The scene chosen in settings. */
     static Scene create(Context c, Mode mode) { return create(c, mode, new HomeConfig(c).scene()); }
 
-    /** A scene by its id (HomeConfig.SCENES): Kids' time's preview shows each one as it's highlighted. */
+    /** A scene by its id (HomeConfig.SCENES / SCENE_CUSTOM): Kids' time's preview shows each one as it's highlighted. */
     static Scene create(Context c, Mode mode, String id) {
         switch (id) {
+            case HomeConfig.SCENE_CUSTOM:
+                if (CustomScene.isAvailable(c)) return new CustomScene(c, mode);
+                return new SunScene(mode);
             case HomeConfig.SCENE_FAIRY: return new FairyScene(mode);
             case HomeConfig.SCENE_TRAIN: return new TrainScene(mode);
             default: return new SunScene(mode);

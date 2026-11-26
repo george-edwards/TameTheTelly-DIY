@@ -12,7 +12,7 @@ import android.content.res.Resources;
  */
 final class HomeConfig {
     /** The bedtime scenes, by the id stored in settings (and in config.xml's <scene>). */
-    static final String SCENE_SUN = "sun", SCENE_FAIRY = "fairy", SCENE_TRAIN = "train";
+    static final String SCENE_CUSTOM = "custom", SCENE_SUN = "sun", SCENE_FAIRY = "fairy", SCENE_TRAIN = "train";
     static final String[] SCENES = {SCENE_SUN, SCENE_FAIRY, SCENE_TRAIN};
     static final String[] SCENE_NAMES = {"Sunset hills", "Fairy garden", "Steam train"};
 
@@ -25,7 +25,8 @@ final class HomeConfig {
             K_ADULT_START = "adult_start", K_ADULT_END = "adult_end",
             K_OVERLAY_CORNER = "overlay_corner", K_OVERLAY_SIZE = "overlay_size",
             K_WORLD_CAMS = "world_cams", K_WORLD_CAMS_URL = "world_cams_url",
-            K_UPDATE_URL = "update_url";
+            K_UPDATE_URL = "update_url",
+            K_RESTORE_BACKLIGHT = "restore_backlight", K_RESTORE_BLUE_LIGHT = "restore_blue_light";
     static final String CORNER_TR = "top_right", CORNER_TL = "top_left", CORNER_BR = "bottom_right", CORNER_BL = "bottom_left";
     static final String[] OVERLAY_CORNERS = {CORNER_TR, CORNER_TL, CORNER_BR, CORNER_BL};
     static final String[] OVERLAY_CORNER_NAMES = {"Top right", "Top left", "Bottom right", "Bottom left"};
@@ -40,13 +41,15 @@ final class HomeConfig {
 
     private static final Object UNSET = new Object();
 
+    private final Context app;
     private final SharedPreferences p;
     private final Resources r;
     private Object lastStartRaw = UNSET, lastEndRaw = UNSET;
     private int cachedStartMin = -1, cachedEndMin = -1;
 
     HomeConfig(Context c) {
-        p = c.getApplicationContext().getSharedPreferences("settings", Context.MODE_PRIVATE);
+        app = c.getApplicationContext();
+        p = app.getSharedPreferences("settings", Context.MODE_PRIVATE);
         r = c.getResources();
     }
 
@@ -68,7 +71,30 @@ final class HomeConfig {
     String overlaySize() { return oneOf(str(K_OVERLAY_SIZE, R.string.overlay_size), OVERLAY_SIZES, OVERLAY_MEDIUM); }
     static String overlayCornerName(String id) { int i = indexOf(OVERLAY_CORNERS, id); return i < 0 ? id : OVERLAY_CORNER_NAMES[i]; }
     static String overlaySizeName(String id) { int i = indexOf(OVERLAY_SIZES, id); return i < 0 ? id : OVERLAY_SIZE_NAMES[i]; }
-    String scene() { return oneOf(str(K_SCENE, R.string.scene), SCENES, SCENE_SUN); }
+    String[] availableScenes() {
+        if (!CustomScene.isAvailable(app)) return SCENES;
+        String[] out = new String[SCENES.length + 1];
+        out[0] = SCENE_CUSTOM;
+        System.arraycopy(SCENES, 0, out, 1, SCENES.length);
+        return out;
+    }
+
+    String[] availableSceneNames() {
+        if (!CustomScene.isAvailable(app)) return SCENE_NAMES;
+        String[] out = new String[SCENE_NAMES.length + 1];
+        out[0] = CustomScene.displayName(app);
+        System.arraycopy(SCENE_NAMES, 0, out, 1, SCENE_NAMES.length);
+        return out;
+    }
+
+    String sceneDisplayName(String id) {
+        if (SCENE_CUSTOM.equals(id) && CustomScene.isAvailable(app)) return CustomScene.displayName(app);
+        return sceneName(id);
+    }
+
+    String scene() { return oneOf(str(K_SCENE, R.string.scene), availableScenes(), SCENE_SUN); }
+    int restoreBacklight() { return num(K_RESTORE_BACKLIGHT, R.integer.restore_backlight); }
+    int restoreBlueLight() { return num(K_RESTORE_BLUE_LIGHT, R.integer.restore_blue_light); }
     /** Arrow code, U/D/L/R. */
     String parentCode() {
         String s = str(K_CODE, R.string.parent_code);
@@ -167,6 +193,53 @@ final class HomeConfig {
     /** Back to the defaults (config.xml) for everything. */
     void reset() { p.edit().clear().apply(); }
 
+    /**
+     * Persist every effective config.xml / cameras.xml default into SharedPreferences (only for keys not
+     * already stored) so a generic in-app self-update never reverts household settings. Synchronous commit().
+     */
+    void freezeToPrefs() {
+        SharedPreferences.Editor ed = p.edit();
+        putIfMissing(ed, K_THEME, R.string.theme);
+        putIfMissing(ed, K_CAMERAS, R.string.cameras);
+        putIfMissing(ed, K_OVERLAY_CORNER, R.string.overlay_corner);
+        putIfMissing(ed, K_OVERLAY_SIZE, R.string.overlay_size);
+        putIfMissing(ed, K_WORLD_CAMS, R.string.world_cams);
+        putIfMissing(ed, K_WORLD_CAMS_URL, R.string.world_cams_url);
+        putIfMissing(ed, K_UPDATE_URL, R.string.update_url);
+        putIfMissing(ed, K_FAMILY, R.string.family_name);
+        putIfMissing(ed, K_POSTCODE, R.string.weather_postcode);
+        putIfMissing(ed, K_PLACE, R.string.weather_place);
+        putIfMissing(ed, K_LAT, R.string.weather_lat);
+        putIfMissing(ed, K_LON, R.string.weather_lon);
+        putIfMissing(ed, K_TZ, R.string.weather_tz);
+        putIntIfMissing(ed, K_BINS_DAY, R.integer.bins_day);
+        putIfMissing(ed, K_BINS_EVERY, R.string.bins_every_week);
+        putIfMissing(ed, K_BINS_ANCHOR, R.string.bins_recycling_on);
+        putIntIfMissing(ed, K_MINUTES, R.integer.yt_minutes);
+        putIfMissing(ed, K_ADULT_START, R.string.adult_start);
+        putIfMissing(ed, K_ADULT_END, R.string.adult_end);
+        putIfMissing(ed, K_CODE, R.string.parent_code);
+        putIfMissing(ed, K_SCENE, R.string.scene);
+        putIfMissing(ed, K_TIMED, R.string.timed_apps);
+        putIntIfMissing(ed, K_RESTORE_BACKLIGHT, R.integer.restore_backlight);
+        putIntIfMissing(ed, K_RESTORE_BLUE_LIGHT, R.integer.restore_blue_light);
+        for (int i = 0; i < CAMERAS; i++) {
+            String n = Integer.toString(i + 1);
+            putIfMissing(ed, K_CAM_NAME + n, CAM_NAMES[i]);
+            putIfMissing(ed, K_CAM_URL + n, CAM_URLS[i]);
+            putIfMissing(ed, K_CAM_HD + n, CAM_HDS[i]);
+        }
+        ed.commit();
+    }
+
+    private void putIfMissing(SharedPreferences.Editor ed, String key, int resId) {
+        if (!p.contains(key)) ed.putString(key, r.getString(resId));
+    }
+
+    private void putIntIfMissing(SharedPreferences.Editor ed, String key, int resId) {
+        if (!p.contains(key)) ed.putInt(key, r.getInteger(resId));
+    }
+
     /** Set from text (adb). Returns an error, or null if it was accepted. */
     String setFromText(String key, String value) {
         if (key == null || value == null) return "need --es key and --es value";
@@ -176,7 +249,11 @@ final class HomeConfig {
             case K_WORLD_CAMS: if (!value.equals("on") && !value.equals("off")) return "world_cams: on or off"; break;
             case K_OVERLAY_CORNER: if (indexOf(OVERLAY_CORNERS, value) < 0) return "overlay_corner: " + String.join(", ", OVERLAY_CORNERS); break;
             case K_OVERLAY_SIZE: if (indexOf(OVERLAY_SIZES, value) < 0) return "overlay_size: " + String.join(", ", OVERLAY_SIZES); break;
-            case K_SCENE: if (indexOf(SCENES, value) < 0) return "scene: " + String.join(", ", SCENES); break;
+            case K_SCENE: {
+                String[] allowed = availableScenes();
+                if (indexOf(allowed, value) < 0) return "scene: " + String.join(", ", allowed);
+                break;
+            }
             case K_CODE: if (!validCode(value)) return "parent_code: 2 to 8 of U D L R"; break;
             case K_MINUTES: case K_BINS_DAY:
                 try {
