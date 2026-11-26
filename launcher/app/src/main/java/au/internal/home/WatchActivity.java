@@ -32,26 +32,44 @@ public final class WatchActivity extends Activity {
         super.onCreate(b);
         ScreenTimeService.start(this);
         String pkg = getIntent().getStringExtra("pkg");
-        open(this, pkg != null ? pkg : getString(R.string.scene_tile_package));
-        finish();
-        overridePendingTransition(0, 0);
+        if (open(this, pkg != null ? pkg : getString(R.string.scene_tile_package), () -> {
+            finish();
+            overridePendingTransition(0, 0);
+        })) {
+            finish();
+            overridePendingTransition(0, 0);
+        }
     }
 
-    static void open(Activity a, String pkg) {
+    static void open(Activity a, String pkg) { open(a, pkg, null); }
+
+    /** Returns true if launched immediately, or false if waiting on the USB-debugging prompt. */
+    private static boolean open(Activity a, String pkg, Runnable onDone) {
         ScreenTime st = new ScreenTime(a);
         long now = System.currentTimeMillis();
-        if (!st.demo() && st.grownUp(now)) { openFullScreen(a, pkg); return; }
+        if (!st.demo() && st.grownUp(now)) { openFullScreen(a, pkg); return true; }
         if (st.asleep(now)) {
             a.startActivity(new Intent(a, GoodnightActivity.class));
-            return;
+            return true;
         }
         Intent i = AppStore.launchIntent(a.getPackageManager(), pkg);
-        if (i == null) return;
+        if (i == null) return true;
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         // Ask for a window; Framer then sizes it to the scene's hole over Home's own adb connection.
-        if (!a.getResources().getBoolean(R.bool.frame_via_adb)) { a.startActivity(i); return; }
+        if (!a.getResources().getBoolean(R.bool.frame_via_adb)) { a.startActivity(i); return true; }
+        if (!LocalAdb.isAdbEnabled(a)) {
+            LocalAdb.showAdbRequiredDialog(a,
+                    "Windowed Kids' time needs USB debugging turned on so this app fits inside the bedtime scene.",
+                    () -> {
+                        a.startActivity(i);
+                        if (onDone != null) onDone.run();
+                    },
+                    onDone);
+            return false;
+        }
         try { a.startActivity(i, windowOptions(a.getResources())); }
         catch (RuntimeException e) { Log.w(ScreenTimeService.TAG, "windowed launch failed", e); a.startActivity(i); }
+        return true;
     }
 
     /** Grown-up time: the app full screen, as it normally is (see Framer.fullScreen). */

@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package au.internal.home;
 
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
+import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
 
@@ -91,6 +96,66 @@ final class LocalAdb {
     static boolean ready(Context c, long authWaitMs) {
         try { return exec(c, "echo ok", authWaitMs).trim().equals("ok"); }
         catch (IOException | RuntimeException e) { Log.w(TAG, "adb not available: " + e.getMessage()); return false; }
+    }
+
+    /** True if USB debugging (ADB) is currently enabled in Android Settings. Reading Settings.Global needs no permission. */
+    static boolean isAdbEnabled(Context c) {
+        return Settings.Global.getInt(c.getContentResolver(), Settings.Global.ADB_ENABLED, 0) == 1;
+    }
+
+    /** True if Developer options is unlocked in Android Settings. */
+    static boolean isDevOptionsEnabled(Context c) {
+        return Settings.Global.getInt(c.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1;
+    }
+
+    static String enableInstructions(Context c) {
+        if (isDevOptionsEnabled(c)) {
+            return "Turn on USB debugging under Developer options, then come back and try again.";
+        }
+        return "Open About, click Build 7 times to unlock Developer options, then turn on USB debugging.";
+    }
+
+    static String settingsButtonLabel(Context c) {
+        return isDevOptionsEnabled(c) ? "Open Developer options" : "Open About";
+    }
+
+    /** Open the TV's Developer options (if unlocked) or About screen (to tap Build 7 times), falling back to Settings. */
+    static void openAdbSettings(Context c) {
+        String[] actions = isDevOptionsEnabled(c)
+                ? new String[]{Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS, Settings.ACTION_DEVICE_INFO_SETTINGS, Settings.ACTION_SETTINGS}
+                : new String[]{Settings.ACTION_DEVICE_INFO_SETTINGS, Settings.ACTION_SETTINGS};
+        for (String action : actions) {
+            try {
+                c.startActivity(new Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                return;
+            } catch (ActivityNotFoundException | SecurityException ignored) { }
+        }
+    }
+
+    /**
+     * Tell the user USB debugging is off and offer a direct shortcut to Developer options / About.
+     * Optional `onOpenAnyway` adds an "Open anyway" button (used when opening a restricted app so kids aren't locked out).
+     */
+    static void showAdbRequiredDialog(Activity a, String reason, Runnable onOpenAnyway, Runnable onDone) {
+        AlertDialog.Builder b = new AlertDialog.Builder(a)
+                .setTitle("USB debugging is off")
+                .setMessage(reason + "\n\n" + enableInstructions(a))
+                .setPositiveButton(settingsButtonLabel(a), (d, w) -> {
+                    openAdbSettings(a);
+                    if (onDone != null) onDone.run();
+                })
+                .setNegativeButton("Cancel", (d, w) -> {
+                    if (onDone != null) onDone.run();
+                })
+                .setOnCancelListener(d -> {
+                    if (onDone != null) onDone.run();
+                });
+        if (onOpenAnyway != null) {
+            b.setNeutralButton("Open anyway", (d, w) -> onOpenAnyway.run());
+        }
+        AlertDialog d = b.create();
+        if (a instanceof MainActivity) MainActivity.showDialog(d);
+        else d.show();
     }
 
     // ---------- wire format ----------

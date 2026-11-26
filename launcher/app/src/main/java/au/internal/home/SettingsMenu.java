@@ -202,6 +202,10 @@ final class SettingsMenu {
     }
 
     private void installUpdate(android.content.Context app, Updater.Release r) {
+        if (!LocalAdb.isAdbEnabled(a)) {
+            LocalAdb.showAdbRequiredDialog(a, "Installing Home updates needs USB debugging turned on temporarily.", null, this::main);
+            return;
+        }
         Toast.makeText(a, "Downloading v" + r.versionName + "…", Toast.LENGTH_LONG).show();
         new Thread(() -> {
             try {
