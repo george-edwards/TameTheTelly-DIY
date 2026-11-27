@@ -239,6 +239,14 @@
       "lon": 28.19
     },
     {
+      "name": "Russia: Dodo Pizza, Nevsky Prospect, St. Petersburg",
+      "category": "World Cams",
+      "type": "iframe",
+      "url": "https://open.ivideon.com/embed/v3/?server=100-mXQCko7zjt0cnFk3MAHVVK&camera=0&width=&height=&lang=en&ap=1&fs=0&noibw=1",
+      "lat": 59.93,
+      "lon": 30.36
+    },
+    {
       "name": "Russia: Nevsky Avenue, St. Petersburg",
       "category": "World Cams",
       "type": "youtube_channel",
@@ -372,6 +380,28 @@
       "match": "Sisig Beef",
       "lat": 7.07,
       "lon": 125.6
+    },
+    {
+      "name": "Philippines: Rosemary Street (JM-Kalix Store), Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=uE3rTdBkfQQ",
+      "channelUrl": "https://www.youtube.com/@mulderschannel24/live",
+      "channelId": "UCtbzAMmmu31t_MkPCJbzJnA",
+      "match": "JM-KALIX",
+      "lat": 7.08,
+      "lon": 125.61
+    },
+    {
+      "name": "Philippines: Agdao Market BBQ Stalls (Benjie Grill), Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=y8Z6I7fNXs0",
+      "channelUrl": "https://www.youtube.com/@EdgeBaborPhilippines/live",
+      "channelId": "UCa6T92S2NKwSdQw8rXLe2rQ",
+      "match": "Benjie Grill",
+      "lat": 7.09,
+      "lon": 125.63
     },
     {
       "name": "Philippines: Agdao Tyre Repair Shop, Davao City",

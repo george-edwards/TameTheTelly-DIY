@@ -702,7 +702,7 @@ public class MainActivity extends Activity {
     private void setupWorldTimerView(float d) {
         android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
         bg.setColor(0x28FFFFFF);
-        bg.setCornerRadius(14f * d);
+        bg.setCornerRadius(7f * d);
         bg.setStroke(Math.max(1, Math.round(1f * d)), 0x33FFFFFF);
         worldTimer.setBackground(bg);
         worldTimer.setOnFocusChangeListener((v, has) -> {
@@ -730,11 +730,11 @@ public class MainActivity extends Activity {
         boolean randRet = worldCams.randomOnReturn();
         boolean on = worldCams.autoAdvanceOn();
         String[] items = {
-                "Timer duration: " + mins + " min…",
-                "Fresh random cam on return Home: " + (randRet ? "On" : "Off"),
-                "Auto-advance timer: " + (on ? "On" : "Off")
+                "Switch cam every: " + mins + " min…",
+                "Auto-switch timer: " + (on ? "On" : "Off"),
+                "New random cam when returning Home: " + (randRet ? "On" : "Off")
         };
-        showDialog(new AlertDialog.Builder(this).setTitle("World Cam timer")
+        showDialog(new AlertDialog.Builder(this).setTitle("World Cam rotation")
                 .setItems(items, (d, which) -> {
                     if (which == 0) {
                         int[] opts = {1, 2, 5, 10, 15, 30, 60};
@@ -744,7 +744,7 @@ public class MainActivity extends Activity {
                             labels[i] = opts[i] + (opts[i] == 1 ? " minute" : " minutes");
                             if (opts[i] == mins) checked = i;
                         }
-                        showDialog(new AlertDialog.Builder(this).setTitle("Auto-advance every…")
+                        showDialog(new AlertDialog.Builder(this).setTitle("Switch cam every…")
                                 .setSingleChoiceItems(labels, checked, (d2, w) -> {
                                     d2.dismiss();
                                     worldCams.setAutoAdvanceMinutes(opts[w]);
@@ -753,14 +753,14 @@ public class MainActivity extends Activity {
                                     updateWorldTimerUi();
                                 }));
                     } else if (which == 1) {
-                        worldCams.setRandomOnReturn(!randRet);
-                        Toast.makeText(this, "Random cam on return Home: " + (!randRet ? "On" : "Off"),
-                                Toast.LENGTH_SHORT).show();
-                    } else if (which == 2) {
                         worldCams.setAutoAdvanceOn(!on);
                         if (!on) resetWorldTimer();
                         else stopWorldTimer();
                         updateWorldTimerUi();
+                    } else if (which == 2) {
+                        worldCams.setRandomOnReturn(!randRet);
+                        Toast.makeText(this, "New random cam on return Home: " + (!randRet ? "On" : "Off"),
+                                Toast.LENGTH_SHORT).show();
                     }
                 }));
     }
