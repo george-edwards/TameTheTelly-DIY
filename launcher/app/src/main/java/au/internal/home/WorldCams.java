@@ -394,6 +394,9 @@ final class WorldCams {
      */
     private static Boolean probeStream(Stream s) {
         if (s == null) return null;
+        if ("earthcam".equals(s.type) || EarthCamResolver.isEarthCamUrl(s.url)) {
+            return EarthCamResolver.probeOnline(s.url, PROBE_UA);
+        }
         if ("youtube_channel".equals(s.type) && !s.channelId.isEmpty()) {
             return probeYouTubeHtml("https://www.youtube.com/channel/" + s.channelId + "/live", true);
         }

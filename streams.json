@@ -59,6 +59,14 @@
       "lon": -118.47
     },
     {
+      "name": "USA: Elvis Wedding Chapel, Las Vegas",
+      "category": "World Cams",
+      "type": "earthcam",
+      "url": "https://www.earthcam.com/usa/nevada/lasvegas/index.php?cam=wedding",
+      "lat": 36.15,
+      "lon": -115.15
+    },
+    {
       "name": "USA: New Orleans Balcony View",
       "category": "World Cams",
       "type": "youtube_multi",
@@ -468,6 +476,15 @@
       "url": "https://www.youtube.com/@kabukicho-2/live",
       "channelId": "UCBFDJXGCOdMjVtg2AnReoXA",
       "lat": 35.69,
+      "lon": 139.7
+    },
+    {
+      "name": "Japan: Shibuya AI Vision (Miyamasuzaka Crossing), Tokyo",
+      "category": "Tokyo & Japan",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@liveaishibuyaaivision2555/live",
+      "channelId": "UCeS_n1uo4ixH531s7zbERwg",
+      "lat": 35.66,
       "lon": 139.7
     },
     {

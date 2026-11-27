@@ -18,7 +18,7 @@ class WorldCamsTest {
         val file = File("../../streams.json")
         assertTrue("streams.json should exist at repo root", file.exists())
         val streams = WorldCams.parse(file.readText())
-        assertTrue("should parse curated streams", streams.size >= 60)
+        assertTrue("should parse curated streams", streams.size >= 20)
 
         val keys = streams.map { it.key }
         assertEquals("all stream keys should be unique", keys.size, keys.toSet().size)

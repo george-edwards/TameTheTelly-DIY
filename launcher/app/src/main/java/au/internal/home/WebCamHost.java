@@ -123,6 +123,9 @@ final class WebCamHost {
         if (slot == 1 && u.startsWith("https://www.youtube.com/embed/")) {
             u = "https://www.youtube-nocookie.com/embed/" + u.substring("https://www.youtube.com/embed/".length());
         }
+        if (!u.contains("youtube.com/") && !u.contains("youtube-nocookie.com/")) {
+            return u;
+        }
         if (!wantMuted[slot]) {
             u = u.replace("mute=1", "mute=0");
         }
@@ -183,6 +186,10 @@ final class WebCamHost {
                             && path != null && path.startsWith("/embed/")) {
                         WebResourceResponse patched = fetchWithoutAv1(req.getUrl().toString(), req.getRequestHeaders(), cleanUa);
                         if (patched != null) return patched;
+                    }
+                    if (EarthCamResolver.isEarthCamUrl(req.getUrl().toString())) {
+                        WebResourceResponse ec = EarthCamResolver.buildPlayerResponse(req.getUrl().toString(), cleanUa);
+                        if (ec != null) return ec;
                     }
                 }
                 return super.shouldInterceptRequest(view, req);
