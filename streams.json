@@ -51,39 +51,6 @@
       "lon": -118.47
     },
     {
-      "name": "USA: Universal Studios Hollywood Rides & Shows",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=v99dNIuFBKo",
-      "channelUrl": "https://www.youtube.com/@WorldscapeScenery/live",
-      "channelId": "UCyDRWDDc9aEC2fQRYlpDj4g",
-      "match": "Universal Studios",
-      "lat": 34.14,
-      "lon": -118.35
-    },
-    {
-      "name": "USA: Disneyland & California Adventure Rides",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=xFkN2cjFPiQ",
-      "channelUrl": "https://www.youtube.com/@WorldscapeScenery/live",
-      "channelId": "UCyDRWDDc9aEC2fQRYlpDj4g",
-      "match": "Disneyland",
-      "lat": 33.81,
-      "lon": -117.92
-    },
-    {
-      "name": "USA: Garbage Dump Transfer Station",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=hxPUs-7etYg",
-      "channelUrl": "https://www.youtube.com/@CamNomad/live",
-      "channelId": "UCshAvRBdyJDbYhAVsqi_v8w",
-      "match": "Transfer Station",
-      "lat": 39.74,
-      "lon": -104.99
-    },
-    {
       "name": "USA: New Orleans Balcony View",
       "category": "World Cams",
       "type": "youtube_multi",
@@ -106,15 +73,6 @@
       "lon": -90.07
     },
     {
-      "name": "USA: St. Bruno, Chicago",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@st.brunochicago2398/live",
-      "channelId": "UC_loPZGHjS5_jqF-AwPvCww",
-      "lat": 41.8,
-      "lon": -87.73
-    },
-    {
       "name": "USA: Friends of Felines Rescue Center",
       "category": "Wild & Underwater",
       "type": "youtube_channel",
@@ -133,17 +91,6 @@
       "match": "Irish Kevin",
       "lat": 24.56,
       "lon": -81.8
-    },
-    {
-      "name": "USA: Walt Disney World Ride POV",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=85gsov__yQ8",
-      "channelUrl": "https://www.youtube.com/@ResortTV24-7/live",
-      "channelId": "UCDcUWSm2qu9uJpCONxCSC8w",
-      "match": "Disney World Ride POV",
-      "lat": 28.42,
-      "lon": -81.58
     },
     {
       "name": "USA: Disney Skyliner, Walt Disney World",
@@ -259,60 +206,6 @@
       "lon": 2.35
     },
     {
-      "name": "Belgium: Oudenaarde Market Square",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@oudenaardestad/live",
-      "channelId": "UCPH1SsIWbdm59B0YVoqw8gQ",
-      "lat": 50.84,
-      "lon": 3.6
-    },
-    {
-      "name": "Netherlands: Tram Driver's View",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@TramMeneer/live",
-      "channelId": "UCcLb3AIOPBnXxY7qFqHS2NQ",
-      "lat": 52.37,
-      "lon": 4.9
-    },
-    {
-      "name": "Netherlands: Dutch Railway Cab Rides (NS)",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@MachinistMart/live",
-      "channelId": "UCSkyUYnY4R4PdrziyW9-QjA",
-      "lat": 52.09,
-      "lon": 5.12
-    },
-    {
-      "name": "Norway: Train Cab Views",
-      "category": "Temples, Shrines & Journeys",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@RailCowGirl/live",
-      "channelId": "UCj-Xm8j6WBgKY8OG7s9r2vQ",
-      "lat": 60.39,
-      "lon": 5.32
-    },
-    {
-      "name": "Netherlands: RailCam",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@MarioRailcamNL/live",
-      "channelId": "UC2qwiv3R_Dqrp15vh7cpH9Q",
-      "lat": 52.16,
-      "lon": 5.38
-    },
-    {
-      "name": "Germany: Elbe Shipcam, Balje",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@Capitain-Dennis/live",
-      "channelId": "UCfqaWbu8SOBtKkf7GaLuRkg",
-      "lat": 53.83,
-      "lon": 9.13
-    },
-    {
       "name": "Italy: Dorsoduro, Venice",
       "category": "World Cams",
       "type": "youtube_multi",
@@ -346,15 +239,6 @@
       "lon": 12.61
     },
     {
-      "name": "Namibia: Swakopmund Beach & Lighthouse",
-      "category": "World Cams",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@NamibiaWild/live",
-      "channelId": "UCArs3YQib0gUuv5SVrjjtCQ",
-      "lat": -22.68,
-      "lon": 14.52
-    },
-    {
       "name": "South Africa: Allen Birdcam Wildlife",
       "category": "Wild & Underwater",
       "type": "youtube_channel",
@@ -371,17 +255,6 @@
       "channelId": "UCz1GKiqSoG2DSesCQ3SoFYg",
       "lat": 59.93,
       "lon": 30.36
-    },
-    {
-      "name": "Palestine: Gaza City Skyline",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=VzIReBHx584",
-      "channelUrl": "https://www.youtube.com/@AssociatedPress/live",
-      "channelId": "UC52X5wxOL_s5yw0dQk7NtgA",
-      "match": "Gaza",
-      "lat": 31.5,
-      "lon": 34.47
     },
     {
       "name": "Israel: Western Wall, Jerusalem",
@@ -608,15 +481,6 @@
       "match": "Royal Albatross",
       "lat": -45.77,
       "lon": 170.73
-    },
-    {
-      "name": "New Zealand: Ōamaru Penguins",
-      "category": "Australia & NZ",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@%C5%8CamaruPenguin/live",
-      "channelId": "UCSlIi8WXERrJUce_les6V6w",
-      "lat": -45.11,
-      "lon": 170.98
     },
     {
       "name": "Ocean: Golden Globe Race",
