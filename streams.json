@@ -372,17 +372,6 @@
       "lon": 125.6
     },
     {
-      "name": "Philippines: Bankerohan Lyn's Food Haus, Davao City",
-      "category": "World Cams",
-      "type": "youtube_multi",
-      "url": "https://www.youtube.com/watch?v=6kX0K9u3NTQ",
-      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
-      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
-      "match": "Lyn's Food Haus",
-      "lat": 7.07,
-      "lon": 125.6
-    },
-    {
       "name": "Philippines: Lyn's Sisig Beef BBQ, Davao City",
       "category": "World Cams",
       "type": "youtube_multi",
@@ -504,7 +493,7 @@
       "type": "youtube_channel",
       "url": "https://www.youtube.com/channel/UCkvW_7kp9LJrztmgA4q4bJQ/live",
       "channelId": "UCkvW_7kp9LJrztmgA4q4bJQ",
-      "labelOffsetLines": 1.75
+      "labelOffsetLines": 2.5
     }
   ]
 }
