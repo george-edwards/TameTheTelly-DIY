@@ -1,0 +1,7 @@
+{
+  "versionCode": 26112713,
+  "versionName": "26.11.27.13",
+  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.27.13/home-v26.11.27.13.apk",
+  "sha256": "e1017788ab79279d169a1b07a4c87cc1109c2d92d1270b406ff1a6b5be08f786",
+  "notes": "World Cam stream pre-fetch, live videoId cache, and performance fixes"
+}
