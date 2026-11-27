@@ -94,6 +94,15 @@
             android:layout_width="match_parent" android:layout_height="match_parent"
             android:orientation="vertical" android:gravity="center"
             android:paddingStart="10dp" android:paddingEnd="12dp">
+            <TextView android:id="@+id/worldTimer"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="end" android:layout_marginBottom="8dp"
+                android:paddingStart="12dp" android:paddingEnd="12dp"
+                android:paddingTop="5dp" android:paddingBottom="5dp"
+                android:textColor="#E6FFFFFF" android:textSize="12.5sp"
+                android:fontFamily="@font/inter_semibold" android:singleLine="true"
+                android:focusable="true" android:clickable="true"
+                android:visibility="gone"/>
             <include android:id="@+id/cam1" layout="@layout/camera"/>
             <Space android:id="@+id/camGap" android:layout_width="match_parent" android:layout_height="10dp"/>
             <include android:id="@+id/cam2" layout="@layout/camera"/>

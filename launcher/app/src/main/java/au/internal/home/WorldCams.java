@@ -47,6 +47,9 @@ final class WorldCams {
     private static final String K_SLOT = "slot_";
     private static final String K_SLOT_WORLD = "slot_world_";
     private static final String K_SLOT_PINNED = "slot_pinned_";
+    private static final String K_AUTO_ON = "auto_advance_on";
+    private static final String K_AUTO_MIN = "auto_advance_min";
+    private static final String K_RANDOM_RETURN = "random_on_return";
     private static final long REFRESH_MS = 5 * 60_000L;
     private static final long PROBE_GAP_MS = 250L;
     private static final long PROBE_CYCLE_MS = 10 * 60_000L;
@@ -508,6 +511,15 @@ final class WorldCams {
 
     boolean isPinned(int slot) { return p.getBoolean(K_SLOT_PINNED + slot, false); }
     void setPinned(int slot, boolean pinned) { p.edit().putBoolean(K_SLOT_PINNED + slot, pinned).apply(); }
+
+    boolean autoAdvanceOn() { return p.getBoolean(K_AUTO_ON, true); }
+    void setAutoAdvanceOn(boolean on) { p.edit().putBoolean(K_AUTO_ON, on).apply(); }
+
+    int autoAdvanceMinutes() { return Math.max(1, p.getInt(K_AUTO_MIN, 5)); }
+    void setAutoAdvanceMinutes(int min) { p.edit().putInt(K_AUTO_MIN, Math.max(1, min)).apply(); }
+
+    boolean randomOnReturn() { return p.getBoolean(K_RANDOM_RETURN, true); }
+    void setRandomOnReturn(boolean on) { p.edit().putBoolean(K_RANDOM_RETURN, on).apply(); }
 
     Stream slotStream(int slot, List<Stream> all) {
         if (all.isEmpty()) return null;

@@ -98,6 +98,8 @@ public class MainActivity extends Activity {
     private View fullscreenCam;
     private boolean fullscreenSound;
     private boolean leftHome;
+    private TextView worldTimer;
+    private long worldTimerDeadlineMs;
     private long lastWeather;
     private int lastSunDay = -1;
     private double lastSunLat = Double.NaN, lastSunLon = Double.NaN;
@@ -223,7 +225,7 @@ public class MainActivity extends Activity {
                         () -> { if (!camViews[idx].hasFocus()) fadeLabel(label, LABEL_FADE_MS); });
             }
             if (useWorld) {
-                if (worldCams.isPinned(i)) {
+                if (worldCams.isPinned(i) || !worldCams.randomOnReturn()) {
                     worldSlots[i] = worldCams.slotStream(i, worldCatalog);
                 } else {
                     List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
@@ -262,6 +264,11 @@ public class MainActivity extends Activity {
         }
         findViewById(R.id.camGap).setVisibility(camOn[0] && camOn[1] ? View.VISIBLE : View.GONE);
         findViewById(R.id.rightWrap).setVisibility(camOn[0] || camOn[1] ? View.VISIBLE : View.GONE);
+        worldTimer = findViewById(R.id.worldTimer);
+        if (worldTimer != null) {
+            setupWorldTimerView(density);
+            updateWorldTimerUi();
+        }
         wide = !camOn[0] && !camOn[1];
         setLook(cfg.look());
 
@@ -349,6 +356,7 @@ public class MainActivity extends Activity {
     @Override protected void onStop() {
         ScreenTimeService.setHomeOnTop(false);
         h.removeCallbacks(tick);
+        stopWorldTimer();
         WorldCams.stopChecker();
         stopCams();   // free the decoders for whatever app is opened
         if (movingPkg != null) endMove();
@@ -385,7 +393,7 @@ public class MainActivity extends Activity {
             }
             if (leftHome) {
                 leftHome = false;
-                if (!worldCatalog.isEmpty()) {
+                if (!worldCatalog.isEmpty() && worldCams.randomOnReturn()) {
                     List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
                     List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
                     for (int i = 0; i < 2; i++) {
@@ -400,6 +408,7 @@ public class MainActivity extends Activity {
                     }
                 }
             }
+            resetWorldTimer();
             boolean adult = screenTime.adultMode(now);
             boolean passEnded = leftDuringPass && screenTime.hasPass(now);
             if (passEnded) screenTime.setGrownUp(0);
@@ -417,6 +426,7 @@ public class MainActivity extends Activity {
         } else {
             leftHome = true;
             if (screenTime.hasPass(now)) leftDuringPass = true;
+            stopWorldTimer();
             WorldCams.stopChecker();
             stopCams();
         }
@@ -590,6 +600,7 @@ public class MainActivity extends Activity {
             fullscreenSound = false;
         }
         for (int i = 0; i < 2; i++) if (camIsWorld[i]) updateWorldLabel(i);
+        updateWorldTimerUi();
         cam.requestFocus();
     }
 
@@ -685,7 +696,137 @@ public class MainActivity extends Activity {
         updateWorldLabel(slot);
         showLabel(camLabels[slot]);
         webHost.setSlot(slot, true, s.embedUrl());
+        resetWorldTimer();
     }
+
+    private void setupWorldTimerView(float d) {
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setColor(0x28FFFFFF);
+        bg.setCornerRadius(14f * d);
+        bg.setStroke(Math.max(1, Math.round(1f * d)), 0x33FFFFFF);
+        worldTimer.setBackground(bg);
+        worldTimer.setOnFocusChangeListener((v, has) -> {
+            v.setPivotX(v.getWidth() / 2f);
+            v.setPivotY(v.getHeight() / 2f);
+            TileFx.animate(v, has ? 1.07f : 1f, 0);
+            bg.setColor(has ? 0x48FFFFFF : 0x28FFFFFF);
+            bg.setStroke(Math.max(1, Math.round((has ? 1.5f : 1f) * d)), has ? 0xCCFFD166 : 0x33FFFFFF);
+        });
+        worldTimer.setOnClickListener(v -> {
+            boolean on = !worldCams.autoAdvanceOn();
+            worldCams.setAutoAdvanceOn(on);
+            if (on) resetWorldTimer();
+            else stopWorldTimer();
+            updateWorldTimerUi();
+        });
+        worldTimer.setOnLongClickListener(v -> {
+            worldTimerMenu();
+            return true;
+        });
+    }
+
+    private void worldTimerMenu() {
+        int mins = worldCams.autoAdvanceMinutes();
+        boolean randRet = worldCams.randomOnReturn();
+        boolean on = worldCams.autoAdvanceOn();
+        String[] items = {
+                "Timer duration: " + mins + " min…",
+                "Fresh random cam on return Home: " + (randRet ? "On" : "Off"),
+                "Auto-advance timer: " + (on ? "On" : "Off")
+        };
+        showDialog(new AlertDialog.Builder(this).setTitle("World Cam timer")
+                .setItems(items, (d, which) -> {
+                    if (which == 0) {
+                        int[] opts = {1, 2, 5, 10, 15, 30, 60};
+                        String[] labels = new String[opts.length];
+                        int checked = 2;
+                        for (int i = 0; i < opts.length; i++) {
+                            labels[i] = opts[i] + (opts[i] == 1 ? " minute" : " minutes");
+                            if (opts[i] == mins) checked = i;
+                        }
+                        showDialog(new AlertDialog.Builder(this).setTitle("Auto-advance every…")
+                                .setSingleChoiceItems(labels, checked, (d2, w) -> {
+                                    d2.dismiss();
+                                    worldCams.setAutoAdvanceMinutes(opts[w]);
+                                    worldCams.setAutoAdvanceOn(true);
+                                    resetWorldTimer();
+                                    updateWorldTimerUi();
+                                }));
+                    } else if (which == 1) {
+                        worldCams.setRandomOnReturn(!randRet);
+                        Toast.makeText(this, "Random cam on return Home: " + (!randRet ? "On" : "Off"),
+                                Toast.LENGTH_SHORT).show();
+                    } else if (which == 2) {
+                        worldCams.setAutoAdvanceOn(!on);
+                        if (!on) resetWorldTimer();
+                        else stopWorldTimer();
+                        updateWorldTimerUi();
+                    }
+                }));
+    }
+
+    private boolean worldTimerActive() {
+        return camIsWorld != null && camIsWorld[0] && camOn != null && camOn[0]
+                && !worldCatalog.isEmpty() && worldCams.autoAdvanceOn() && !worldCams.isPinned(0);
+    }
+
+    private void resetWorldTimer() {
+        h.removeCallbacks(worldTimerTick);
+        if (worldTimerActive()) {
+            worldTimerDeadlineMs = System.currentTimeMillis() + worldCams.autoAdvanceMinutes() * 60_000L;
+            h.postDelayed(worldTimerTick, 1_000L);
+        } else {
+            worldTimerDeadlineMs = 0L;
+        }
+        updateWorldTimerUi();
+    }
+
+    private void stopWorldTimer() {
+        h.removeCallbacks(worldTimerTick);
+    }
+
+    private void updateWorldTimerUi() {
+        if (worldTimer == null) return;
+        boolean show = camIsWorld != null && camIsWorld[0] && camOn != null && camOn[0] && fullscreenCam == null;
+        worldTimer.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (!show) return;
+        if (worldCams.isPinned(0)) {
+            worldTimer.setText("📌 Pinned");
+            worldTimer.setAlpha(0.85f);
+        } else if (!worldCams.autoAdvanceOn()) {
+            worldTimer.setText("⏱ Off");
+            worldTimer.setAlpha(0.60f);
+        } else {
+            long remSec = Math.max(0L, (worldTimerDeadlineMs - System.currentTimeMillis() + 999L) / 1_000L);
+            if (worldTimerDeadlineMs <= 0L) remSec = worldCams.autoAdvanceMinutes() * 60L;
+            worldTimer.setText(String.format(java.util.Locale.ROOT, "⏱ %d:%02d", remSec / 60L, remSec % 60L));
+            worldTimer.setAlpha(0.95f);
+        }
+    }
+
+    private final Runnable worldTimerTick = new Runnable() {
+        @Override public void run() {
+            if (!worldTimerActive()) {
+                updateWorldTimerUi();
+                return;
+            }
+            long now = System.currentTimeMillis();
+            if (now >= worldTimerDeadlineMs) {
+                if (hasWindowFocus() && !worldCatalog.isEmpty()) {
+                    List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
+                    List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
+                    WorldCams.Stream pick = worldCams.shuffle(0, pool, otherWorldKey(0));
+                    if (pick != null) {
+                        switchWorldSlot(0, pick); // also resets timer
+                        return;
+                    }
+                }
+                worldTimerDeadlineMs = now + worldCams.autoAdvanceMinutes() * 60_000L;
+            }
+            updateWorldTimerUi();
+            h.postDelayed(this, 1_000L);
+        }
+    };
 
     private void advanceWorldCams(int dir) {
         if (worldCatalog.isEmpty()) return;
@@ -744,6 +885,7 @@ public class MainActivity extends Activity {
                     } else if (which == pIdx) {
                         worldCams.setPinned(slot, !isPinned);
                         updateWorldLabel(slot);
+                        resetWorldTimer();
                         showLabel(camLabels[slot]);
                         fadeLabel(camLabels[slot], 2_500);
                     } else if (which == hIdx) {
