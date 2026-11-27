@@ -320,6 +320,17 @@
       "lon": 35.23
     },
     {
+      "name": "Russia: Live 24/7 (Cam 3)",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=MpPn1vzKf84",
+      "channelUrl": "https://www.youtube.com/@%D0%9F%D1%8F%D1%82%D0%BA/live",
+      "channelId": "UCFXE9DpDuCqh0aRxpuB20nw",
+      "match": "камера 3",
+      "lat": 55.75,
+      "lon": 37.62
+    },
+    {
       "name": "Saudi Arabia: Makkah Live (Al-Haram)",
       "category": "Temples, Shrines & Journeys",
       "type": "youtube_channel",
@@ -433,6 +444,17 @@
       "lon": 125.6
     },
     {
+      "name": "Philippines: Bankerohan Meat Market, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=HAdKdRqrjXw",
+      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
+      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
+      "match": "Meat Market",
+      "lat": 7.07,
+      "lon": 125.6
+    },
+    {
       "name": "Philippines: Lyn's Sisig Beef BBQ, Davao City",
       "category": "World Cams",
       "type": "youtube_multi",
@@ -486,6 +508,48 @@
       "match": "Dodong Barber",
       "lat": 7.09,
       "lon": 125.63
+    },
+    {
+      "name": "Philippines: New Agdao Farmers Market, Davao City",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=bCdlVbhsVo8",
+      "channelUrl": "https://www.youtube.com/@JazBazPhilippines/live",
+      "channelId": "UC0djAWwMXP22wzocdJR9dWw",
+      "match": "Farmers Market",
+      "lat": 7.09,
+      "lon": 125.63
+    },
+    {
+      "name": "Japan: Arashiyama Bamboo Forest, Kyoto",
+      "category": "Tokyo & Japan",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=JLlY6Cg17cc",
+      "channelUrl": "https://www.youtube.com/@DMOKYOTO_Live/live",
+      "channelId": "UCLpgVZwl9CaXierI3oq08mQ",
+      "match": "Bamboo forest",
+      "lat": 35.02,
+      "lon": 135.67
+    },
+    {
+      "name": "Japan: Kyoto Station Bus Terminal, Kyoto",
+      "category": "Tokyo & Japan",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=ABJKHT5ZrF4",
+      "channelUrl": "https://www.youtube.com/@DMOKYOTO_Live/live",
+      "channelId": "UCLpgVZwl9CaXierI3oq08mQ",
+      "match": "Kyoto Station Bus",
+      "lat": 34.99,
+      "lon": 135.76
+    },
+    {
+      "name": "Japan: Omicho Market (Oguchi Fisheries), Kanazawa",
+      "category": "Tokyo & Japan",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@omichooguchifisherieslive4295/live",
+      "channelId": "UCLS71Ij_wED0TPwTeQ4M92w",
+      "lat": 36.57,
+      "lon": 136.66
     },
     {
       "name": "Japan: Kabukicho, Shinjuku",
