@@ -163,6 +163,7 @@ final class WorldCams {
             case "Belgium": return "🇧🇪";
             case "Netherlands": return "🇳🇱";
             case "Germany": return "🇩🇪";
+            case "Slovakia": return "🇸🇰";
             case "Norway": return "🇳🇴";
             case "Russia": return "🇷🇺";
             case "Namibia": return "🇳🇦";

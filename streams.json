@@ -31,6 +31,14 @@
       "lon": -122.41
     },
     {
+      "name": "USA: Clean Planet Car Wash, Woodinville, WA",
+      "category": "World Cams",
+      "type": "iframe",
+      "url": "https://g1.ipcamlive.com/player/player.php?alias=5c81ad656b5eb&autoplay=1",
+      "lat": 47.75,
+      "lon": -122.16
+    },
+    {
       "name": "USA: Strawberry General Store, CA",
       "category": "World Cams",
       "type": "youtube_channel",
@@ -188,6 +196,15 @@
       "lon": -0.18
     },
     {
+      "name": "UK: Boxing Training & Sparring (The KO Cup)",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@TheKOCup/live",
+      "channelId": "UCHLcaDrJQkesqdu2IpwGRoA",
+      "lat": 51.51,
+      "lon": -0.13
+    },
+    {
       "name": "France: Seine & Notre-Dame, Paris",
       "category": "World Cams",
       "type": "youtube_channel",
@@ -195,6 +212,17 @@
       "channelId": "UC5oMexvQVrM4qNNVFK7M7Yw",
       "lat": 48.85,
       "lon": 2.35
+    },
+    {
+      "name": "Germany: AES Packaging Machine (Wöhner)",
+      "category": "World Cams",
+      "type": "youtube_multi",
+      "url": "https://www.youtube.com/watch?v=Gd4dFtz9Yt8",
+      "channelUrl": "https://www.youtube.com/@woehner-systems/live",
+      "channelId": "UCvmmi6n5P4lplMjQm_xbyqw",
+      "match": "AES Verpackungsautomat",
+      "lat": 50.29,
+      "lon": 11.04
     },
     {
       "name": "Italy: Dorsoduro, Venice",
@@ -228,6 +256,14 @@
       "match": "Assisi",
       "lat": 43.07,
       "lon": 12.61
+    },
+    {
+      "name": "Slovakia: Hurricane Factory Indoor Skydiving, Liptovský Mikuláš",
+      "category": "World Cams",
+      "type": "iframe",
+      "url": "https://g0.ipcamlive.com/player/player.php?alias=hft1&autoplay=1",
+      "lat": 49.09,
+      "lon": 19.61
     },
     {
       "name": "South Africa: Allen Birdcam Wildlife",
