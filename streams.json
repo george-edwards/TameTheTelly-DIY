@@ -20,6 +20,14 @@
       "lon": -122.66
     },
     {
+      "name": "USA: Metro South Transfer Station, Oregon City",
+      "category": "World Cams",
+      "type": "iframe",
+      "url": "https://v.angelcam.com/iframe?v=49yjx9o5r2&autoplay=1&mute=1",
+      "lat": 45.34,
+      "lon": -122.58
+    },
+    {
       "name": "USA: Pier 39, San Francisco",
       "category": "World Cams",
       "type": "youtube_multi",
