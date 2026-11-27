@@ -6,9 +6,9 @@ import android.webkit.WebResourceResponse;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  * postMessage protocol as YouTube slots.
  */
 final class EarthCamResolver {
-    private static final Pattern JSON_BASE = Pattern.compile("json_base\\s*=\\s*(\\{.*?\\});\\s*\\n");
+    private static final Pattern JSON_BASE = Pattern.compile("json_base\\s*=\\s*(\\{.*?\\});");
 
     private EarthCamResolver() { }
 
@@ -62,20 +62,25 @@ final class EarthCamResolver {
             conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
             if (conn.getResponseCode() != 200) return null;
 
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            byte[] buf = new byte[8192];
-            try (InputStream in = conn.getInputStream()) {
-                int n;
-                while ((n = in.read(buf)) >= 0) {
-                    bos.write(buf, 0, n);
-                    if (bos.size() > 1536 * 1024) break;
+            String jsonStr = null;
+            int charsRead = 0;
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8), 8192)) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    charsRead += line.length() + 1;
+                    if (line.contains("json_base")) {
+                        Matcher m = JSON_BASE.matcher(line);
+                        if (m.find()) {
+                            jsonStr = m.group(1);
+                            break;
+                        }
+                    }
+                    if (charsRead > 1536 * 1024) break;
                 }
             }
-            String html = bos.toString("UTF-8");
-            Matcher m = JSON_BASE.matcher(html);
-            if (!m.find()) return null;
+            if (jsonStr == null) return null;
 
-            JSONObject root = new JSONObject(m.group(1));
+            JSONObject root = new JSONObject(jsonStr);
             JSONObject cams = root.optJSONObject("cam");
             if (cams == null || cams.length() == 0) return null;
 

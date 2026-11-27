@@ -50,7 +50,9 @@ final class WorldCams {
     private static final String K_AUTO_ON = "auto_advance_on";
     private static final String K_AUTO_MIN = "auto_advance_min";
     private static final String K_RANDOM_RETURN = "random_on_return";
+    private static final String K_PREFETCH = "prefetch_count";
     private static final long REFRESH_MS = 5 * 60_000L;
+    private static final long LIVE_ID_TTL_MS = 15 * 60_000L;
     private static final long PROBE_GAP_MS = 250L;
     private static final long PROBE_CYCLE_MS = 10 * 60_000L;
     private static final int PROBE_WORKERS = 3;
@@ -58,9 +60,20 @@ final class WorldCams {
     private static final Pattern CANONICAL_HREF = Pattern.compile("rel=\"canonical\"[^>]+href=\"([^\"]+)\"");
     private static final String PROBE_UA = "Mozilla/5.0 (Linux; Android 11; TV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
+    private static final class CachedVideoId {
+        final String videoId;
+        final long cachedAtMs;
+        CachedVideoId(String videoId, long cachedAtMs) {
+            this.videoId = videoId;
+            this.cachedAtMs = cachedAtMs;
+        }
+    }
+
     private static final ConcurrentHashMap<String, Boolean> ONLINE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, CachedVideoId> LIVE_VIDEO_IDS = new ConcurrentHashMap<>();
     private static final Object CHECKER_LOCK = new Object();
     private static final AtomicInteger CHECKER_CURSOR = new AtomicInteger(0);
+    private static volatile int checkerGen;
     private static volatile boolean checkerRunning;
     private static volatile List<Stream> checkerStreams = Collections.emptyList();
     private static volatile Runnable statusListener;
@@ -295,6 +308,37 @@ final class WorldCams {
 
     static void clearOnlineForTest() {
         ONLINE.clear();
+        LIVE_VIDEO_IDS.clear();
+    }
+
+    /** Cached live YouTube videoId for a channelId (populated by background probes and player loads). */
+    static String cachedChannelVideoId(String channelId) {
+        return cachedChannelVideoId(channelId, System.currentTimeMillis());
+    }
+
+    static String cachedChannelVideoId(String channelId, long nowMs) {
+        if (channelId == null || channelId.isEmpty()) return null;
+        CachedVideoId entry = LIVE_VIDEO_IDS.get(channelId);
+        if (entry == null) return null;
+        if (nowMs - entry.cachedAtMs > LIVE_ID_TTL_MS) {
+            LIVE_VIDEO_IDS.remove(channelId, entry);
+            return null;
+        }
+        return entry.videoId;
+    }
+
+    static void cacheChannelVideoId(String channelId, String videoId) {
+        cacheChannelVideoId(channelId, videoId, System.currentTimeMillis());
+    }
+
+    static void cacheChannelVideoId(String channelId, String videoId, long nowMs) {
+        if (channelId == null || channelId.isEmpty() || videoId == null || videoId.isEmpty()) return;
+        LIVE_VIDEO_IDS.put(channelId, new CachedVideoId(videoId, nowMs));
+    }
+
+    static void invalidateChannelVideoId(String channelId) {
+        if (channelId == null || channelId.isEmpty()) return;
+        LIVE_VIDEO_IDS.remove(channelId);
     }
 
     /** Sort earthbound streams West (-180°) -> East (+180°), with roving/orbital streams at the end. */
@@ -315,6 +359,10 @@ final class WorldCams {
         statusListener = listener;
     }
 
+    static void clearStatusListener(Runnable listener) {
+        if (statusListener == listener) statusListener = null;
+    }
+
     /**
      * Start (or update) the low-priority background probe pool (3 MIN_PRIORITY daemon threads)
      * that gently cycles through all feeds while Home is on top.
@@ -329,8 +377,9 @@ final class WorldCams {
             if (checkerRunning && anyAlive) return;
             CHECKER_THREADS.clear();
             checkerRunning = true;
+            final int gen = ++checkerGen;
             for (int w = 0; w < PROBE_WORKERS; w++) {
-                Thread t = new Thread(WorldCams::runCheckerLoop, "world-cams-probe-" + w);
+                Thread t = new Thread(() -> runCheckerLoop(gen), "world-cams-probe-" + w);
                 t.setDaemon(true);
                 t.setPriority(Thread.MIN_PRIORITY);
                 CHECKER_THREADS.add(t);
@@ -343,14 +392,15 @@ final class WorldCams {
     static void stopChecker() {
         synchronized (CHECKER_LOCK) {
             checkerRunning = false;
+            checkerGen++;
             for (Thread t : CHECKER_THREADS) t.interrupt();
             CHECKER_THREADS.clear();
         }
     }
 
-    private static void runCheckerLoop() {
+    private static void runCheckerLoop(int myGen) {
         Handler main = new Handler(Looper.getMainLooper());
-        while (checkerRunning) {
+        while (checkerRunning && checkerGen == myGen) {
             List<Stream> list = checkerStreams;
             if (list.isEmpty()) break;
             int idx = CHECKER_CURSOR.getAndIncrement();
@@ -383,7 +433,7 @@ final class WorldCams {
                     if (l != null) main.post(l);
                 }
             }
-            if (!checkerRunning) break;
+            if (!checkerRunning || checkerGen != myGen) break;
             try { Thread.sleep(PROBE_GAP_MS); }
             catch (InterruptedException e) { break; }
         }
@@ -399,11 +449,11 @@ final class WorldCams {
             return EarthCamResolver.probeOnline(s.url, PROBE_UA);
         }
         if ("youtube_channel".equals(s.type) && !s.channelId.isEmpty()) {
-            return probeYouTubeHtml("https://www.youtube.com/channel/" + s.channelId + "/live", true);
+            return probeYouTubeHtml("https://www.youtube.com/channel/" + s.channelId + "/live", true, s.channelId);
         }
         String vid = extractVideoId(s.url);
         if (vid != null) {
-            return probeYouTubeHtml("https://www.youtube.com/watch?v=" + vid, false);
+            return probeYouTubeHtml("https://www.youtube.com/watch?v=" + vid, false, null);
         }
         HttpURLConnection conn = null;
         try {
@@ -426,7 +476,7 @@ final class WorldCams {
      * Stream-scan YouTube HTML with a tiny sliding overlap window (16 KB RAM) up to 2 MB so
      * watch?v= pages whose ytInitialPlayerResponse appears around 500–900 KB are detected reliably.
      */
-    private static Boolean probeYouTubeHtml(String urlStr, boolean isChannelLive) {
+    private static Boolean probeYouTubeHtml(String urlStr, boolean isChannelLive, String channelId) {
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) new URL(urlStr).openConnection();
@@ -436,7 +486,10 @@ final class WorldCams {
             conn.setRequestProperty("User-Agent", PROBE_UA);
             conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
             int code = conn.getResponseCode();
-            if (code == 404 || code == 410) return Boolean.FALSE;
+            if (code == 404 || code == 410) {
+                if (channelId != null) invalidateChannelVideoId(channelId);
+                return Boolean.FALSE;
+            }
             if (code != 200) return null;
             byte[] buf = new byte[8192];
             String tail = "";
@@ -447,21 +500,28 @@ final class WorldCams {
                 while (checkerRunning && (n = in.read(buf)) >= 0) {
                     total += n;
                     String chunk = tail + new String(buf, 0, n, StandardCharsets.UTF_8);
+                    if (isChannelLive && !sawWatchCanonical && total <= 64 * 1024) {
+                        Matcher cm = CANONICAL_HREF.matcher(chunk);
+                        if (cm.find()) {
+                            String href = cm.group(1);
+                            if (href.contains("watch?v=")) {
+                                sawWatchCanonical = true;
+                                String vid = extractVideoId(href);
+                                if (channelId != null && vid != null) cacheChannelVideoId(channelId, vid);
+                            } else {
+                                if (channelId != null) invalidateChannelVideoId(channelId);
+                                return Boolean.FALSE;
+                            }
+                        }
+                    }
                     if (chunk.contains("\"isLiveNow\":true")) return Boolean.TRUE;
                     if (chunk.contains("\"isLiveNow\":false")
                             || chunk.contains("\"LIVE_STREAM_OFFLINE\"")
                             || chunk.contains("\"isUpcoming\":true")
                             || chunk.contains("\"status\":\"ERROR\"")
                             || chunk.contains("\"status\":\"UNPLAYABLE\"")) {
+                        if (channelId != null) invalidateChannelVideoId(channelId);
                         return Boolean.FALSE;
-                    }
-                    if (isChannelLive && !sawWatchCanonical && total <= 64 * 1024) {
-                        Matcher cm = CANONICAL_HREF.matcher(chunk);
-                        if (cm.find()) {
-                            String href = cm.group(1);
-                            if (href.contains("watch?v=")) sawWatchCanonical = true;
-                            else return Boolean.FALSE;
-                        }
                     }
                     tail = chunk.length() > 128 ? chunk.substring(chunk.length() - 128) : chunk;
                     if (total >= 2 * 1024 * 1024) break;
@@ -477,18 +537,64 @@ final class WorldCams {
         }
     }
 
-    // ---------- hearting / bookmarks ----------
+    private static final Pattern LIVE_VID = Pattern.compile("\"videoId\":\"([A-Za-z0-9_-]{11})\"");
 
-    private Set<String> hearts() {
-        Set<String> s = p.getStringSet(K_HEARTS, null);
-        return s == null ? new LinkedHashSet<>() : new LinkedHashSet<>(s);
+    /**
+     * Resolve a YouTube channel's /live page to its current live videoId using a tiny sliding
+     * window (16 KB RAM) instead of buffering the full page. Checks `<link rel="canonical">` first
+     * (usually in the first chunk) and falls back to `"videoId"`.
+     */
+    static String resolveChannelLiveId(String channelId, String ua) {
+        if (channelId == null || channelId.isEmpty()) return null;
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new URL("https://www.youtube.com/channel/" + channelId + "/live").openConnection();
+            conn.setInstanceFollowRedirects(true);
+            conn.setConnectTimeout(6_000);
+            conn.setReadTimeout(8_000);
+            if (ua != null) conn.setRequestProperty("User-Agent", ua);
+            if (conn.getResponseCode() != 200) return null;
+            byte[] buf = new byte[8192];
+            String tail = "";
+            int total = 0;
+            try (InputStream in = conn.getInputStream()) {
+                int n;
+                while ((n = in.read(buf)) >= 0) {
+                    total += n;
+                    String chunk = tail + new String(buf, 0, n, StandardCharsets.UTF_8);
+                    if (total <= 64 * 1024) {
+                        Matcher cm = CANONICAL_HREF.matcher(chunk);
+                        if (cm.find()) {
+                            String vid = extractVideoId(cm.group(1));
+                            if (vid != null) return vid;
+                        }
+                    }
+                    Matcher vm = LIVE_VID.matcher(chunk);
+                    if (vm.find()) return vm.group(1);
+                    tail = chunk.length() > 160 ? chunk.substring(chunk.length() - 160) : chunk;
+                    if (total >= 1536 * 1024) break;
+                }
+            }
+            return null;
+        } catch (IOException | RuntimeException e) {
+            return null;
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
     }
 
-    boolean isHearted(Stream s) { return s != null && hearts().contains(s.key); }
+    // ---------- hearting / bookmarks ----------
+
+    private Set<String> heartsReadOnly() {
+        Set<String> s = p.getStringSet(K_HEARTS, null);
+        return s == null ? Collections.emptySet() : s;
+    }
+
+    boolean isHearted(Stream s) { return s != null && heartsReadOnly().contains(s.key); }
 
     boolean toggleHeart(Stream s) {
         if (s == null) return false;
-        Set<String> h = hearts();
+        Set<String> h = new LinkedHashSet<>(heartsReadOnly());
         boolean added = !h.remove(s.key);
         if (added) h.add(s.key);
         p.edit().putStringSet(K_HEARTS, h).apply();
@@ -496,17 +602,33 @@ final class WorldCams {
     }
 
     int heartedCount(List<Stream> all) {
-        Set<String> h = hearts();
+        Set<String> h = heartsReadOnly();
+        if (h.isEmpty()) return 0;
         int n = 0;
         for (Stream s : all) if (h.contains(s.key)) n++;
         return n;
     }
 
     List<Stream> hearted(List<Stream> all) {
-        Set<String> h = hearts();
+        Set<String> h = heartsReadOnly();
+        if (h.isEmpty()) return Collections.emptyList();
         List<Stream> out = new ArrayList<>();
         for (Stream s : all) if (h.contains(s.key)) out.add(s);
         return out;
+    }
+
+    /** Active stepping/shuffle pool: hearted streams if at least 2 are hearted, else the full catalog. */
+    List<Stream> activePool(List<Stream> all) {
+        List<Stream> favs = hearted(all);
+        return favs.size() > 1 ? favs : all;
+    }
+
+    /** Turn single-card World Cam mode on or off consistently across panel, menus, and remote key setup. */
+    void setWorldMode(HomeConfig cfg, boolean on) {
+        cfg.set(HomeConfig.K_WORLD_CAMS, on ? "on" : "off");
+        setSlotUsesWorld(0, on);
+        setSlotUsesWorld(1, false);
+        if (on && !cfg.camerasOn()) cfg.set(HomeConfig.K_CAMERAS, "on");
     }
 
     // ---------- per-slot selection ----------
@@ -525,6 +647,9 @@ final class WorldCams {
 
     boolean randomOnReturn() { return p.getBoolean(K_RANDOM_RETURN, true); }
     void setRandomOnReturn(boolean on) { p.edit().putBoolean(K_RANDOM_RETURN, on).apply(); }
+
+    int prefetchCount() { return Math.max(0, Math.min(2, p.getInt(K_PREFETCH, 0))); }
+    void setPrefetchCount(int n) { p.edit().putInt(K_PREFETCH, Math.max(0, Math.min(2, n))).apply(); }
 
     Stream slotStream(int slot, List<Stream> all) {
         if (all.isEmpty()) return null;
@@ -571,37 +696,12 @@ final class WorldCams {
     }
 
     /** Advance both slots together as a non-overlapping pair, skipping known-offline feeds when possible. */
-    Stream[] nextPair(List<Stream> pool) {
-        if (pool.isEmpty()) return new Stream[]{null, null};
-        if (pool.size() == 1) {
-            Stream only = pool.get(0);
-            setSlot(0, only);
-            setSlot(1, only);
-            return new Stream[]{only, only};
-        }
-        Stream s0 = slotStream(0, pool);
-        Stream s1 = slotStream(1, pool);
-        int i0 = indexOf(pool, s0), i1 = indexOf(pool, s1);
-        int base = i1 >= 0 ? i1 : i0;
-        int n = pool.size();
-        Stream next0 = null, next1 = null;
-        for (int step = 1; step <= n && next1 == null; step++) {
-            Stream cand = pool.get((base + step) % n);
-            if (isKnownOffline(cand)) continue;
-            if (next0 == null) next0 = cand;
-            else if (!cand.key.equals(next0.key)) next1 = cand;
-        }
-        if (next0 == null || next1 == null) {
-            next0 = pool.get((base + 1) % n);
-            next1 = pool.get((base + 2) % n);
-        }
-        setSlot(0, next0);
-        setSlot(1, next1);
-        return new Stream[]{next0, next1};
-    }
+    Stream[] nextPair(List<Stream> pool) { return stepPair(pool, 1); }
 
     /** Step both slots backward as a non-overlapping pair, skipping known-offline feeds when possible. */
-    Stream[] prevPair(List<Stream> pool) {
+    Stream[] prevPair(List<Stream> pool) { return stepPair(pool, -1); }
+
+    private Stream[] stepPair(List<Stream> pool, int dir) {
         if (pool.isEmpty()) return new Stream[]{null, null};
         if (pool.size() == 1) {
             Stream only = pool.get(0);
@@ -612,22 +712,25 @@ final class WorldCams {
         Stream s0 = slotStream(0, pool);
         Stream s1 = slotStream(1, pool);
         int i0 = indexOf(pool, s0), i1 = indexOf(pool, s1);
-        int base = i0 >= 0 ? i0 : (i1 >= 0 ? i1 : 0);
+        int base = dir > 0 ? (i1 >= 0 ? i1 : i0) : (i0 >= 0 ? i0 : (i1 >= 0 ? i1 : 0));
         int n = pool.size();
-        Stream prev1 = null, prev0 = null;
-        for (int step = 1; step <= n && prev0 == null; step++) {
-            Stream cand = pool.get(Math.floorMod(base - step, n));
+        Stream first = null, second = null;
+        for (int step = 1; step <= n && second == null; step++) {
+            int pos = dir > 0 ? (base + step) % n : Math.floorMod(base - step, n);
+            Stream cand = pool.get(pos);
             if (isKnownOffline(cand)) continue;
-            if (prev1 == null) prev1 = cand;
-            else if (!cand.key.equals(prev1.key)) prev0 = cand;
+            if (first == null) first = cand;
+            else if (!cand.key.equals(first.key)) second = cand;
         }
-        if (prev0 == null || prev1 == null) {
-            prev0 = pool.get(Math.floorMod(base - 2, n));
-            prev1 = pool.get(Math.floorMod(base - 1, n));
+        Stream p0 = dir > 0 ? first : second;
+        Stream p1 = dir > 0 ? second : first;
+        if (p0 == null || p1 == null) {
+            p0 = pool.get(Math.floorMod(base + (dir > 0 ? 1 : -2), n));
+            p1 = pool.get(Math.floorMod(base + (dir > 0 ? 2 : -1), n));
         }
-        setSlot(0, prev0);
-        setSlot(1, prev1);
-        return new Stream[]{prev0, prev1};
+        setSlot(0, p0);
+        setSlot(1, p1);
+        return new Stream[]{p0, p1};
     }
 
     /** Step `slot` backward by 1 in `pool` (skipping known-offline feeds and `avoidKey` when possible). */
@@ -647,10 +750,34 @@ final class WorldCams {
         return -1;
     }
 
-    /** Pick a random stream in `pool`, strictly preferring confirmed-online streams (never known-offline). */
-    Stream shuffle(int slot, List<Stream> pool, String avoidKey) {
-        if (pool.isEmpty()) return null;
-        Stream cur = slotStream(slot, pool);
+    /**
+     * Peek up to `count` upcoming streams stepping forward from `cur` in `pool`,
+     * skipping known-offline feeds, `cur`, `avoidKey`, and duplicates. Does not mutate slot prefs.
+     */
+    static List<Stream> peekNext(Stream cur, List<Stream> pool, String avoidKey, int count) {
+        if (pool == null || pool.isEmpty() || count <= 0) return Collections.emptyList();
+        List<Stream> out = new ArrayList<>(count);
+        Set<String> seen = new LinkedHashSet<>();
+        if (cur != null) seen.add(cur.key);
+        if (avoidKey != null) seen.add(avoidKey);
+        int idx = indexOf(pool, cur);
+        int n = pool.size();
+        for (int pass = 0; pass < 2 && out.size() < count; pass++) {
+            boolean skipOffline = (pass == 0);
+            for (int step = 1; step <= n && out.size() < count; step++) {
+                Stream cand = pool.get(Math.floorMod(idx + step, n));
+                if (seen.contains(cand.key)) continue;
+                if (skipOffline && isKnownOffline(cand)) continue;
+                seen.add(cand.key);
+                out.add(cand);
+            }
+        }
+        return out;
+    }
+
+    /** Pick a random stream in `pool` without committing it to prefs, preferring confirmed-online streams. */
+    Stream peekShuffle(Stream cur, List<Stream> pool, String avoidKey) {
+        if (pool == null || pool.isEmpty()) return null;
         List<Stream> confirmedOnline = new ArrayList<>();
         List<Stream> notOffline = new ArrayList<>();
         List<Stream> anyCands = new ArrayList<>();
@@ -663,8 +790,14 @@ final class WorldCams {
         }
         List<Stream> cands = !confirmedOnline.isEmpty() ? confirmedOnline
                 : (!notOffline.isEmpty() ? notOffline : (!anyCands.isEmpty() ? anyCands : pool));
-        Stream pick = cands.get(rng.nextInt(cands.size()));
-        setSlot(slot, pick);
+        return cands.get(rng.nextInt(cands.size()));
+    }
+
+    /** Pick a random stream in `pool`, strictly preferring confirmed-online streams (never known-offline). */
+    Stream shuffle(int slot, List<Stream> pool, String avoidKey) {
+        if (pool.isEmpty()) return null;
+        Stream pick = peekShuffle(slotStream(slot, pool), pool, avoidKey);
+        if (pick != null) setSlot(slot, pick);
         return pick;
     }
 

@@ -143,14 +143,14 @@ final class SettingsMenu {
             changed(on ? "Cameras on" : "Cameras off: apps use the whole screen");
         }));
         WorldCams wc = new WorldCams(a);
-        int hearts = wc.heartedCount(wc.load());
-        String wcVal = cfg.worldCamsOn() ? (hearts > 0 ? "On (" + hearts + " ♥)" : "On") : "Off";
+        String wcVal = "Off";
+        if (cfg.worldCamsOn()) {
+            int hearts = wc.heartedCount(wc.load());
+            wcVal = hearts > 0 ? "On (" + hearts + " ♥)" : "On";
+        }
         rows.add(new MenuRow("World cam", wcVal, () -> {
             boolean on = !cfg.worldCamsOn();
-            cfg.set(HomeConfig.K_WORLD_CAMS, on ? "on" : "off");
-            wc.setSlotUsesWorld(0, on);
-            wc.setSlotUsesWorld(1, false);
-            if (on && !cfg.camerasOn()) cfg.set(HomeConfig.K_CAMERAS, "on");
+            wc.setWorldMode(cfg, on);
             changed(on ? "World cam on (hold OK on the card to switch or ♥)" : "World cam off");
         }));
         rows.add(new MenuRow("Camera setup", null, this::cameras));
@@ -975,11 +975,7 @@ final class SettingsMenu {
                         show(dialog("Turn on World cam first", () -> pickTarget(id, back))
                                 .setMessage("This action steps through World Cams. Turn on World cam in Settings (or tap the camera icon in Home's top corner) first.")
                                 .setPositiveButton("Turn on & map", (x, w) -> {
-                                    cfg.set(HomeConfig.K_WORLD_CAMS, "on");
-                                    WorldCams wc = new WorldCams(a);
-                                    wc.setSlotUsesWorld(0, true);
-                                    wc.setSlotUsesWorld(1, false);
-                                    if (!cfg.camerasOn()) cfg.set(HomeConfig.K_CAMERAS, "on");
+                                    new WorldCams(a).setWorldMode(cfg, true);
                                     rk.set(id, chosen);
                                     changed(rk.label(id) + " → " + RemoteKeys.targetLabel(chosen, installed, ta, cfg));
                                 })

@@ -89,4 +89,46 @@ class WorldCamsTest {
         assertTrue("subsolar point should be high day", altNoon > 60.0)
         assertTrue("antipode should be deep night", altMidnight < -60.0)
     }
+
+    @Test fun peekNextReturnsUpcomingNonOfflineStreamsWithoutDuplicates() {
+        val s0 = WorldCams.Stream("S0", "Cat", "youtube_channel", "https://youtube.com/@s0/live", "UC0", "")
+        val s1 = WorldCams.Stream("S1", "Cat", "youtube_channel", "https://youtube.com/@s1/live", "UC1", "")
+        val s2 = WorldCams.Stream("S2", "Cat", "youtube_channel", "https://youtube.com/@s2/live", "UC2", "")
+        val s3 = WorldCams.Stream("S3", "Cat", "youtube_channel", "https://youtube.com/@s3/live", "UC3", "")
+        val s4 = WorldCams.Stream("S4", "Cat", "youtube_channel", "https://youtube.com/@s4/live", "UC4", "")
+        val pool = listOf(s0, s1, s2, s3, s4)
+
+        WorldCams.setOnlineForTest(s1, false) // offline -> skipped on first pass
+        WorldCams.setOnlineForTest(s2, true)
+        WorldCams.setOnlineForTest(s4, true)
+
+        val one = WorldCams.peekNext(s0, pool, null, 1)
+        assertEquals(listOf(s2.key), one.map { it.key })
+
+        // Request 2 while avoiding s3: should pick s2 then s4
+        val two = WorldCams.peekNext(s0, pool, s3.key, 2)
+        assertEquals(listOf(s2.key, s4.key), two.map { it.key })
+
+        // Zero or single-item pool returns empty
+        assertTrue(WorldCams.peekNext(s0, pool, null, 0).isEmpty())
+        assertTrue(WorldCams.peekNext(s0, listOf(s0), null, 2).isEmpty())
+    }
+
+    @Test fun cachesExpiresAndInvalidatesChannelVideoIds() {
+        val ch = "UC_TEST_CACHE"
+        val t0 = 1_000_000L
+        assertNull(WorldCams.cachedChannelVideoId(ch, t0))
+
+        WorldCams.cacheChannelVideoId(ch, "dQw4w9WgXcQ", t0)
+        assertEquals("dQw4w9WgXcQ", WorldCams.cachedChannelVideoId(ch, t0 + 60_000L))
+
+        // Expired after 15 minutes
+        assertNull(WorldCams.cachedChannelVideoId(ch, t0 + 16 * 60_000L))
+
+        // Explicit invalidation
+        WorldCams.cacheChannelVideoId(ch, "ROboUHfPUrU", t0)
+        assertEquals("ROboUHfPUrU", WorldCams.cachedChannelVideoId(ch, t0 + 1_000L))
+        WorldCams.invalidateChannelVideoId(ch)
+        assertNull(WorldCams.cachedChannelVideoId(ch, t0 + 1_000L))
+    }
 }

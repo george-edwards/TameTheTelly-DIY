@@ -29,6 +29,9 @@ final class CustomScene extends PaintedScene {
     private static final String PROPS = "scene.properties";
     private static final String[] FILES = {PROPS, "sky.webp", "riding.webp", "sleep.webp"};
 
+    private static volatile Boolean cachedAvailable;
+    private static volatile String cachedName;
+
     private final Paint namePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final String plaqueTag;
 
@@ -46,17 +49,25 @@ final class CustomScene extends PaintedScene {
 
     /** True if a custom scene is installed in filesDir or bundled in APK assets. */
     static boolean isAvailable(Context c) {
-        if (new File(dir(c), PROPS).isFile()) return true;
-        try (InputStream ignored = c.getAssets().open(DIR + "/" + PROPS)) {
-            return true;
-        } catch (IOException | RuntimeException e) {
-            return false;
+        Boolean cached = cachedAvailable;
+        if (cached != null) return cached;
+        boolean avail = new File(dir(c), PROPS).isFile();
+        if (!avail) {
+            try (InputStream ignored = c.getAssets().open(DIR + "/" + PROPS)) {
+                avail = true;
+            } catch (IOException | RuntimeException ignored) { }
         }
+        cachedAvailable = avail;
+        return avail;
     }
 
     static String displayName(Context c) {
+        String cached = cachedName;
+        if (cached != null) return cached;
         String n = loadProps(c).getProperty("name", "").trim();
-        return n.isEmpty() ? "Custom scene" : n;
+        String res = n.isEmpty() ? "Custom scene" : n;
+        cachedName = res;
+        return res;
     }
 
     /**
@@ -73,13 +84,21 @@ final class CustomScene extends PaintedScene {
         if (!dstDir.isDirectory() && !dstDir.mkdirs()) return;
         byte[] buf = new byte[16 * 1024];
         for (String f : FILES) {
+            File tmp = new File(dstDir, f + ".tmp");
+            File dst = new File(dstDir, f);
             try (InputStream in = c.getAssets().open(DIR + "/" + f);
-                 FileOutputStream out = new FileOutputStream(new File(dstDir, f))) {
+                 FileOutputStream out = new FileOutputStream(tmp)) {
                 for (int n; (n = in.read(buf)) > 0; ) out.write(buf, 0, n);
+                out.getFD().sync();
             } catch (IOException e) {
+                tmp.delete();
                 Log.w(TAG, "seed " + f + " failed: " + e.getMessage());
+                continue;
             }
+            if (!tmp.renameTo(dst)) tmp.delete();
         }
+        cachedAvailable = null;
+        cachedName = null;
     }
 
     private static Properties loadProps(Context c) {

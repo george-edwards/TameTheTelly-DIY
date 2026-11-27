@@ -43,19 +43,19 @@ public class MainActivity extends Activity {
     private static final long TICK_MS = 30_000, WEATHER_MS = 15 * 60_000, LABEL_FADE_MS = 5_000;
 
     private static volatile MainActivity active;
+    private static volatile boolean assetsSeeded;
 
     /** Step the visible World Cam card forward (dir > 0) or backward (dir < 0). */
     static void stepWorldCams(Context c, int dir) {
         MainActivity a = active;
-        if (a != null) {
+        if (a != null && a.hasWindowFocus()) {
             a.h.post(() -> a.advanceWorldCams(dir));
             return;
         }
         WorldCams wc = new WorldCams(c);
         List<WorldCams.Stream> all = wc.load();
         if (all.isEmpty()) return;
-        List<WorldCams.Stream> favs = wc.hearted(all);
-        List<WorldCams.Stream> pool = favs.size() > 1 ? favs : all;
+        List<WorldCams.Stream> pool = wc.activePool(all);
         if (dir < 0) wc.prev(0, pool, null); else wc.next(0, pool, null);
     }
 
@@ -98,8 +98,10 @@ public class MainActivity extends Activity {
     private View fullscreenCam;
     private boolean fullscreenSound;
     private boolean leftHome;
+    private static final long RANDOM_PREFETCH_LEAD_MS = 10_000L;
     private TextView worldTimer;
     private long worldTimerDeadlineMs;
+    private WorldCams.Stream pendingRandomStream;
     private long lastWeather;
     private int lastSunDay = -1;
     private double lastSunLat = Double.NaN, lastSunLon = Double.NaN;
@@ -156,11 +158,14 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         store = new AppStore(this);
         cfg = new HomeConfig(this);
-        Context appCtx = getApplicationContext();
-        new Thread(() -> {
-            Restore.seedIfBundled(appCtx);
-            CustomScene.seedIfBundled(appCtx);
-        }, "seed-private").start();
+        if (!assetsSeeded) {
+            assetsSeeded = true;
+            Context appCtx = getApplicationContext();
+            new Thread(() -> {
+                Restore.seedIfBundled(appCtx);
+                CustomScene.seedIfBundled(appCtx);
+            }, "seed-private").start();
+        }
         screenTime = new ScreenTime(this);
         timedApps = new TimedApps(this);
         // Hides Home while a timed app's window sits on top of it (Home stays visible behind it, and may be
@@ -228,9 +233,7 @@ public class MainActivity extends Activity {
                 if (worldCams.isPinned(i) || !worldCams.randomOnReturn()) {
                     worldSlots[i] = worldCams.slotStream(i, worldCatalog);
                 } else {
-                    List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
-                    List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
-                    worldSlots[i] = worldCams.shuffle(i, pool, otherWorldKey(i));
+                    worldSlots[i] = worldCams.shuffle(i, activeWorldPool(), otherWorldKey(i));
                 }
                 v.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                 v.findViewById(R.id.surface).setVisibility(View.GONE);
@@ -264,6 +267,7 @@ public class MainActivity extends Activity {
         }
         findViewById(R.id.camGap).setVisibility(camOn[0] && camOn[1] ? View.VISIBLE : View.GONE);
         findViewById(R.id.rightWrap).setVisibility(camOn[0] || camOn[1] ? View.VISIBLE : View.GONE);
+        updateWorldPrefetch();
         worldTimer = findViewById(R.id.worldTimer);
         if (worldTimer != null) {
             setupWorldTimerView(density);
@@ -394,8 +398,7 @@ public class MainActivity extends Activity {
             if (leftHome) {
                 leftHome = false;
                 if (!worldCatalog.isEmpty() && worldCams.randomOnReturn()) {
-                    List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
-                    List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
+                    List<WorldCams.Stream> pool = activeWorldPool();
                     for (int i = 0; i < 2; i++) {
                         if (camIsWorld[i] && !worldCams.isPinned(i)) {
                             WorldCams.Stream pick = worldCams.shuffle(i, pool, otherWorldKey(i));
@@ -409,6 +412,7 @@ public class MainActivity extends Activity {
                 }
             }
             resetWorldTimer();
+            updateWorldPrefetch();
             boolean adult = screenTime.adultMode(now);
             boolean passEnded = leftDuringPass && screenTime.hasPass(now);
             if (passEnded) screenTime.setGrownUp(0);
@@ -639,22 +643,17 @@ public class MainActivity extends Activity {
         boolean allWorld = anyOn && (!camOn[0] || camIsWorld[0]) && (!camOn[1] || camIsWorld[1]);
         boolean hasLocal = !cfg.camUrl(0).isEmpty() || !cfg.camUrl(1).isEmpty();
         if (!anyOn) {
-            cfg.set(HomeConfig.K_CAMERAS, "on");
             if (hasLocal) {
+                cfg.set(HomeConfig.K_CAMERAS, "on");
                 worldCams.setSlotUsesWorld(0, false);
                 worldCams.setSlotUsesWorld(1, false);
             } else {
-                cfg.set(HomeConfig.K_WORLD_CAMS, "on");
-                worldCams.setSlotUsesWorld(0, true);
-                worldCams.setSlotUsesWorld(1, false);
+                worldCams.setWorldMode(cfg, true);
             }
         } else if (allWorld) {
             cfg.set(HomeConfig.K_CAMERAS, "off");
         } else {
-            cfg.set(HomeConfig.K_CAMERAS, "on");
-            cfg.set(HomeConfig.K_WORLD_CAMS, "on");
-            worldCams.setSlotUsesWorld(0, true);
-            worldCams.setSlotUsesWorld(1, false);
+            worldCams.setWorldMode(cfg, true);
         }
         recreate();
     }
@@ -670,9 +669,7 @@ public class MainActivity extends Activity {
                     if (which == 0) {
                         ScreenTimeService.camOverlay(this, wasPinned ? "off" : "set", slot);
                     } else if (which == 1 && canWorld) {
-                        cfg.set(HomeConfig.K_WORLD_CAMS, "on");
-                        worldCams.setSlotUsesWorld(0, true);
-                        worldCams.setSlotUsesWorld(1, false);
+                        worldCams.setWorldMode(cfg, true);
                         recreate();
                     }
                 }));
@@ -693,10 +690,44 @@ public class MainActivity extends Activity {
         if (s == null) return;
         worldSlots[slot] = s;
         worldCams.setSlot(slot, s);
+        if (slot == 0) pendingRandomStream = null;
         updateWorldLabel(slot);
         showLabel(camLabels[slot]);
         webHost.setSlot(slot, true, s.embedUrl());
         resetWorldTimer();
+        updateWorldPrefetch();
+    }
+
+    private List<WorldCams.Stream> activeWorldPool() {
+        return worldCams.activePool(worldCatalog);
+    }
+
+    private void updateWorldPrefetch() {
+        if (webHost == null || worldCams == null) return;
+        int count = worldCams.prefetchCount();
+        if (count <= 0 || camIsWorld == null || camOn == null || !camIsWorld[0] || !camOn[0]
+                || worldCatalog.isEmpty() || worldSlots[0] == null) {
+            webHost.setPrefetchUrls(Collections.emptyList());
+            return;
+        }
+        List<String> urls = new ArrayList<>(count);
+        String avoidKey = otherWorldKey(0);
+        if (pendingRandomStream != null && !pendingRandomStream.key.equals(worldSlots[0].key)) {
+            urls.add(pendingRandomStream.embedUrl());
+        }
+        if (urls.size() < count) {
+            List<WorldCams.Stream> nexts = WorldCams.peekNext(worldSlots[0], activeWorldPool(), avoidKey, count);
+            for (WorldCams.Stream s : nexts) {
+                if (urls.size() >= count) break;
+                String u = s.embedUrl();
+                if (u != null && !urls.contains(u)) urls.add(u);
+            }
+        }
+        webHost.setPrefetchUrls(urls);
+    }
+
+    private static String prefetchLabel(int n) {
+        return n <= 0 ? "Off" : String.valueOf(n);
     }
 
     private void setupWorldTimerView(float d) {
@@ -750,6 +781,7 @@ public class MainActivity extends Activity {
                                     worldCams.setAutoAdvanceMinutes(opts[w]);
                                     worldCams.setAutoAdvanceOn(true);
                                     resetWorldTimer();
+                                    updateWorldPrefetch();
                                     updateWorldTimerUi();
                                 }));
                     } else if (which == 1) {
@@ -772,6 +804,7 @@ public class MainActivity extends Activity {
 
     private void resetWorldTimer() {
         h.removeCallbacks(worldTimerTick);
+        pendingRandomStream = null;
         if (worldTimerActive()) {
             worldTimerDeadlineMs = System.currentTimeMillis() + worldCams.autoAdvanceMinutes() * 60_000L;
             h.postDelayed(worldTimerTick, 1_000L);
@@ -783,6 +816,7 @@ public class MainActivity extends Activity {
 
     private void stopWorldTimer() {
         h.removeCallbacks(worldTimerTick);
+        pendingRandomStream = null;
     }
 
     private void updateWorldTimerUi() {
@@ -813,15 +847,24 @@ public class MainActivity extends Activity {
             long now = System.currentTimeMillis();
             if (now >= worldTimerDeadlineMs) {
                 if (hasWindowFocus() && !worldCatalog.isEmpty()) {
-                    List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
-                    List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
-                    WorldCams.Stream pick = worldCams.shuffle(0, pool, otherWorldKey(0));
+                    List<WorldCams.Stream> pool = activeWorldPool();
+                    WorldCams.Stream pick = pendingRandomStream;
+                    pendingRandomStream = null;
+                    if (pick == null || WorldCams.isKnownOffline(pick)) {
+                        pick = worldCams.peekShuffle(worldSlots[0], pool, otherWorldKey(0));
+                    }
                     if (pick != null) {
-                        switchWorldSlot(0, pick); // also resets timer
+                        switchWorldSlot(0, pick); // also resets timer & updates prefetch
                         return;
                     }
                 }
+                pendingRandomStream = null;
                 worldTimerDeadlineMs = now + worldCams.autoAdvanceMinutes() * 60_000L;
+            } else if (hasWindowFocus() && !worldCatalog.isEmpty()
+                    && worldCams.prefetchCount() > 0 && pendingRandomStream == null
+                    && (worldTimerDeadlineMs - now) <= RANDOM_PREFETCH_LEAD_MS) {
+                pendingRandomStream = worldCams.peekShuffle(worldSlots[0], activeWorldPool(), otherWorldKey(0));
+                if (pendingRandomStream != null) updateWorldPrefetch();
             }
             updateWorldTimerUi();
             h.postDelayed(this, 1_000L);
@@ -830,8 +873,7 @@ public class MainActivity extends Activity {
 
     private void advanceWorldCams(int dir) {
         if (worldCatalog.isEmpty()) return;
-        List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
-        List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
+        List<WorldCams.Stream> pool = activeWorldPool();
         if (camIsWorld[0] && camIsWorld[1]) {
             WorldCams.Stream[] pair = dir < 0 ? worldCams.prevPair(pool) : worldCams.nextPair(pool);
             if (pair[0] != null) switchWorldSlot(0, pair[0]);
@@ -855,60 +897,71 @@ public class MainActivity extends Activity {
         List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
         boolean hasLocal0 = !cfg.camUrl(0).isEmpty();
         boolean hasLocal1 = !cfg.camUrl(1).isEmpty();
-        boolean hasLocal = hasLocal0 || hasLocal1;
         boolean isFull = fullscreenCam == camViews[slot];
         boolean isPinned = worldCams.isPinned(slot);
+
         List<String> items = new ArrayList<>();
-        int soundIdx = -1;
-        if (isFull) { soundIdx = items.size(); items.add(fullscreenSound ? "Mute sound" : "🔊 Sound on"); }
-        int pinIdx = items.size(); items.add(isPinned ? "📌 Unpin from Home (random on return)" : "📌 Pin to Home (always show this cam)");
-        int heartIdx = items.size(); items.add(isH ? "♥ Remove heart" : "♡ Heart this stream");
-        int nextIdx = items.size(); items.add(favs.size() > 1 ? "Next hearted stream" : "Next stream");
-        int shufIdx = items.size(); items.add("Shuffle");
+        List<Runnable> actions = new ArrayList<>();
+        if (isFull) {
+            items.add(fullscreenSound ? "Mute sound" : "🔊 Sound on");
+            actions.add(() -> toggleFullscreenSound(slot));
+        }
+        items.add(isPinned ? "📌 Unpin from Home (random on return)" : "📌 Pin to Home (always show this cam)");
+        actions.add(() -> {
+            worldCams.setPinned(slot, !isPinned);
+            updateWorldLabel(slot);
+            resetWorldTimer();
+            updateWorldPrefetch();
+            showLabel(camLabels[slot]);
+            fadeLabel(camLabels[slot], 2_500);
+        });
+        items.add(isH ? "♥ Remove heart" : "♡ Heart this stream");
+        actions.add(() -> {
+            worldCams.toggleHeart(cur);
+            updateWorldLabel(slot);
+            updateWorldPrefetch();
+            showLabel(camLabels[slot]);
+            fadeLabel(camLabels[slot], 2_500);
+        });
+        items.add(favs.size() > 1 ? "Next hearted stream" : "Next stream");
+        actions.add(() -> switchWorldSlot(slot, worldCams.next(slot, activeWorldPool(), otherWorldKey(slot))));
+        items.add("Shuffle");
+        actions.add(() -> switchWorldSlot(slot, worldCams.shuffle(slot, activeWorldPool(), otherWorldKey(slot))));
+
         int onlineAll = WorldCams.onlineCount(worldCatalog);
         String onlineTag = onlineAll > 0 ? " · " + onlineAll + " online" : "";
-        int allIdx = items.size(); items.add("Browse all streams (" + worldCatalog.size() + onlineTag + ")…");
-        int favIdx = -1, localIdx = -1;
-        if (!favs.isEmpty()) { favIdx = items.size(); items.add("♥ Hearted streams (" + favs.size() + ")…"); }
-        if (hasLocal) {
-            localIdx = items.size();
+        items.add("Browse all streams (" + worldCatalog.size() + onlineTag + ")…");
+        actions.add(() -> pickWorldStream(slot, "All World Cams", worldCatalog));
+
+        if (!favs.isEmpty()) {
+            items.add("♥ Hearted streams (" + favs.size() + ")…");
+            actions.add(() -> pickWorldStream(slot, "♥ Hearted streams", favs));
+        }
+        items.add("Pre-fetch next stream: " + prefetchLabel(worldCams.prefetchCount()));
+        actions.add(() -> {
+            String[] opts = {"Off", "1 stream (recommended)", "2 streams (rapid surfing)"};
+            showDialog(new AlertDialog.Builder(this).setTitle("Pre-fetch next stream")
+                    .setSingleChoiceItems(opts, worldCams.prefetchCount(), (d2, w) -> {
+                        d2.dismiss();
+                        worldCams.setPrefetchCount(w);
+                        if (w == 0) pendingRandomStream = null;
+                        updateWorldPrefetch();
+                        Toast.makeText(this, "Pre-fetch next stream: " + prefetchLabel(w), Toast.LENGTH_SHORT).show();
+                    }));
+        });
+        if (hasLocal0 || hasLocal1) {
             String localLabel = (hasLocal0 && hasLocal1) ? "cameras" : (hasLocal0 ? cfg.camName(0) : cfg.camName(1));
             items.add("Switch back to " + localLabel);
+            actions.add(() -> {
+                worldCams.setSlotUsesWorld(0, false);
+                worldCams.setSlotUsesWorld(1, false);
+                recreate();
+            });
         }
 
-        final int sIdx = soundIdx, pIdx = pinIdx, hIdx = heartIdx, nIdx = nextIdx, shIdx = shufIdx, aIdx = allIdx, fIdx = favIdx, lIdx = localIdx;
         String title = cur != null ? cur.displayName() : "World Cams";
         showDialog(new AlertDialog.Builder(this).setTitle(title)
-                .setItems(items.toArray(new String[0]), (d, which) -> {
-                    if (which == sIdx) {
-                        toggleFullscreenSound(slot);
-                    } else if (which == pIdx) {
-                        worldCams.setPinned(slot, !isPinned);
-                        updateWorldLabel(slot);
-                        resetWorldTimer();
-                        showLabel(camLabels[slot]);
-                        fadeLabel(camLabels[slot], 2_500);
-                    } else if (which == hIdx) {
-                        worldCams.toggleHeart(cur);
-                        updateWorldLabel(slot);
-                        showLabel(camLabels[slot]);
-                        fadeLabel(camLabels[slot], 2_500);
-                    } else if (which == nIdx) {
-                        List<WorldCams.Stream> pool = favs.size() > 1 ? favs : worldCatalog;
-                        switchWorldSlot(slot, worldCams.next(slot, pool, otherWorldKey(slot)));
-                    } else if (which == shIdx) {
-                        List<WorldCams.Stream> spool = favs.size() > 1 ? favs : worldCatalog;
-                        switchWorldSlot(slot, worldCams.shuffle(slot, spool, otherWorldKey(slot)));
-                    } else if (which == aIdx) {
-                        pickWorldStream(slot, "All World Cams", worldCatalog);
-                    } else if (which == fIdx) {
-                        pickWorldStream(slot, "♥ Hearted streams", favs);
-                    } else if (which == lIdx) {
-                        worldCams.setSlotUsesWorld(0, false);
-                        worldCams.setSlotUsesWorld(1, false);
-                        recreate();
-                    }
-                }));
+                .setItems(items.toArray(new String[0]), (d, which) -> actions.get(which).run()));
     }
 
     private void pickWorldStream(int slot, String title, List<WorldCams.Stream> pool) {

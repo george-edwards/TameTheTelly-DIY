@@ -114,6 +114,25 @@ final class WorldCamPicker {
         lv.setSelector(selector);
         lv.setDrawSelectorOnTop(true);
 
+        // Precompute static row tints & longitude/daylight labels once for the dialog's lifetime
+        final int[] rowTints = new int[pool.size()];
+        final String[] rightLabels = new String[pool.size()];
+        for (int i = 0; i < pool.size(); i++) {
+            WorldCams.Stream s = pool.get(i);
+            if (s.hasCoords) {
+                double alt = Sun.altitude(s.lat, s.lon, decl, subLon);
+                rowTints[i] = rowTintForAltitude(alt);
+                String icon = alt > 6.0 ? "☀ " : (alt > -12.0 ? "🌅 " : "🌙 ");
+                int lonInt = (int) Math.round(Math.abs(s.lon));
+                String hemi = s.lon >= 0 ? "°E" : "°W";
+                rightLabels[i] = icon + lonInt + hemi;
+            } else {
+                rowTints[i] = 0x281E293B;
+                rightLabels[i] = "Space".equalsIgnoreCase(s.category) || s.name.startsWith("Space")
+                        ? "🛰 Orbit" : "⛵ Roving";
+            }
+        }
+
         BaseAdapter adapter = new BaseAdapter() {
             @Override public int getCount() { return pool.size(); }
             @Override public Object getItem(int pos) { return pool.get(pos); }
@@ -158,18 +177,8 @@ final class WorldCamPicker {
                 String curMark = (current != null && current.key.equals(s.key)) ? "✓ " : "";
                 left.setText(dot + curMark + heart + s.displayName());
                 left.setAlpha(Boolean.FALSE.equals(st) ? 0.55f : 1f);
-
-                if (s.hasCoords) {
-                    double alt = Sun.altitude(s.lat, s.lon, decl, subLon);
-                    row.setBackgroundColor(rowTintForAltitude(alt));
-                    String icon = alt > 6.0 ? "☀ " : (alt > -12.0 ? "🌅 " : "🌙 ");
-                    int lonInt = (int) Math.round(Math.abs(s.lon));
-                    String hemi = s.lon >= 0 ? "°E" : "°W";
-                    right.setText(icon + lonInt + hemi);
-                } else {
-                    row.setBackgroundColor(0x281E293B);
-                    right.setText(s.name.startsWith("Space") ? "🛰 Orbit" : "⛵ Roving");
-                }
+                row.setBackgroundColor(rowTints[pos]);
+                right.setText(rightLabels[pos]);
                 return row;
             }
         };
@@ -207,13 +216,21 @@ final class WorldCamPicker {
             if (onPick != null) onPick.onPick(pool.get(pos));
         });
 
-        WorldCams.setStatusListener(() -> {
+        final Runnable refreshUi = () -> {
             if (!dialog.isShowing()) return;
             updateHeader.run();
             adapter.notifyDataSetChanged();
             mapView.invalidate();
+        };
+        final Runnable listener = () -> {
+            lv.removeCallbacks(refreshUi);
+            lv.postDelayed(refreshUi, 250L);
+        };
+        WorldCams.setStatusListener(listener);
+        dialog.setOnDismissListener(di -> {
+            lv.removeCallbacks(refreshUi);
+            WorldCams.clearStatusListener(listener);
         });
-        dialog.setOnDismissListener(di -> WorldCams.setStatusListener(null));
 
         MainActivity.showDialog(dialog);
         Window w = dialog.getWindow();
@@ -242,6 +259,9 @@ final class WorldCamPicker {
      * position, glowing camera pins, and a live gold crosshair tracking the focused list row.
      */
     private static final class DaylightMapView extends View {
+        private static final String[] AXIS_LABELS = {"180°W", "90°W", "0°", "90°E", "180°E"};
+        private static final int[] AXIS_LONS = {-180, -90, 0, 90, 180};
+
         private final List<WorldCams.Stream> streams;
         private final double decl;
         private final double subLon;
@@ -254,10 +274,13 @@ final class WorldCamPicker {
         private final Paint sunPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint landFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint landStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint crosshairPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path landPath = new Path();
         private final Rect srcRect;
         private final RectF dstRect = new RectF();
         private int selectedIdx = -1;
+        private int landW, landH;
 
         /** Simplified continent/island outlines in (lon, lat) pairs for the equirectangular daylight plot. */
         private static final float[][] LAND_POLYS = {
@@ -332,6 +355,13 @@ final class WorldCamPicker {
             ringPaint.setColor(0xFFFFD166);
             ringPaint.setStrokeWidth(2f * d);
 
+            crosshairPaint.setColor(0x88FFD166);
+            crosshairPaint.setStrokeWidth(1.2f * d);
+
+            borderPaint.setStyle(Paint.Style.STROKE);
+            borderPaint.setColor(0x44FFFFFF);
+            borderPaint.setStrokeWidth(1f * d);
+
             sunPaint.setStyle(Paint.Style.FILL);
         }
 
@@ -353,15 +383,19 @@ final class WorldCamPicker {
 
             canvas.drawBitmap(bgBitmap, srcRect, dstRect, bmpPaint);
 
-            // Subtle world coastline / continent silhouettes
-            landPath.rewind();
-            for (float[] poly : LAND_POLYS) {
-                if (poly.length < 4) continue;
-                landPath.moveTo(lonToX(poly[0], w), latToY(poly[1], mapH));
-                for (int i = 2; i < poly.length; i += 2) {
-                    landPath.lineTo(lonToX(poly[i], w), latToY(poly[i + 1], mapH));
+            // Subtle world coastline / continent silhouettes (cached per size)
+            if (w != landW || h != landH) {
+                landW = w;
+                landH = h;
+                landPath.rewind();
+                for (float[] poly : LAND_POLYS) {
+                    if (poly.length < 4) continue;
+                    landPath.moveTo(lonToX(poly[0], w), latToY(poly[1], mapH));
+                    for (int i = 2; i < poly.length; i += 2) {
+                        landPath.lineTo(lonToX(poly[i], w), latToY(poly[i + 1], mapH));
+                    }
+                    landPath.close();
                 }
-                landPath.close();
             }
             canvas.drawPath(landPath, landFillPaint);
             canvas.drawPath(landPath, landStrokePaint);
@@ -375,14 +409,12 @@ final class WorldCamPicker {
 
             // Bottom longitude axis labels
             float textY = h - 2.5f * d;
-            String[] labels = {"180°W", "90°W", "0°", "90°E", "180°E"};
-            int[] lons = {-180, -90, 0, 90, 180};
-            for (int i = 0; i < labels.length; i++) {
-                float x = lonToX(lons[i], w);
+            for (int i = 0; i < AXIS_LABELS.length; i++) {
+                float x = lonToX(AXIS_LONS[i], w);
                 if (i == 0) textPaint.setTextAlign(Paint.Align.LEFT);
-                else if (i == labels.length - 1) textPaint.setTextAlign(Paint.Align.RIGHT);
+                else if (i == AXIS_LABELS.length - 1) textPaint.setTextAlign(Paint.Align.RIGHT);
                 else textPaint.setTextAlign(Paint.Align.CENTER);
-                canvas.drawText(labels[i], x, textY, textPaint);
+                canvas.drawText(AXIS_LABELS[i], x, textY, textPaint);
             }
 
             // Subsolar point (glowing sun)
@@ -411,10 +443,7 @@ final class WorldCamPicker {
                 if (sel.hasCoords) {
                     float cx = lonToX(sel.lon, w);
                     float cy = latToY(sel.lat, mapH);
-                    Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    line.setColor(0x88FFD166);
-                    line.setStrokeWidth(1.2f * d);
-                    canvas.drawLine(cx, 0, cx, mapH, line);
+                    canvas.drawLine(cx, 0, cx, mapH, crosshairPaint);
                     dotPaint.setColor(0xFFFFD166);
                     canvas.drawCircle(cx, cy, 3.6f * d, dotPaint);
                     canvas.drawCircle(cx, cy, 7.2f * d, ringPaint);
@@ -422,11 +451,7 @@ final class WorldCamPicker {
             }
 
             // Crisp border around map
-            Paint border = new Paint(Paint.ANTI_ALIAS_FLAG);
-            border.setStyle(Paint.Style.STROKE);
-            border.setColor(0x44FFFFFF);
-            border.setStrokeWidth(1f * d);
-            canvas.drawRect(0.5f, 0.5f, w - 0.5f, mapH - 0.5f, border);
+            canvas.drawRect(0.5f, 0.5f, w - 0.5f, mapH - 0.5f, borderPaint);
         }
 
         private static float lonToX(double lon, float w) {
@@ -444,6 +469,11 @@ final class WorldCamPicker {
             int[] px = new int[bw * bh];
             double declRad = Math.toRadians(declDeg);
             double sinD = Math.sin(declRad), cosD = Math.cos(declRad);
+            double[] cosDLon = new double[bw];
+            for (int x = 0; x < bw; x++) {
+                double lonDeg = -180.0 + (x + 0.5) * (360.0 / bw);
+                cosDLon[x] = Math.cos(Math.toRadians(lonDeg - subLonDeg));
+            }
 
             for (int y = 0; y < bh; y++) {
                 double latDeg = 80.0 - (y + 0.5) * (160.0 / bh);
@@ -451,8 +481,7 @@ final class WorldCamPicker {
                 double sinL = Math.sin(latRad), cosL = Math.cos(latRad);
                 int rowOff = y * bw;
                 for (int x = 0; x < bw; x++) {
-                    double lonDeg = -180.0 + (x + 0.5) * (360.0 / bw);
-                    double sinAlt = sinL * sinD + cosL * cosD * Math.cos(Math.toRadians(lonDeg - subLonDeg));
+                    double sinAlt = sinL * sinD + cosL * cosD * cosDLon[x];
                     if (sinAlt > 1.0) sinAlt = 1.0;
                     else if (sinAlt < -1.0) sinAlt = -1.0;
                     double altDeg = Math.toDegrees(Math.asin(sinAlt));
@@ -465,31 +494,22 @@ final class WorldCamPicker {
         private static int colorForAltitude(double alt) {
             if (alt >= 12.0) {
                 float t = (float) Math.min(1.0, (alt - 12.0) / 60.0);
-                return lerpColor(0xFF3E7BB6, 0xFF7EC8E3, t);
+                return Sky.lerpColor(0xFF3E7BB6, 0xFF7EC8E3, t);
             }
             if (alt >= 2.0) {
                 float t = (float) ((alt - 2.0) / 10.0);
-                return lerpColor(0xFFD98A4E, 0xFF3E7BB6, t);
+                return Sky.lerpColor(0xFFD98A4E, 0xFF3E7BB6, t);
             }
             if (alt >= -2.0) {
                 // Bright golden horizon band right on the terminator curve
                 float t = (float) ((alt + 2.0) / 4.0);
-                return lerpColor(0xFF8C4A5E, 0xFFE6A15C, t);
+                return Sky.lerpColor(0xFF8C4A5E, 0xFFE6A15C, t);
             }
             if (alt >= -12.0) {
                 float t = (float) ((alt + 12.0) / 10.0);
-                return lerpColor(0xFF0E1730, 0xFF5A3B6E, t);
+                return Sky.lerpColor(0xFF0E1730, 0xFF5A3B6E, t);
             }
             return 0xFF080E1E;
-        }
-
-        private static int lerpColor(int a, int b, float t) {
-            int ar = (a >> 16) & 0xFF, ag = (a >> 8) & 0xFF, ab = a & 0xFF;
-            int br = (b >> 16) & 0xFF, bg = (b >> 8) & 0xFF, bb = b & 0xFF;
-            int r = Math.round(ar + (br - ar) * t);
-            int g = Math.round(ag + (bg - ag) * t);
-            int bl = Math.round(ab + (bb - ab) * t);
-            return 0xFF000000 | (r << 16) | (g << 8) | bl;
         }
     }
 }
