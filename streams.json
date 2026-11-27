@@ -581,6 +581,15 @@
       "lon": 139.8
     },
     {
+      "name": "Australia: Sydney Olympic Park Sea-Eagle Cam",
+      "category": "Australia & NZ",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@SeaEagleCAM4/live",
+      "channelId": "UCZss13TJZLtZ0ones3HpYMQ",
+      "lat": -33.83,
+      "lon": 151.07
+    },
+    {
       "name": "Australia: Sydney Harbour",
       "category": "Australia & NZ",
       "type": "youtube_channel",
