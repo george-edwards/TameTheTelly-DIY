@@ -191,6 +191,14 @@
       "lon": -64.76
     },
     {
+      "name": "Brazil: Pizza Time, Goiânia",
+      "category": "World Cams",
+      "type": "earthcam",
+      "url": "https://www.myearthcam.com/pizzatime",
+      "lat": -16.69,
+      "lon": -49.26
+    },
+    {
       "name": "Ireland: Dublin",
       "category": "World Cams",
       "type": "youtube_multi",

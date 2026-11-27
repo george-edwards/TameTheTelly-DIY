@@ -149,6 +149,7 @@ final class WorldCams {
             case "UK": return "🇬🇧";
             case "Ireland": return "🇮🇪";
             case "Canada": return "🇨🇦";
+            case "Brazil": return "🇧🇷";
             case "Japan": return "🇯🇵";
             case "Thailand": return "🇹🇭";
             case "Philippines": return "🇵🇭";

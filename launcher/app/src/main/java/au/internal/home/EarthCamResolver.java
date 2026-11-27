@@ -35,7 +35,8 @@ final class EarthCamResolver {
         if (url == null) return false;
         Uri u = Uri.parse(url);
         String host = u.getHost();
-        return host != null && (host.equals("www.earthcam.com") || host.equals("earthcam.com"))
+        return host != null && (host.equals("www.earthcam.com") || host.equals("earthcam.com")
+                || host.equals("www.myearthcam.com") || host.equals("myearthcam.com"))
                 && !url.endsWith(".m3u8") && !url.endsWith(".ts");
     }
 
