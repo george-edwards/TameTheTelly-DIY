@@ -647,19 +647,22 @@ final class WorldCams {
         return -1;
     }
 
-    /** Pick a random stream in `pool` (avoiding known-offline, current, and `avoidKey` when possible). */
+    /** Pick a random stream in `pool`, strictly preferring confirmed-online streams (never known-offline). */
     Stream shuffle(int slot, List<Stream> pool, String avoidKey) {
         if (pool.isEmpty()) return null;
         Stream cur = slotStream(slot, pool);
-        List<Stream> onlineCands = new ArrayList<>();
+        List<Stream> confirmedOnline = new ArrayList<>();
+        List<Stream> notOffline = new ArrayList<>();
         List<Stream> anyCands = new ArrayList<>();
         for (Stream s : pool) {
             if (cur != null && s.key.equals(cur.key)) continue;
             if (avoidKey != null && s.key.equals(avoidKey)) continue;
             anyCands.add(s);
-            if (!isKnownOffline(s)) onlineCands.add(s);
+            if (isOnline(s)) confirmedOnline.add(s);
+            if (!isKnownOffline(s)) notOffline.add(s);
         }
-        List<Stream> cands = !onlineCands.isEmpty() ? onlineCands : (!anyCands.isEmpty() ? anyCands : pool);
+        List<Stream> cands = !confirmedOnline.isEmpty() ? confirmedOnline
+                : (!notOffline.isEmpty() ? notOffline : (!anyCands.isEmpty() ? anyCands : pool));
         Stream pick = cands.get(rng.nextInt(cands.size()));
         setSlot(slot, pick);
         return pick;
