@@ -109,6 +109,15 @@
       "lon": -81.8
     },
     {
+      "name": "USA: Two Friends Restaurant, Key West",
+      "category": "World Cams",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@keyslive/live",
+      "channelId": "UCByDkIC1CsbQpXJox4syGiw",
+      "lat": 24.56,
+      "lon": -81.8
+    },
+    {
       "name": "USA: Disney Skyliner, Walt Disney World",
       "category": "Temples, Shrines & Journeys",
       "type": "youtube_multi",
@@ -320,6 +329,15 @@
       "lon": 39.83
     },
     {
+      "name": "Saudi Arabia: Makkah Live (Saudi Quran TV)",
+      "category": "Temples, Shrines & Journeys",
+      "type": "youtube_channel",
+      "url": "https://www.youtube.com/@SaudiQuranTv/live",
+      "channelId": "UCos52azQNBgW63_9uDJoPDA",
+      "lat": 21.42,
+      "lon": 39.83
+    },
+    {
       "name": "Iraq: Holy Shrine of Imam Hussain, Karbala",
       "category": "Temples, Shrines & Journeys",
       "type": "youtube_channel",
@@ -476,15 +494,6 @@
       "url": "https://www.youtube.com/@kabukicho-2/live",
       "channelId": "UCBFDJXGCOdMjVtg2AnReoXA",
       "lat": 35.69,
-      "lon": 139.7
-    },
-    {
-      "name": "Japan: Shibuya AI Vision (Miyamasuzaka Crossing), Tokyo",
-      "category": "Tokyo & Japan",
-      "type": "youtube_channel",
-      "url": "https://www.youtube.com/@liveaishibuyaaivision2555/live",
-      "channelId": "UCeS_n1uo4ixH531s7zbERwg",
-      "lat": 35.66,
       "lon": 139.7
     },
     {
