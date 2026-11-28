@@ -246,7 +246,7 @@ final class SettingsMenu {
                     if (cancelled.get()) return;
                     progressDlg.dismiss();
                     String msg = "Home v" + r.versionName + " has been downloaded and verified."
-                            + (r.notes.isEmpty() ? "" : "\n\n" + r.notes)
+                            + (r.notes.isEmpty() ? "" : "\n\nChangelog:\n" + r.notes)
                             + "\n\nInstall now? Home will restart briefly.";
                     show(dialog("Update ready: v" + r.versionName, this::main)
                             .setMessage(msg)

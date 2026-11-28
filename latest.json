@@ -1,7 +1,7 @@
 {
-  "versionCode": 26112808,
-  "versionName": "26.11.28.8",
-  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.8/home-v26.11.28.8.apk",
-  "sha256": "411d437c76e1ea97fab0fa08e26e26708d8340e78adf7e4d811e349bed29f80c",
-  "notes": "Add labelOffsetAfterX/labelOffsetAfterY secondary offsets after labelOffsetSec"
+  "versionCode": 26112809,
+  "versionName": "26.11.28.9",
+  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.9/home-v26.11.28.9.apk",
+  "sha256": "5d1f67f4143826d1ea876313ab4124d1f44a234b7a2307dc5cf849756a05c489",
+  "notes": "Add Changelog: heading in the Update ready dialog"
 }

@@ -1,5 +1,8 @@
 # Changelog
 
+## v26.11.28.9 — 2026-11-28
+- Add a "Changelog:" heading above the release notes in the Update ready dialog.
+
 ## v26.11.28.8 — 2026-11-28
 - Add optional `labelOffsetAfterX` and `labelOffsetAfterY` in `streams.json` so `labelOffsetSec` can transition to a secondary offset instead of `0, 0`.
 
