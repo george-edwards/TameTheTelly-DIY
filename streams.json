@@ -631,7 +631,9 @@
       "url": "https://www.youtube.com/@webcamsydney/live",
       "channelId": "UCLav_kTu9PmAEChvGyrPbhQ",
       "lat": -33.86,
-      "lon": 151.21
+      "lon": 151.21,
+      "labelOffsetY": 3.5,
+      "labelOffsetSec": 10
     },
     {
       "name": "Australia: Wildlife Cam",
