@@ -93,13 +93,14 @@ final class WorldCams {
         final boolean hasCoords;
         final float labelOffsetY;
         final float labelOffsetX;
+        final int labelOffsetSec;
 
         Stream(String name, String category, String type, String url, String channelId, String match) {
-            this(name, category, type, url, channelId, match, Double.NaN, Double.NaN, 0f, 0f);
+            this(name, category, type, url, channelId, match, Double.NaN, Double.NaN, 0f, 0f, 0);
         }
 
         Stream(String name, String category, String type, String url, String channelId, String match,
-               double lat, double lon, float labelOffsetY, float labelOffsetX) {
+               double lat, double lon, float labelOffsetY, float labelOffsetX, int labelOffsetSec) {
             this.name = name;
             this.category = category;
             this.type = type;
@@ -111,6 +112,7 @@ final class WorldCams {
             this.hasCoords = !Double.isNaN(lat) && !Double.isNaN(lon);
             this.labelOffsetY = Math.max(0f, labelOffsetY);
             this.labelOffsetX = Math.max(0f, labelOffsetX);
+            this.labelOffsetSec = Math.max(0, labelOffsetSec);
             this.key = "youtube_channel".equals(type) && !channelId.isEmpty() ? "ch:" + channelId : url;
         }
 
@@ -217,6 +219,7 @@ final class WorldCams {
                         ? o.optDouble("labelOffsetY", 0.0)
                         : o.optDouble("labelOffsetLines", 0.0));
                 float labelOffsetX = (float) o.optDouble("labelOffsetX", 0.0);
+                int labelOffsetSec = o.optInt("labelOffsetSec", 0);
                 out.add(new Stream(
                         name,
                         o.optString("category", "").trim(),
@@ -227,7 +230,8 @@ final class WorldCams {
                         lat,
                         lon,
                         labelOffsetY,
-                        labelOffsetX
+                        labelOffsetX,
+                        labelOffsetSec
                 ));
             }
             return out;

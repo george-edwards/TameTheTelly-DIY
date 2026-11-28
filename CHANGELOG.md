@@ -1,5 +1,9 @@
 # Changelog
 
+## v26.11.28.7 — 2026-11-28
+- Add `labelOffsetSec` in `streams.json` to automatically snap the camera label back to `0, 0` after N seconds once a stream's intro logo fades out.
+- Bust GitHub's CDN cache when checking `latest.json` so newly published updates are detected immediately.
+
 ## v26.11.28.6 — 2026-11-28
 - Add developer label-offset calibrator on fullscreen World Cams: press Up, Up, Down, Down to nudge the label with the D-pad and read live `labelOffsetX` / `labelOffsetY` values in a high-contrast HUD (Back exits).
 

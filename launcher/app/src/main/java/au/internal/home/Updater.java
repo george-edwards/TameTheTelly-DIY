@@ -101,10 +101,13 @@ final class Updater {
         if (manifestUrl == null || !manifestUrl.startsWith("https://")) {
             throw new IOException("No update URL configured");
         }
-        HttpURLConnection conn = (HttpURLConnection) new URL(manifestUrl).openConnection();
+        String fetchUrl = manifestUrl + (manifestUrl.contains("?") ? "&" : "?") + "t=" + System.currentTimeMillis();
+        HttpURLConnection conn = (HttpURLConnection) new URL(fetchUrl).openConnection();
+        conn.setUseCaches(false);
         conn.setConnectTimeout(8_000);
         conn.setReadTimeout(10_000);
         conn.setRequestProperty("User-Agent", "HomeTV-Updater");
+        conn.setRequestProperty("Cache-Control", "no-cache");
         try {
             int status = conn.getResponseCode();
             if (status != 200) throw new IOException("HTTP " + status);

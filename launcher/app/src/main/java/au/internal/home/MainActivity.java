@@ -98,6 +98,8 @@ public class MainActivity extends Activity {
     private boolean[] camIsWorld;
     private View[] camViews, camLabels;
     private int[] camLabelTopPad, camLabelStartPad;
+    private final Runnable[] labelOffsetReset = new Runnable[2];
+    private final boolean[] labelOffsetExpired = new boolean[2];
     private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
     private static final int[] DEV_LABEL_SEQ = {
@@ -253,6 +255,7 @@ public class MainActivity extends Activity {
                 }
                 v.setBackgroundColor(android.graphics.Color.TRANSPARENT);
                 v.findViewById(R.id.surface).setVisibility(View.GONE);
+                resetLabelOffsetTimer(i);
                 updateWorldLabel(i);
                 webHost.setSlot(i, true, worldSlots[i] != null ? worldSlots[i].embedUrl() : null);
             } else {
@@ -450,6 +453,8 @@ public class MainActivity extends Activity {
             if (camStarters[i] != null) h.removeCallbacks(camStarters[i]);
             if (camOn[i] && camViews[i].getVisibility() == View.VISIBLE) {
                 if (camIsWorld[i]) {
+                    resetLabelOffsetTimer(i);
+                    updateWorldLabel(i);
                     showLabel(camLabels[i]);
                     anyWorld = true;
                 } else {
@@ -465,6 +470,7 @@ public class MainActivity extends Activity {
     private void stopCams() {
         for (int i = 0; i < camViews.length; i++) {
             if (camStarters[i] != null) { h.removeCallbacks(camStarters[i]); camStarters[i] = null; }
+            if (labelOffsetReset[i] != null) { h.removeCallbacks(labelOffsetReset[i]); labelOffsetReset[i] = null; }
             if (feeds[i] != null) feeds[i].stop();
         }
         if (webHost != null) webHost.stop();
@@ -829,6 +835,24 @@ public class MainActivity extends Activity {
                 label.getPaddingEnd(), label.getPaddingBottom());
     }
 
+    private void resetLabelOffsetTimer(int slot) {
+        if (labelOffsetReset[slot] != null) {
+            h.removeCallbacks(labelOffsetReset[slot]);
+            labelOffsetReset[slot] = null;
+        }
+        labelOffsetExpired[slot] = false;
+        WorldCams.Stream s = worldSlots[slot];
+        if (s != null && s.labelOffsetSec > 0 && (s.labelOffsetX > 0f || s.labelOffsetY > 0f)) {
+            Runnable r = () -> {
+                labelOffsetReset[slot] = null;
+                labelOffsetExpired[slot] = true;
+                if (devLabelSlot != slot) applyLabelPadding(slot, 0f, 0f);
+            };
+            labelOffsetReset[slot] = r;
+            h.postDelayed(r, s.labelOffsetSec * 1_000L);
+        }
+    }
+
     private void updateWorldLabel(int slot) {
         WorldCams.Stream s = worldSlots[slot];
         if (s == null) return;
@@ -836,7 +860,8 @@ public class MainActivity extends Activity {
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
         TextView nameTv = camViews[slot].findViewById(R.id.name);
         nameTv.setText(pin + prefix + s.displayName());
-        applyLabelPadding(slot, s.labelOffsetX, s.labelOffsetY);
+        if (labelOffsetExpired[slot]) applyLabelPadding(slot, 0f, 0f);
+        else applyLabelPadding(slot, s.labelOffsetX, s.labelOffsetY);
     }
 
     private void switchWorldSlot(int slot, WorldCams.Stream s) {
@@ -844,6 +869,7 @@ public class MainActivity extends Activity {
         worldSlots[slot] = s;
         worldCams.setSlot(slot, s);
         if (slot == 0) pendingRandomStream = null;
+        resetLabelOffsetTimer(slot);
         updateWorldLabel(slot);
         showLabel(camLabels[slot]);
         webHost.setSlot(slot, true, s.embedUrl());
