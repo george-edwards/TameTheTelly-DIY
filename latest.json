@@ -1,7 +1,7 @@
 {
-  "versionCode": 26112803,
-  "versionName": "26.11.28.3",
-  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.3/home-v26.11.28.3.apk",
-  "sha256": "ef3b9f68709f1c2aaa0453d8e10c5129810f5a913acea4e0fb6793c7a3202611",
-  "notes": "Remove fullscreen World Cam sound toggle & speaker icon; bundle full changelog history"
+  "versionCode": 26112804,
+  "versionName": "26.11.28.4",
+  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.4/home-v26.11.28.4.apk",
+  "sha256": "3f85235142a30b4883583b36ab299f94e0e209c0dd940774419d1863b61b3810",
+  "notes": "Add per-stream labelOffsetX to shift camera label right around top-left logos"
 }

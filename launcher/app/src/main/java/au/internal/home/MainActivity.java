@@ -94,7 +94,7 @@ public class MainActivity extends Activity {
     private WorldCams.Stream[] worldSlots = new WorldCams.Stream[2];
     private boolean[] camIsWorld;
     private View[] camViews, camLabels;
-    private int[] camLabelTopPad;
+    private int[] camLabelTopPad, camLabelStartPad;
     private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
     private boolean leftHome;
@@ -198,6 +198,7 @@ public class MainActivity extends Activity {
         camViews = new View[]{findViewById(R.id.cam1), findViewById(R.id.cam2)};
         camLabels = new View[2];
         camLabelTopPad = new int[2];
+        camLabelStartPad = new int[2];
         camOn = new boolean[2];
         camIsWorld = new boolean[2];
         feeds = new CameraFeed[2];
@@ -211,6 +212,7 @@ public class MainActivity extends Activity {
             final int idx = i;
             camLabels[i] = camViews[i].findViewById(R.id.label);
             camLabelTopPad[i] = camLabels[i].getPaddingTop();
+            camLabelStartPad[i] = camLabels[i].getPaddingStart();
             webOnLive[i] = () -> { if (!camViews[idx].hasFocus()) fadeLabel(camLabels[idx], LABEL_FADE_MS); };
         }
         webHost = new WebCamHost(this, findViewById(R.id.webBackdrop), camViews, webOnLive);
@@ -664,8 +666,10 @@ public class MainActivity extends Activity {
         TextView nameTv = camViews[slot].findViewById(R.id.name);
         nameTv.setText(pin + prefix + s.displayName());
         View label = camLabels[slot];
-        int extraTop = s.labelOffsetLines > 0f ? Math.round(s.labelOffsetLines * nameTv.getTextSize()) : 0;
-        label.setPaddingRelative(label.getPaddingStart(), camLabelTopPad[slot] + extraTop,
+        float textPx = nameTv.getTextSize();
+        int extraTop = s.labelOffsetLines > 0f ? Math.round(s.labelOffsetLines * textPx) : 0;
+        int extraStart = s.labelOffsetX > 0f ? Math.round(s.labelOffsetX * textPx) : 0;
+        label.setPaddingRelative(camLabelStartPad[slot] + extraStart, camLabelTopPad[slot] + extraTop,
                 label.getPaddingEnd(), label.getPaddingBottom());
     }
 

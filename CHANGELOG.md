@@ -1,5 +1,8 @@
 # Changelog
 
+## v26.11.28.4 — 2026-11-28
+- Add per-stream `labelOffsetX` in `streams.json` to shift the camera label to the right (without moving the vignette) when a stream has a top-left logo.
+
 ## v26.11.28.3 — 2026-11-28
 - Remove the fullscreen World Cam sound toggle and speaker icon from the label (fullscreen streams play audio normally; use the TV remote to mute).
 

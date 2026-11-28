@@ -92,13 +92,14 @@ final class WorldCams {
         final double lon;
         final boolean hasCoords;
         final float labelOffsetLines;
+        final float labelOffsetX;
 
         Stream(String name, String category, String type, String url, String channelId, String match) {
-            this(name, category, type, url, channelId, match, Double.NaN, Double.NaN, 0f);
+            this(name, category, type, url, channelId, match, Double.NaN, Double.NaN, 0f, 0f);
         }
 
         Stream(String name, String category, String type, String url, String channelId, String match,
-               double lat, double lon, float labelOffsetLines) {
+               double lat, double lon, float labelOffsetLines, float labelOffsetX) {
             this.name = name;
             this.category = category;
             this.type = type;
@@ -109,6 +110,7 @@ final class WorldCams {
             this.lon = lon;
             this.hasCoords = !Double.isNaN(lat) && !Double.isNaN(lon);
             this.labelOffsetLines = Math.max(0f, labelOffsetLines);
+            this.labelOffsetX = Math.max(0f, labelOffsetX);
             this.key = "youtube_channel".equals(type) && !channelId.isEmpty() ? "ch:" + channelId : url;
         }
 
@@ -212,6 +214,7 @@ final class WorldCams {
                 double lat = o.has("lat") && !o.isNull("lat") ? o.optDouble("lat", Double.NaN) : Double.NaN;
                 double lon = o.has("lon") && !o.isNull("lon") ? o.optDouble("lon", Double.NaN) : Double.NaN;
                 float labelOffset = (float) o.optDouble("labelOffsetLines", 0.0);
+                float labelOffsetX = (float) o.optDouble("labelOffsetX", 0.0);
                 out.add(new Stream(
                         name,
                         o.optString("category", "").trim(),
@@ -221,7 +224,8 @@ final class WorldCams {
                         o.optString("match", "").trim(),
                         lat,
                         lon,
-                        labelOffset
+                        labelOffset,
+                        labelOffsetX
                 ));
             }
             return out;

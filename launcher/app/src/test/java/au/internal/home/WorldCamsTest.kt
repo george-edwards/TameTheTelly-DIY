@@ -44,6 +44,14 @@ class WorldCamsTest {
         assertEquals("ROboUHfPUrU", WorldCams.extractVideoId("https://youtu.be/ROboUHfPUrU"))
     }
 
+    @Test fun parsesLabelOffsets() {
+        val json = """{"streams":[{"name":"Test","url":"https://youtu.be/ROboUHfPUrU","labelOffsetLines":2.5,"labelOffsetX":4.0}]}"""
+        val streams = WorldCams.parse(json)
+        assertEquals(1, streams.size)
+        assertEquals(2.5f, streams[0].labelOffsetLines, 0.001f)
+        assertEquals(4.0f, streams[0].labelOffsetX, 0.001f)
+    }
+
     @Test fun nextAndPrevSkipKnownOfflineStreams() {
         val s0 = WorldCams.Stream("S0", "Cat", "youtube_channel", "https://youtube.com/@s0/live", "UC0", "")
         val s1 = WorldCams.Stream("S1", "Cat", "youtube_channel", "https://youtube.com/@s1/live", "UC1", "")
