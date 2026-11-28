@@ -368,7 +368,8 @@
       "type": "iframe",
       "url": "https://g0.ipcamlive.com/player/player.php?alias=hft1&autoplay=1",
       "lat": 49.09,
-      "lon": 19.61
+      "lon": 19.61,
+      "labelOffsetX": 2.25
     },
     {
       "name": "South Africa: Allen Birdcam Wildlife",
@@ -377,7 +378,12 @@
       "url": "https://www.youtube.com/@AllenBirdcam/live",
       "channelId": "UCFzY3MF-rYrexk1be3gnTRw",
       "lat": -25.75,
-      "lon": 28.19
+      "lon": 28.19,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 2.5
     },
     {
       "name": "Russia: Dodo Pizza, Nevsky Prospect, St. Petersburg",
@@ -385,7 +391,9 @@
       "type": "iframe",
       "url": "https://open.ivideon.com/embed/v3/?server=100-mXQCko7zjt0cnFk3MAHVVK&camera=0&width=&height=&lang=en&ap=1&fs=0&noibw=1",
       "lat": 59.93,
-      "lon": 30.36
+      "lon": 30.36,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25
     },
     {
       "name": "Russia: Nevsky Avenue, St. Petersburg",
@@ -394,7 +402,12 @@
       "url": "https://www.youtube.com/@msbud2/live",
       "channelId": "UCz1GKiqSoG2DSesCQ3SoFYg",
       "lat": 59.93,
-      "lon": 30.36
+      "lon": 30.36,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 1.75
     },
     {
       "name": "Israel: Western Wall, Jerusalem",
@@ -405,7 +418,12 @@
       "channelId": "UC6qrG3W8SMK0jior2olka3g",
       "match": "Western Wall",
       "lat": 31.78,
-      "lon": 35.23
+      "lon": 35.23,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Russia: Live 24/7 (Cam 3)",
@@ -416,7 +434,12 @@
       "channelId": "UCFXE9DpDuCqh0aRxpuB20nw",
       "match": "камера 3",
       "lat": 55.75,
-      "lon": 37.62
+      "lon": 37.62,
+      "labelOffsetX": 1.75,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 1.75,
+      "labelOffsetAfterY": 1.75
     },
     {
       "name": "Saudi Arabia: Makkah Live (Al-Haram)",
@@ -425,7 +448,12 @@
       "url": "https://www.youtube.com/@TheSpiritualQuran/live",
       "channelId": "UCllTh8Qy9Z6cFF4VNtuwdcQ",
       "lat": 21.42,
-      "lon": 39.83
+      "lon": 39.83,
+      "labelOffsetX": 3.25,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 3.25,
+      "labelOffsetAfterY": 0.25
     },
     {
       "name": "Saudi Arabia: Makkah Live (Saudi Quran TV)",
@@ -434,7 +462,12 @@
       "url": "https://www.youtube.com/@SaudiQuranTv/live",
       "channelId": "UCos52azQNBgW63_9uDJoPDA",
       "lat": 21.42,
-      "lon": 39.83
+      "lon": 39.83,
+      "labelOffsetX": 3.25,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 3.25,
+      "labelOffsetAfterY": 0.25
     },
     {
       "name": "Iraq: Holy Shrine of Imam Hussain, Karbala",
@@ -443,7 +476,9 @@
       "url": "https://www.youtube.com/channel/UC-IYgdWMbKsZI5ZCzK1sk3Q/live",
       "channelId": "UC-IYgdWMbKsZI5ZCzK1sk3Q",
       "lat": 32.62,
-      "lon": 44.03
+      "lon": 44.03,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25
     },
     {
       "name": "India: Tower of Peace, Madhuban",
@@ -452,7 +487,12 @@
       "url": "https://www.youtube.com/@rajyoginidadigulzar/live",
       "channelId": "UCGWcQnqDci9aHo7-YQ_-big",
       "lat": 24.59,
-      "lon": 72.71
+      "lon": 72.71,
+      "labelOffsetX": 1.25,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterX": 1.25,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Thailand: Fisherman's Village, Bophut, Koh Samui",
@@ -474,7 +514,12 @@
       "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
       "match": "Bondi Aussie",
       "lat": 9.53,
-      "lon": 100.06
+      "lon": 100.06,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 2.25,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Thailand: Henry Africa's, Soi Green Mango, Koh Samui",
@@ -485,7 +530,12 @@
       "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
       "match": "Henry Africa",
       "lat": 9.53,
-      "lon": 100.06
+      "lon": 100.06,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Thailand: El Gaucho, Soi 11 Sukhumvit, Bangkok",
@@ -496,7 +546,12 @@
       "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
       "match": "El Gaucho",
       "lat": 13.74,
-      "lon": 100.56
+      "lon": 100.56,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Thailand: Sukhumvit Road, Bangkok",
@@ -507,7 +562,12 @@
       "channelId": "UCmYyJaUxYiF5IbLx-0jFXHQ",
       "match": "Sukhumvit",
       "lat": 13.74,
-      "lon": 100.56
+      "lon": 100.56,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Taiwan: Chaotian Temple Main Hall",
@@ -518,7 +578,12 @@
       "channelId": "UCfESjY0FHcOWuwU6ZE10v1g",
       "match": "朝天宮",
       "lat": 23.57,
-      "lon": 120.3
+      "lon": 120.3,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Philippines: Bankerohan Fish Sellers, Davao City",
@@ -529,7 +594,12 @@
       "channelId": "UC0djAWwMXP22wzocdJR9dWw",
       "match": "Fish sellers",
       "lat": 7.07,
-      "lon": 125.6
+      "lon": 125.6,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0.5,
+      "labelOffsetAfterY": 1.5
     },
     {
       "name": "Philippines: Bankerohan Meat Market, Davao City",
@@ -540,7 +610,12 @@
       "channelId": "UC0djAWwMXP22wzocdJR9dWw",
       "match": "Meat Market",
       "lat": 7.07,
-      "lon": 125.6
+      "lon": 125.6,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Philippines: Lyn's Sisig Beef BBQ, Davao City",
@@ -551,7 +626,12 @@
       "channelId": "UC0djAWwMXP22wzocdJR9dWw",
       "match": "Sisig Beef",
       "lat": 7.07,
-      "lon": 125.6
+      "lon": 125.6,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Philippines: Rosemary Street (JM-Kalix Store), Davao City",
@@ -562,7 +642,12 @@
       "channelId": "UCtbzAMmmu31t_MkPCJbzJnA",
       "match": "JM-KALIX",
       "lat": 7.08,
-      "lon": 125.61
+      "lon": 125.61,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Philippines: Agdao Market BBQ Stalls (Benjie Grill), Davao City",
@@ -573,7 +658,12 @@
       "channelId": "UCa6T92S2NKwSdQw8rXLe2rQ",
       "match": "Benjie Grill",
       "lat": 7.09,
-      "lon": 125.63
+      "lon": 125.63,
+      "labelOffsetX": 0.75,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0.75,
+      "labelOffsetAfterY": 0.75
     },
     {
       "name": "Philippines: Agdao Tyre Repair Shop, Davao City",
@@ -584,7 +674,12 @@
       "channelId": "UC0djAWwMXP22wzocdJR9dWw",
       "match": "Tyre Repair",
       "lat": 7.09,
-      "lon": 125.63
+      "lon": 125.63,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 1
     },
     {
       "name": "Philippines: Dodong Barber Shop, Agdao, Davao City",
@@ -595,7 +690,12 @@
       "channelId": "UC0djAWwMXP22wzocdJR9dWw",
       "match": "Dodong Barber",
       "lat": 7.09,
-      "lon": 125.63
+      "lon": 125.63,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0.5
     },
     {
       "name": "Philippines: New Agdao Farmers Market, Davao City",
@@ -606,7 +706,12 @@
       "channelId": "UC0djAWwMXP22wzocdJR9dWw",
       "match": "Farmers Market",
       "lat": 7.09,
-      "lon": 125.63
+      "lon": 125.63,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Japan: Arashiyama Bamboo Forest, Kyoto",
@@ -617,7 +722,12 @@
       "channelId": "UCLpgVZwl9CaXierI3oq08mQ",
       "match": "Bamboo forest",
       "lat": 35.02,
-      "lon": 135.67
+      "lon": 135.67,
+      "labelOffsetX": 0.25,
+      "labelOffsetY": 3.75,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0.25,
+      "labelOffsetAfterY": 3.75
     },
     {
       "name": "Japan: Kyoto Station Bus Terminal, Kyoto",
@@ -628,7 +738,12 @@
       "channelId": "UCLpgVZwl9CaXierI3oq08mQ",
       "match": "Kyoto Station Bus",
       "lat": 34.99,
-      "lon": 135.76
+      "lon": 135.76,
+      "labelOffsetX": 0.25,
+      "labelOffsetY": 3.75,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0.25,
+      "labelOffsetAfterY": 3.75
     },
     {
       "name": "Japan: Omicho Market (Oguchi Fisheries), Kanazawa",
@@ -646,7 +761,12 @@
       "url": "https://www.youtube.com/@kabukicho-2/live",
       "channelId": "UCBFDJXGCOdMjVtg2AnReoXA",
       "lat": 35.69,
-      "lon": 139.7
+      "lon": 139.7,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Japan: Shibuya Scramble Crossing, Tokyo",
@@ -657,7 +777,12 @@
       "channelId": "UCoQBJMzcwmXrRSHBFAlTsIw",
       "match": "渋谷",
       "lat": 35.66,
-      "lon": 139.7
+      "lon": 139.7,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Japan: Sushi Chef Yogi (Live Kitchen)",
@@ -666,7 +791,12 @@
       "url": "https://www.youtube.com/@Sushichefmohan/live",
       "channelId": "UC8Ng6a8q_GubKPBBJpUkU-A",
       "lat": 35.68,
-      "lon": 139.76
+      "lon": 139.76,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Japan: Asakusa Sensō-ji Temple, Tokyo",
@@ -675,7 +805,12 @@
       "url": "https://www.youtube.com/@asakusanakaya/live",
       "channelId": "UCh1UcGFBIuFo5I-I1WMyclA",
       "lat": 35.71,
-      "lon": 139.8
+      "lon": 139.8,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Australia: Sydney Olympic Park Sea-Eagle Cam",
@@ -684,7 +819,12 @@
       "url": "https://www.youtube.com/@SeaEagleCAM4/live",
       "channelId": "UCZss13TJZLtZ0ones3HpYMQ",
       "lat": -33.83,
-      "lon": 151.07
+      "lon": 151.07,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Australia: Sticky Candy Making, Sydney",
@@ -693,7 +833,12 @@
       "url": "https://www.youtube.com/@Stickylollies/live",
       "channelId": "UCJ8_h7AZjj4tu5GZS_riF-Q",
       "lat": -33.86,
-      "lon": 151.21
+      "lon": 151.21,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Australia: Sydney Harbour",
@@ -703,9 +848,11 @@
       "channelId": "UCLav_kTu9PmAEChvGyrPbhQ",
       "lat": -33.86,
       "lon": 151.21,
-      "labelOffsetX": 1.25,
-      "labelOffsetY": 3.5,
-      "labelOffsetSec": 10
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Australia: Wildlife Cam",
@@ -714,7 +861,12 @@
       "url": "https://www.youtube.com/@AustralianWildlifeCamLive/live",
       "channelId": "UC2fT5OsZ71PBA-jdq68DyWQ",
       "lat": -33.87,
-      "lon": 151.21
+      "lon": 151.21,
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Australia: Port of Newcastle (Harbour & Nobbys)",
@@ -724,9 +876,11 @@
       "channelId": "UCTGhjtFloAPlbLy4_yrkoWg",
       "lat": -32.92,
       "lon": 151.79,
-      "labelOffsetX": 1.25,
-      "labelOffsetY": 3.5,
-      "labelOffsetSec": 5
+      "labelOffsetX": 0,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "New Zealand: Royal Albatross Cam, Otago",
