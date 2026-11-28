@@ -1,7 +1,7 @@
 {
-  "versionCode": 26112713,
-  "versionName": "26.11.27.13",
-  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.27.13/home-v26.11.27.13.apk",
-  "sha256": "e1017788ab79279d169a1b07a4c87cc1109c2d92d1270b406ff1a6b5be08f786",
-  "notes": "World Cam stream pre-fetch, live videoId cache, and performance fixes"
+  "versionCode": 26112801,
+  "versionName": "26.11.28.1",
+  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.1/home-v26.11.28.1.apk",
+  "sha256": "f0929dfeaff8f85baf075ab8f6bd278f773bb00ee2974a82359c453756debaae",
+  "notes": "Fix camera label vignette offset, snap World Cams to live edge, and add Settings About & changelog"
 }

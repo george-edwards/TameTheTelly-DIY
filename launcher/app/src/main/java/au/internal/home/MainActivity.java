@@ -94,6 +94,7 @@ public class MainActivity extends Activity {
     private WorldCams.Stream[] worldSlots = new WorldCams.Stream[2];
     private boolean[] camIsWorld;
     private View[] camViews, camLabels;
+    private int[] camLabelTopPad;
     private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
     private boolean fullscreenSound;
@@ -197,6 +198,7 @@ public class MainActivity extends Activity {
 
         camViews = new View[]{findViewById(R.id.cam1), findViewById(R.id.cam2)};
         camLabels = new View[2];
+        camLabelTopPad = new int[2];
         camOn = new boolean[2];
         camIsWorld = new boolean[2];
         feeds = new CameraFeed[2];
@@ -209,6 +211,7 @@ public class MainActivity extends Activity {
         for (int i = 0; i < 2; i++) {
             final int idx = i;
             camLabels[i] = camViews[i].findViewById(R.id.label);
+            camLabelTopPad[i] = camLabels[i].getPaddingTop();
             webOnLive[i] = () -> { if (!camViews[idx].hasFocus()) fadeLabel(camLabels[idx], LABEL_FADE_MS); };
         }
         webHost = new WebCamHost(this, findViewById(R.id.webBackdrop), camViews, webOnLive);
@@ -683,7 +686,10 @@ public class MainActivity extends Activity {
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
         TextView nameTv = camViews[slot].findViewById(R.id.name);
         nameTv.setText(sound + pin + prefix + s.displayName());
-        camLabels[slot].setTranslationY(s.labelOffsetLines > 0f ? s.labelOffsetLines * nameTv.getTextSize() : 0f);
+        View label = camLabels[slot];
+        int extraTop = s.labelOffsetLines > 0f ? Math.round(s.labelOffsetLines * nameTv.getTextSize()) : 0;
+        label.setPaddingRelative(label.getPaddingStart(), camLabelTopPad[slot] + extraTop,
+                label.getPaddingEnd(), label.getPaddingBottom());
     }
 
     private void switchWorldSlot(int slot, WorldCams.Stream s) {

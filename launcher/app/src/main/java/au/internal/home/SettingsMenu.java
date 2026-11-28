@@ -164,6 +164,7 @@ final class SettingsMenu {
         rows.add(new MenuRow("Weather", cfg.place().isEmpty() ? "Off" : cfg.place(), () -> postcode(cfg.postcode())));
         rows.add(new MenuRow("Bin night", cfg.binsDay() >= 1 && cfg.binsDay() <= 7 ? DAYS[cfg.binsDay() - 1] : "Off", this::bins));
         if (!cfg.updateUrl().isEmpty()) rows.add(new MenuRow("Check for updates", "v" + Updater.currentVersionName(a), this::checkUpdate));
+        rows.add(new MenuRow("About", "v" + Updater.currentVersionName(a), this::about));
         rows.add(new MenuRow(RESET, null, this::reset));
         rows.add(new MenuRow("Put the TV back", null, onRestore));
         showMenu(settingsTitle(), () -> { }, rows);
@@ -218,6 +219,28 @@ final class SettingsMenu {
                 });
             }
         }, "home-update-install").start();
+    }
+
+    private void about() {
+        String ver = Updater.currentVersionName(a);
+        long updatedMs = 0L;
+        try {
+            updatedMs = a.getPackageManager().getPackageInfo(a.getPackageName(), 0).lastUpdateTime;
+        } catch (android.content.pm.PackageManager.NameNotFoundException ignored) { }
+        List<Changelog.Entry> entries = Changelog.load(a);
+        AlertDialog.Builder b = dialog("About Home", this::main)
+                .setMessage(Changelog.formatAbout(ver, updatedMs, entries))
+                .setPositiveButton("OK", (d, w) -> main());
+        if (entries.size() > 1) {
+            b.setNeutralButton("Full changelog", (d, w) -> fullChangelog(entries));
+        }
+        show(b);
+    }
+
+    private void fullChangelog(List<Changelog.Entry> entries) {
+        show(dialog("Changelog", this::about)
+                .setMessage(Changelog.formatAll(entries))
+                .setPositiveButton("Back", (d, w) -> about()));
     }
 
     private String settingsTitle() {

@@ -301,6 +301,10 @@ final class WebCamHost {
                 + "  if(!m)ytCmd(i,'setVolume',[100]);"
                 + "  f.contentWindow.postMessage({homeMute:!!m},'*');"
                 + "}"
+                + "function ytSnapLive(i){"
+                + "  var f=document.getElementById('f'+i);"
+                + "  if(f&&f.contentWindow){f.contentWindow.postMessage({homeSnapLive:true},'*');}"
+                + "}"
                 + "</script></body></html>";
         wv.loadDataWithBaseURL(ORIGIN + "/", html, "text/html", "utf-8", null);
     }
@@ -367,7 +371,7 @@ final class WebCamHost {
                     clearPane(curPane);
                 }
                 webView.evaluateJavascript(
-                        "showPane(" + standby + ",true);ytMute(" + standby + "," + wantMuted[i] + ");", null);
+                        "showPane(" + standby + ",true);ytMute(" + standby + "," + wantMuted[i] + ");ytSnapLive(" + standby + ");", null);
                 long elapsed = SystemClock.uptimeMillis() - paneLoadedAt[standby];
                 if (paneReady[standby] || elapsed >= WARMUP_MS) {
                     paneReady[standby] = true;
@@ -599,8 +603,9 @@ final class WebCamHost {
                 + "navigator.mediaCapabilities.decodingInfo=function(cfg){"
                 + "if(cfg&&cfg.video&&b(cfg.video.contentType))return Promise.resolve({supported:false,smooth:false,powerEfficient:false});"
                 + "return d(cfg);};}"
-                + "try{for(var k in localStorage){if(/resume|time|progress|position/i.test(k))localStorage.removeItem(k);}}catch(e){}"
-                + "var hm=null,liveChecked=false;"
+                + "function clearResume(st){try{if(!st)return;for(var i=st.length-1;i>=0;i--){var k=st.key(i);if(k&&/resume|time|progress|position/i.test(k))st.removeItem(k);}}catch(e){}}"
+                + "clearResume(window.localStorage);clearResume(window.sessionStorage);"
+                + "var hm=null,liveTries=0;"
                 + "function applyMute(){"
                 + "if(hm===null)return;"
                 + "var vs=document.querySelectorAll('video');"
@@ -609,15 +614,31 @@ final class WebCamHost {
                 + "if(v.muted!==hm)v.muted=hm;"
                 + "if(!hm&&v.volume<0.99)v.volume=1;"
                 + "}}"
-                + "function clickLiveIfBehind(){"
-                + "if(liveChecked)return;liveChecked=true;"
+                + "function snapToLive(force){"
+                + "if(!force&&liveTries>=2)return;"
+                + "if(!force)liveTries++;"
                 + "try{var lb=document.querySelector('.ytp-live-badge');"
-                + "if(lb&&!lb.disabled&&!lb.getAttribute('disabled')){lb.click();}"
-                + "}catch(e){}}"
+                + "if(lb&&!lb.disabled&&!lb.getAttribute('disabled')){lb.click();return;}"
+                + "}catch(e){}"
+                + "try{var p=document.getElementById('movie_player');"
+                + "if(p&&p.getDuration&&p.getCurrentTime&&p.seekTo){"
+                + "var dur=p.getDuration(),cur=p.getCurrentTime();"
+                + "if(dur>60&&dur-cur>25){p.seekTo(dur,true);return;}"
+                + "}}catch(e){}"
+                + "try{var vs=document.querySelectorAll('video');"
+                + "for(var i=0;i<vs.length;i++){"
+                + "var v=vs[i];"
+                + "if(v.paused&&force){try{v.play();}catch(e){}}"
+                + "if(v.seekable&&v.seekable.length>0){"
+                + "var end=v.seekable.end(v.seekable.length-1);"
+                + "if(end-v.currentTime>25){v.currentTime=Math.max(0,end-2);}"
+                + "}}}catch(e){}}"
                 + "window.addEventListener('message',function(e){"
-                + "if(e&&e.data&&typeof e.data.homeMute==='boolean'){hm=e.data.homeMute;applyMute();}"
+                + "if(!e||!e.data)return;"
+                + "if(typeof e.data.homeMute==='boolean'){hm=e.data.homeMute;applyMute();}"
+                + "if(e.data.homeSnapLive){snapToLive(true);}"
                 + "});"
-                + "document.addEventListener('playing',function(){applyMute();setTimeout(clickLiveIfBehind,600);},true);"
+                + "document.addEventListener('playing',function(){applyMute();if(liveTries<2){setTimeout(function(){snapToLive(false);},600);setTimeout(function(){snapToLive(false);},2500);}},true);"
                 + "document.addEventListener('loadedmetadata',applyMute,true);"
                 + "document.addEventListener('volumechange',applyMute,true);"
                 + "})();</script>";

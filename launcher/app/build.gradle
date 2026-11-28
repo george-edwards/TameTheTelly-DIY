@@ -15,6 +15,7 @@ def copyRestore = tasks.register('copyRestoreScript', Sync) {
     def privRestore = privDir != null ? new File(privDir, 'restore.sh') : null
     from (privRestore != null && privRestore.exists() ? privRestore : rootProject.file('../restore.sh'))
     from rootProject.file('../streams.json')
+    from rootProject.file('../CHANGELOG.md')
     if (privDir != null && new File(privDir, 'custom_scene').exists()) {
         from(new File(privDir, 'custom_scene')) {
             into 'custom_scene'
@@ -37,8 +38,8 @@ android {
         minSdk 26
         targetSdk 34
         // CalVer: YY.MM.DD.N (versionCode = YYMMDDNN, strictly increasing)
-        versionCode 26112713
-        versionName "26.11.27.13"
+        versionCode 26112801
+        versionName "26.11.28.1"
     }
     signingConfigs {
         release {
