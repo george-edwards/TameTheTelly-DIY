@@ -1,5 +1,8 @@
 # Changelog
 
+## v26.11.28.3 — 2026-11-28
+- Remove the fullscreen World Cam sound toggle and speaker icon from the label (fullscreen streams play audio normally; use the TV remote to mute).
+
 ## v26.11.28.2 — 2026-11-28
 - Add automatic background updates (checks every 6 hours, downloads in the background, and installs when the TV is asleep or idle overnight), with an Automatic/Manual toggle in Settings.
 - Manual Check for updates now downloads automatically with a progress bar and prompts to install once verified locally.

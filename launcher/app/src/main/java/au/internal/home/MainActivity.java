@@ -97,7 +97,6 @@ public class MainActivity extends Activity {
     private int[] camLabelTopPad;
     private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
-    private boolean fullscreenSound;
     private boolean leftHome;
     private static final long RANDOM_PREFETCH_LEAD_MS = 10_000L;
     private TextView worldTimer;
@@ -246,15 +245,6 @@ public class MainActivity extends Activity {
                 ((TextView) v.findViewById(R.id.name)).setText(cfg.camName(i));
             }
             v.setOnClickListener(this::toggleFullscreen);
-            v.setOnKeyListener((x, code, ev) -> {
-                if (ev.getAction() == KeyEvent.ACTION_DOWN && fullscreenCam == v && camIsWorld[idx]
-                        && (code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
-                        || code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)) {
-                    toggleFullscreenSound(idx);
-                    return true;
-                }
-                return false;
-            });
             v.setOnLongClickListener(x -> {
                 if (camIsWorld[idx]) worldCamMenu(idx);
                 else localCamMenu(idx);
@@ -599,25 +589,13 @@ public class MainActivity extends Activity {
         }
         if (webHost != null) webHost.setFullscreen(goFull);
         if (goFull && fullSlot >= 0 && camIsWorld[fullSlot]) {
-            fullscreenSound = true;
             if (webHost != null) webHost.setMuted(fullSlot, false);
             showLabel(camLabels[fullSlot]);
             fadeLabel(camLabels[fullSlot], 2_500);
-        } else {
-            fullscreenSound = false;
         }
         for (int i = 0; i < 2; i++) if (camIsWorld[i]) updateWorldLabel(i);
         updateWorldTimerUi();
         cam.requestFocus();
-    }
-
-    private void toggleFullscreenSound(int slot) {
-        if (webHost == null || fullscreenCam != camViews[slot] || !camIsWorld[slot]) return;
-        fullscreenSound = !fullscreenSound;
-        webHost.setMuted(slot, !fullscreenSound);
-        updateWorldLabel(slot);
-        showLabel(camLabels[slot]);
-        fadeLabel(camLabels[slot], 2_500);
     }
 
     private void updateCamButton(ImageView camBtn) {
@@ -681,11 +659,10 @@ public class MainActivity extends Activity {
     private void updateWorldLabel(int slot) {
         WorldCams.Stream s = worldSlots[slot];
         if (s == null) return;
-        String sound = (fullscreenCam == camViews[slot] && fullscreenSound) ? "🔊 " : "";
         String pin = worldCams.isPinned(slot) ? "📌 " : "";
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
         TextView nameTv = camViews[slot].findViewById(R.id.name);
-        nameTv.setText(sound + pin + prefix + s.displayName());
+        nameTv.setText(pin + prefix + s.displayName());
         View label = camLabels[slot];
         int extraTop = s.labelOffsetLines > 0f ? Math.round(s.labelOffsetLines * nameTv.getTextSize()) : 0;
         label.setPaddingRelative(label.getPaddingStart(), camLabelTopPad[slot] + extraTop,
@@ -903,15 +880,10 @@ public class MainActivity extends Activity {
         List<WorldCams.Stream> favs = worldCams.hearted(worldCatalog);
         boolean hasLocal0 = !cfg.camUrl(0).isEmpty();
         boolean hasLocal1 = !cfg.camUrl(1).isEmpty();
-        boolean isFull = fullscreenCam == camViews[slot];
         boolean isPinned = worldCams.isPinned(slot);
 
         List<String> items = new ArrayList<>();
         List<Runnable> actions = new ArrayList<>();
-        if (isFull) {
-            items.add(fullscreenSound ? "Mute sound" : "🔊 Sound on");
-            actions.add(() -> toggleFullscreenSound(slot));
-        }
         items.add(isPinned ? "📌 Unpin from Home (random on return)" : "📌 Pin to Home (always show this cam)");
         actions.add(() -> {
             worldCams.setPinned(slot, !isPinned);
