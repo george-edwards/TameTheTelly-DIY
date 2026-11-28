@@ -1,5 +1,8 @@
 # Changelog
 
+## v26.11.28.8 — 2026-11-28
+- Add optional `labelOffsetAfterX` and `labelOffsetAfterY` in `streams.json` so `labelOffsetSec` can transition to a secondary offset instead of `0, 0`.
+
 ## v26.11.28.7 — 2026-11-28
 - Add `labelOffsetSec` in `streams.json` to automatically snap the camera label back to `0, 0` after N seconds once a stream's intro logo fades out.
 - Bust GitHub's CDN cache when checking `latest.json` so newly published updates are detected immediately.

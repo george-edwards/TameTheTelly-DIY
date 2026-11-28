@@ -842,11 +842,15 @@ public class MainActivity extends Activity {
         }
         labelOffsetExpired[slot] = false;
         WorldCams.Stream s = worldSlots[slot];
-        if (s != null && s.labelOffsetSec > 0 && (s.labelOffsetX > 0f || s.labelOffsetY > 0f)) {
+        if (s != null && s.labelOffsetSec > 0
+                && (s.labelOffsetX != s.labelOffsetAfterX || s.labelOffsetY != s.labelOffsetAfterY)) {
             Runnable r = () -> {
                 labelOffsetReset[slot] = null;
                 labelOffsetExpired[slot] = true;
-                if (devLabelSlot != slot) applyLabelPadding(slot, 0f, 0f);
+                WorldCams.Stream cur = worldSlots[slot];
+                if (devLabelSlot != slot && cur != null) {
+                    applyLabelPadding(slot, cur.labelOffsetAfterX, cur.labelOffsetAfterY);
+                }
             };
             labelOffsetReset[slot] = r;
             h.postDelayed(r, s.labelOffsetSec * 1_000L);
@@ -860,7 +864,7 @@ public class MainActivity extends Activity {
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
         TextView nameTv = camViews[slot].findViewById(R.id.name);
         nameTv.setText(pin + prefix + s.displayName());
-        if (labelOffsetExpired[slot]) applyLabelPadding(slot, 0f, 0f);
+        if (labelOffsetExpired[slot]) applyLabelPadding(slot, s.labelOffsetAfterX, s.labelOffsetAfterY);
         else applyLabelPadding(slot, s.labelOffsetX, s.labelOffsetY);
     }
 

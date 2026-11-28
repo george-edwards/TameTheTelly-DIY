@@ -1,7 +1,7 @@
 {
-  "versionCode": 26112807,
-  "versionName": "26.11.28.7",
-  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.7/home-v26.11.28.7.apk",
-  "sha256": "7795ef7a4b4d9543030263eca81910028cfd69b5cde5be6e722e14f8d30651df",
-  "notes": "Add labelOffsetSec timed auto-reset and cache-bust latest.json update checks"
+  "versionCode": 26112808,
+  "versionName": "26.11.28.8",
+  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.8/home-v26.11.28.8.apk",
+  "sha256": "411d437c76e1ea97fab0fa08e26e26708d8340e78adf7e4d811e349bed29f80c",
+  "notes": "Add labelOffsetAfterX/labelOffsetAfterY secondary offsets after labelOffsetSec"
 }

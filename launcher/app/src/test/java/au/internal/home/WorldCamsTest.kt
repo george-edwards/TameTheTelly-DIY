@@ -46,7 +46,7 @@ class WorldCamsTest {
 
     @Test fun parsesLabelOffsets() {
         val json = """{"streams":[
-            {"name":"New","url":"https://youtu.be/ROboUHfPUrU","labelOffsetY":2.5,"labelOffsetX":4.0,"labelOffsetSec":10},
+            {"name":"New","url":"https://youtu.be/ROboUHfPUrU","labelOffsetY":2.5,"labelOffsetX":4.0,"labelOffsetSec":10,"labelOffsetAfterX":1.5,"labelOffsetAfterY":0.5},
             {"name":"Legacy","url":"https://youtu.be/dypAtzvl24s","labelOffsetLines":1.5}
         ]}"""
         val streams = WorldCams.parse(json)
@@ -54,9 +54,13 @@ class WorldCamsTest {
         assertEquals(2.5f, streams[0].labelOffsetY, 0.001f)
         assertEquals(4.0f, streams[0].labelOffsetX, 0.001f)
         assertEquals(10, streams[0].labelOffsetSec)
+        assertEquals(1.5f, streams[0].labelOffsetAfterX, 0.001f)
+        assertEquals(0.5f, streams[0].labelOffsetAfterY, 0.001f)
         assertEquals(1.5f, streams[1].labelOffsetY, 0.001f)
         assertEquals(0.0f, streams[1].labelOffsetX, 0.001f)
         assertEquals(0, streams[1].labelOffsetSec)
+        assertEquals(0.0f, streams[1].labelOffsetAfterX, 0.001f)
+        assertEquals(0.0f, streams[1].labelOffsetAfterY, 0.001f)
     }
 
     @Test fun nextAndPrevSkipKnownOfflineStreams() {

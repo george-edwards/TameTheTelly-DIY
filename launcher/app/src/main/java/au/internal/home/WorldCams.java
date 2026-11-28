@@ -94,13 +94,16 @@ final class WorldCams {
         final float labelOffsetY;
         final float labelOffsetX;
         final int labelOffsetSec;
+        final float labelOffsetAfterX;
+        final float labelOffsetAfterY;
 
         Stream(String name, String category, String type, String url, String channelId, String match) {
-            this(name, category, type, url, channelId, match, Double.NaN, Double.NaN, 0f, 0f, 0);
+            this(name, category, type, url, channelId, match, Double.NaN, Double.NaN, 0f, 0f, 0, 0f, 0f);
         }
 
         Stream(String name, String category, String type, String url, String channelId, String match,
-               double lat, double lon, float labelOffsetY, float labelOffsetX, int labelOffsetSec) {
+               double lat, double lon, float labelOffsetY, float labelOffsetX, int labelOffsetSec,
+               float labelOffsetAfterX, float labelOffsetAfterY) {
             this.name = name;
             this.category = category;
             this.type = type;
@@ -113,6 +116,8 @@ final class WorldCams {
             this.labelOffsetY = Math.max(0f, labelOffsetY);
             this.labelOffsetX = Math.max(0f, labelOffsetX);
             this.labelOffsetSec = Math.max(0, labelOffsetSec);
+            this.labelOffsetAfterX = Math.max(0f, labelOffsetAfterX);
+            this.labelOffsetAfterY = Math.max(0f, labelOffsetAfterY);
             this.key = "youtube_channel".equals(type) && !channelId.isEmpty() ? "ch:" + channelId : url;
         }
 
@@ -220,6 +225,8 @@ final class WorldCams {
                         : o.optDouble("labelOffsetLines", 0.0));
                 float labelOffsetX = (float) o.optDouble("labelOffsetX", 0.0);
                 int labelOffsetSec = o.optInt("labelOffsetSec", 0);
+                float labelOffsetAfterX = (float) o.optDouble("labelOffsetAfterX", 0.0);
+                float labelOffsetAfterY = (float) o.optDouble("labelOffsetAfterY", 0.0);
                 out.add(new Stream(
                         name,
                         o.optString("category", "").trim(),
@@ -231,7 +238,9 @@ final class WorldCams {
                         lon,
                         labelOffsetY,
                         labelOffsetX,
-                        labelOffsetSec
+                        labelOffsetSec,
+                        labelOffsetAfterX,
+                        labelOffsetAfterY
                 ));
             }
             return out;
