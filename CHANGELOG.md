@@ -1,5 +1,8 @@
 # Changelog
 
+## v26.11.28.5 — 2026-11-28
+- Rename `labelOffsetLines` to `labelOffsetY` (keeping `labelOffsetLines` as a backwards-compatible fallback) to pair cleanly with `labelOffsetX`.
+
 ## v26.11.28.4 — 2026-11-28
 - Add per-stream `labelOffsetX` in `streams.json` to shift the camera label to the right (without moving the vignette) when a stream has a top-left logo.
 

@@ -91,7 +91,7 @@ final class WorldCams {
         final double lat;
         final double lon;
         final boolean hasCoords;
-        final float labelOffsetLines;
+        final float labelOffsetY;
         final float labelOffsetX;
 
         Stream(String name, String category, String type, String url, String channelId, String match) {
@@ -99,7 +99,7 @@ final class WorldCams {
         }
 
         Stream(String name, String category, String type, String url, String channelId, String match,
-               double lat, double lon, float labelOffsetLines, float labelOffsetX) {
+               double lat, double lon, float labelOffsetY, float labelOffsetX) {
             this.name = name;
             this.category = category;
             this.type = type;
@@ -109,7 +109,7 @@ final class WorldCams {
             this.lat = lat;
             this.lon = lon;
             this.hasCoords = !Double.isNaN(lat) && !Double.isNaN(lon);
-            this.labelOffsetLines = Math.max(0f, labelOffsetLines);
+            this.labelOffsetY = Math.max(0f, labelOffsetY);
             this.labelOffsetX = Math.max(0f, labelOffsetX);
             this.key = "youtube_channel".equals(type) && !channelId.isEmpty() ? "ch:" + channelId : url;
         }
@@ -213,7 +213,9 @@ final class WorldCams {
                 if (name.isEmpty() || url.isEmpty()) continue;
                 double lat = o.has("lat") && !o.isNull("lat") ? o.optDouble("lat", Double.NaN) : Double.NaN;
                 double lon = o.has("lon") && !o.isNull("lon") ? o.optDouble("lon", Double.NaN) : Double.NaN;
-                float labelOffset = (float) o.optDouble("labelOffsetLines", 0.0);
+                float labelOffsetY = (float) (o.has("labelOffsetY")
+                        ? o.optDouble("labelOffsetY", 0.0)
+                        : o.optDouble("labelOffsetLines", 0.0));
                 float labelOffsetX = (float) o.optDouble("labelOffsetX", 0.0);
                 out.add(new Stream(
                         name,
@@ -224,7 +226,7 @@ final class WorldCams {
                         o.optString("match", "").trim(),
                         lat,
                         lon,
-                        labelOffset,
+                        labelOffsetY,
                         labelOffsetX
                 ));
             }

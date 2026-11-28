@@ -1,7 +1,7 @@
 {
-  "versionCode": 26112804,
-  "versionName": "26.11.28.4",
-  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.4/home-v26.11.28.4.apk",
-  "sha256": "3f85235142a30b4883583b36ab299f94e0e209c0dd940774419d1863b61b3810",
-  "notes": "Add per-stream labelOffsetX to shift camera label right around top-left logos"
+  "versionCode": 26112805,
+  "versionName": "26.11.28.5",
+  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.5/home-v26.11.28.5.apk",
+  "sha256": "67a088e16fd3522f7da4a30b189c3eb2e728b259aac88e8f0f47ee67c868cff9",
+  "notes": "Rename labelOffsetLines to labelOffsetY (with fallback) to pair with labelOffsetX"
 }

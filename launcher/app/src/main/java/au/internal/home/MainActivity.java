@@ -667,7 +667,7 @@ public class MainActivity extends Activity {
         nameTv.setText(pin + prefix + s.displayName());
         View label = camLabels[slot];
         float textPx = nameTv.getTextSize();
-        int extraTop = s.labelOffsetLines > 0f ? Math.round(s.labelOffsetLines * textPx) : 0;
+        int extraTop = s.labelOffsetY > 0f ? Math.round(s.labelOffsetY * textPx) : 0;
         int extraStart = s.labelOffsetX > 0f ? Math.round(s.labelOffsetX * textPx) : 0;
         label.setPaddingRelative(camLabelStartPad[slot] + extraStart, camLabelTopPad[slot] + extraTop,
                 label.getPaddingEnd(), label.getPaddingBottom());
