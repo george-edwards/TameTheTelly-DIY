@@ -8,7 +8,12 @@
       "url": "https://www.youtube.com/@MEGALabCam/live",
       "channelId": "UCTLF36lXVM7uiR-VolWHv0Q",
       "lat": 19.64,
-      "lon": -155.99
+      "lon": -155.99,
+      "labelOffsetX": 1,
+      "labelOffsetY": 3,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterX": 1,
+      "labelOffsetAfterY": 0.5
     },
     {
       "name": "Canada: TinyKittens Rescue",
@@ -17,7 +22,12 @@
       "url": "https://www.youtube.com/@TinyKittens/live",
       "channelId": "UCeL2LSl91k2VccR7XEh5IKg",
       "lat": 49.1,
-      "lon": -122.66
+      "lon": -122.66,
+      "labelOffsetX": 1,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "USA: Metro South Transfer Station, Oregon City",
@@ -25,7 +35,9 @@
       "type": "iframe",
       "url": "https://v.angelcam.com/iframe?v=49yjx9o5r2&autoplay=1&mute=1",
       "lat": 45.34,
-      "lon": -122.58
+      "lon": -122.58,
+      "labelOffsetX": 0.75,
+      "labelOffsetY": 2.25
     },
     {
       "name": "USA: Pier 39, San Francisco",
@@ -36,7 +48,12 @@
       "channelId": "UCdMUgj9aXg5rBjw3ep8R7Pg",
       "match": "Pier 39",
       "lat": 37.81,
-      "lon": -122.41
+      "lon": -122.41,
+      "labelOffsetX": 0.75,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "USA: Clean Planet Car Wash, Woodinville, WA",
@@ -53,7 +70,12 @@
       "url": "https://www.youtube.com/@StrawberryGeneralStore/live",
       "channelId": "UCqsvqJ5glbznXUMs1_XxeXg",
       "lat": 38.2,
-      "lon": -120.01
+      "lon": -120.01,
+      "labelOffsetX": 10.25,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterX": 10.25,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "USA: Venice Beach, Los Angeles",
@@ -64,7 +86,8 @@
       "channelId": "UCegzBUd6-PYoO_v7gjJgufg",
       "match": "Venice Beach",
       "lat": 33.99,
-      "lon": -118.47
+      "lon": -118.47,
+      "labelOffsetY": 3.75
     },
     {
       "name": "USA: Elvis Wedding Chapel, Las Vegas",
@@ -83,7 +106,12 @@
       "channelId": "UC6qrG3W8SMK0jior2olka3g",
       "match": "New Orleans Balcony",
       "lat": 29.96,
-      "lon": -90.07
+      "lon": -90.07,
+      "labelOffsetX": 1.25,
+      "labelOffsetY": 3.5,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "USA: New Orleans Street View",
@@ -94,7 +122,12 @@
       "channelId": "UC6qrG3W8SMK0jior2olka3g",
       "match": "New Orleans Street",
       "lat": 29.96,
-      "lon": -90.07
+      "lon": -90.07,
+      "labelOffsetX": 1.25,
+      "labelOffsetY": 3.5,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterX": 0,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "USA: Friends of Felines Rescue Center",
@@ -103,7 +136,11 @@
       "url": "https://www.youtube.com/@FOFRescueCenter/live",
       "channelId": "UClB2FZ7Qvwq0Ons_6jN1lAQ",
       "lat": 41.28,
-      "lon": -84.36
+      "lon": -84.36,
+      "labelOffsetX": 7.5,
+      "labelOffsetY": 3.5,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "USA: Irish Kevin's, Duval Street, Key West",
@@ -114,7 +151,8 @@
       "channelId": "UC-KS6AGW3J43aFF-KOQ6VAw",
       "match": "Irish Kevin",
       "lat": 24.56,
-      "lon": -81.8
+      "lon": -81.8,
+      "labelOffsetY": 3.5
     },
     {
       "name": "USA: Two Friends Restaurant, Key West",
@@ -123,7 +161,9 @@
       "url": "https://www.youtube.com/@keyslive/live",
       "channelId": "UCByDkIC1CsbQpXJox4syGiw",
       "lat": 24.56,
-      "lon": -81.8
+      "lon": -81.8,
+      "labelOffsetY": 3.5,
+      "labelOffsetSec": 5
     },
     {
       "name": "USA: Disney Skyliner, Walt Disney World",
@@ -632,6 +672,7 @@
       "channelId": "UCLav_kTu9PmAEChvGyrPbhQ",
       "lat": -33.86,
       "lon": 151.21,
+      "labelOffsetX": 1.25,
       "labelOffsetY": 3.5,
       "labelOffsetSec": 10
     },
@@ -651,7 +692,10 @@
       "url": "https://www.youtube.com/@portofnewcastle/live",
       "channelId": "UCTGhjtFloAPlbLy4_yrkoWg",
       "lat": -32.92,
-      "lon": 151.79
+      "lon": 151.79,
+      "labelOffsetX": 1.25,
+      "labelOffsetY": 3.5,
+      "labelOffsetSec": 5
     },
     {
       "name": "New Zealand: Royal Albatross Cam, Otago",
@@ -662,14 +706,19 @@
       "channelId": "UCZXZQxS3d6NpR-eH_gdDwYA",
       "match": "Royal Albatross",
       "lat": -45.77,
-      "lon": 170.73
+      "lon": 170.73,
+      "labelOffsetX": 1.25,
+      "labelOffsetY": 3.5,
+      "labelOffsetSec": 10,
+      "labelOffsetAfterY": 0.5
     },
     {
       "name": "Ocean: Golden Globe Race",
       "category": "Temples, Shrines & Journeys",
       "type": "youtube_channel",
       "url": "https://www.youtube.com/@Goldengloberace/live",
-      "channelId": "UCHAanPHup_V8JHJLSwQbKmQ"
+      "channelId": "UCHAanPHup_V8JHJLSwQbKmQ",
+      "labelOffsetY": 6.75
     },
     {
       "name": "Space: NASA ISS HD Earth",
@@ -686,7 +735,8 @@
       "type": "youtube_channel",
       "url": "https://www.youtube.com/channel/UCkvW_7kp9LJrztmgA4q4bJQ/live",
       "channelId": "UCkvW_7kp9LJrztmgA4q4bJQ",
-      "labelOffsetY": 2.5
+      "labelOffsetX": 0.75,
+      "labelOffsetY": 3
     }
   ]
 }
