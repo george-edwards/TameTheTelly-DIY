@@ -140,6 +140,7 @@
       "labelOffsetX": 7.5,
       "labelOffsetY": 3.5,
       "labelOffsetSec": 5,
+      "labelOffsetAfterX": 7.5,
       "labelOffsetAfterY": 0
     },
     {
@@ -185,7 +186,9 @@
       "channelId": "UC87uKTXV7je0G6h3eUqMaNQ",
       "match": "Tarpon Feeding",
       "lat": 24.89,
-      "lon": -80.66
+      "lon": -80.66,
+      "labelOffsetX": 0.25,
+      "labelOffsetY": 3.75
     },
     {
       "name": "USA: Elbo Room Beach Bar, Fort Lauderdale",
@@ -196,7 +199,10 @@
       "channelId": "UCUkUjr4syovc3NbLWtuVfYw",
       "match": "BAR CAM",
       "lat": 26.12,
-      "lon": -80.1
+      "lon": -80.1,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5,
+      "labelOffsetAfterY": 1.75
     },
     {
       "name": "USA: Seaside Heights Boardwalk, NJ",
@@ -218,7 +224,9 @@
       "channelId": "UC6qrG3W8SMK0jior2olka3g",
       "match": "Times Square",
       "lat": 40.76,
-      "lon": -73.99
+      "lon": -73.99,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "USA: Bryant Park Ice Rink, New York",
@@ -227,7 +235,9 @@
       "url": "https://www.youtube.com/@BryantParkNYC/live",
       "channelId": "UC6AlfoRUeH4B1an_R5YSSTw",
       "lat": 40.75,
-      "lon": -73.98
+      "lon": -73.98,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "British Virgin Islands: White Bay Beach, Soggy Dollar",
@@ -236,7 +246,9 @@
       "url": "https://www.youtube.com/@SoggyDollar/live",
       "channelId": "UC-CrxJnHPaM4tm2haTibUZA",
       "lat": 18.44,
-      "lon": -64.76
+      "lon": -64.76,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "Brazil: Pizza Time, Goiânia",
@@ -256,7 +268,8 @@
       "match": "Dublin",
       "lat": 53.35,
       "lon": -6.26,
-      "labelOffsetY": 2.5
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "UK: Abbey Road Crossing, London",
@@ -267,7 +280,9 @@
       "channelId": "UC6qrG3W8SMK0jior2olka3g",
       "match": "Abbey Road",
       "lat": 51.53,
-      "lon": -0.18
+      "lon": -0.18,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "UK: Boxing Training & Sparring (The KO Cup)",
@@ -276,7 +291,9 @@
       "url": "https://www.youtube.com/@TheKOCup/live",
       "channelId": "UCHLcaDrJQkesqdu2IpwGRoA",
       "lat": 51.51,
-      "lon": -0.13
+      "lon": -0.13,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "France: Seine & Notre-Dame, Paris",
@@ -285,7 +302,9 @@
       "url": "https://www.youtube.com/@Sondelaterre/live",
       "channelId": "UC5oMexvQVrM4qNNVFK7M7Yw",
       "lat": 48.85,
-      "lon": 2.35
+      "lon": 2.35,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "Germany: AES Packaging Machine (Wöhner)",
@@ -296,7 +315,9 @@
       "channelId": "UCvmmi6n5P4lplMjQm_xbyqw",
       "match": "AES Verpackungsautomat",
       "lat": 50.29,
-      "lon": 11.04
+      "lon": 11.04,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "Italy: Dorsoduro, Venice",
@@ -307,7 +328,9 @@
       "channelId": "UCMpn1qLudF-zb4M4bqxLIbw",
       "match": "Dorsoduro",
       "lat": 45.43,
-      "lon": 12.33
+      "lon": 12.33,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 5
     },
     {
       "name": "Italy: Grand Canal, Venice",
@@ -318,7 +341,11 @@
       "channelId": "UCMpn1qLudF-zb4M4bqxLIbw",
       "match": "Grand Canal",
       "lat": 45.44,
-      "lon": 12.33
+      "lon": 12.33,
+      "labelOffsetY": 4.5,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 7.25,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Italy: Basilica di San Francesco, Assisi",
@@ -329,7 +356,11 @@
       "channelId": "UC_FuR9GFVJE2A8H02sQmHWw",
       "match": "Assisi",
       "lat": 43.07,
-      "lon": 12.61
+      "lon": 12.61,
+      "labelOffsetY": 3.25,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 9.25,
+      "labelOffsetAfterY": 0
     },
     {
       "name": "Slovakia: Hurricane Factory Indoor Skydiving, Liptovský Mikuláš",
