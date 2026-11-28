@@ -1,7 +1,7 @@
 {
-  "versionCode": 26112801,
-  "versionName": "26.11.28.1",
-  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.1/home-v26.11.28.1.apk",
-  "sha256": "f0929dfeaff8f85baf075ab8f6bd278f773bb00ee2974a82359c453756debaae",
-  "notes": "Fix camera label vignette offset, snap World Cams to live edge, and add Settings About & changelog"
+  "versionCode": 26112802,
+  "versionName": "26.11.28.2",
+  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.2/home-v26.11.28.2.apk",
+  "sha256": "e0c15db2e43920965e3a46a094e1d7e3051e028132a27d0ac601c42b57cf27f9",
+  "notes": "Automatic overnight updates (with Manual toggle) and progress-bar manual update download"
 }

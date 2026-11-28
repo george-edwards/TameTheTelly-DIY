@@ -25,7 +25,7 @@ final class HomeConfig {
             K_ADULT_START = "adult_start", K_ADULT_END = "adult_end",
             K_OVERLAY_CORNER = "overlay_corner", K_OVERLAY_SIZE = "overlay_size",
             K_WORLD_CAMS = "world_cams", K_WORLD_CAMS_URL = "world_cams_url",
-            K_UPDATE_URL = "update_url",
+            K_UPDATE_URL = "update_url", K_AUTO_UPDATE = "auto_update",
             K_RESTORE_BACKLIGHT = "restore_backlight", K_RESTORE_BLUE_LIGHT = "restore_blue_light";
     static final String CORNER_TR = "top_right", CORNER_TL = "top_left", CORNER_BR = "bottom_right", CORNER_BL = "bottom_left";
     static final String[] OVERLAY_CORNERS = {CORNER_TR, CORNER_TL, CORNER_BR, CORNER_BL};
@@ -67,6 +67,7 @@ final class HomeConfig {
     boolean worldCamsOn() { return str(K_WORLD_CAMS, R.string.world_cams).equals("on"); }
     String worldCamsUrl() { return str(K_WORLD_CAMS_URL, R.string.world_cams_url).trim(); }
     String updateUrl() { return str(K_UPDATE_URL, R.string.update_url).trim(); }
+    boolean autoUpdate() { return !str(K_AUTO_UPDATE, R.string.auto_update).equals("off"); }
     String overlayCorner() { return oneOf(str(K_OVERLAY_CORNER, R.string.overlay_corner), OVERLAY_CORNERS, CORNER_TR); }
     String overlaySize() { return oneOf(str(K_OVERLAY_SIZE, R.string.overlay_size), OVERLAY_SIZES, OVERLAY_MEDIUM); }
     static String overlayCornerName(String id) { int i = indexOf(OVERLAY_CORNERS, id); return i < 0 ? id : OVERLAY_CORNER_NAMES[i]; }
@@ -206,6 +207,7 @@ final class HomeConfig {
         putIfMissing(ed, K_WORLD_CAMS, R.string.world_cams);
         putIfMissing(ed, K_WORLD_CAMS_URL, R.string.world_cams_url);
         putIfMissing(ed, K_UPDATE_URL, R.string.update_url);
+        putIfMissing(ed, K_AUTO_UPDATE, R.string.auto_update);
         putIfMissing(ed, K_FAMILY, R.string.family_name);
         putIfMissing(ed, K_POSTCODE, R.string.weather_postcode);
         putIfMissing(ed, K_PLACE, R.string.weather_place);
@@ -247,6 +249,7 @@ final class HomeConfig {
             case K_THEME: if (indexOf(Look.ids(), value) < 0) return "theme: " + String.join(", ", Look.ids()); break;
             case K_CAMERAS: if (!value.equals("on") && !value.equals("off")) return "cameras: on or off"; break;
             case K_WORLD_CAMS: if (!value.equals("on") && !value.equals("off")) return "world_cams: on or off"; break;
+            case K_AUTO_UPDATE: if (!value.equals("on") && !value.equals("off")) return "auto_update: on or off"; break;
             case K_OVERLAY_CORNER: if (indexOf(OVERLAY_CORNERS, value) < 0) return "overlay_corner: " + String.join(", ", OVERLAY_CORNERS); break;
             case K_OVERLAY_SIZE: if (indexOf(OVERLAY_SIZES, value) < 0) return "overlay_size: " + String.join(", ", OVERLAY_SIZES); break;
             case K_SCENE: {

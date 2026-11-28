@@ -33,4 +33,14 @@ class UpdaterTest {
         assertNull(Updater.parse("""{"versionCode":64,"versionName":"2.21.0","url":"https://example.com/a.apk","sha256":"notasha"}"""))
         assertNull(Updater.parse("""{"versionCode":0,"versionName":"2.21.0","url":"https://example.com/a.apk","sha256":"$validSha"}"""))
     }
+
+    @Test fun autoInstallWindowOnlyWhenAsleepOrOvernightIdle() {
+        assertEquals(true, Updater.isSafeAutoInstallWindow(false, 19, false))
+        assertEquals(true, Updater.isSafeAutoInstallWindow(false, 19, true))
+        assertEquals(true, Updater.isSafeAutoInstallWindow(true, 3, false))
+        assertEquals(true, Updater.isSafeAutoInstallWindow(true, 4, false))
+        assertEquals(false, Updater.isSafeAutoInstallWindow(true, 3, true))
+        assertEquals(false, Updater.isSafeAutoInstallWindow(true, 14, false))
+        assertEquals(false, Updater.isSafeAutoInstallWindow(true, 5, false))
+    }
 }

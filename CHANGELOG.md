@@ -1,5 +1,9 @@
 # Changelog
 
+## v26.11.28.2 — 2026-11-28
+- Add automatic background updates (checks every 6 hours, downloads in the background, and installs when the TV is asleep or idle overnight), with an Automatic/Manual toggle in Settings.
+- Manual Check for updates now downloads automatically with a progress bar and prompts to install once verified locally.
+
 ## v26.11.28.1 — 2026-11-28
 - Keep the camera label vignette anchored to the top of the frame when `labelOffsetLines` lowers the label.
 - Add an About screen in Settings showing the installed version, last updated date, and changelog.

@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Checks a remote latest.json manifest (hosted on GitHub) for newer signed Home APKs, verifies
@@ -29,6 +31,10 @@ import java.util.Locale;
  */
 final class Updater {
     private static final String TAG = "HomeUpdater";
+
+    interface ProgressListener {
+        void onProgress(long downloadedBytes, long totalBytes);
+    }
 
     static final class Release {
         final int versionCode;
@@ -44,6 +50,15 @@ final class Updater {
             this.sha256 = sha256;
             this.notes = notes;
         }
+    }
+
+    /**
+     * Unattended auto-install is safe when the TV screen is asleep/off, or during the quiet
+     * overnight window (3:00–4:59 am) while nobody is actively watching a timed app.
+     */
+    static boolean isSafeAutoInstallWindow(boolean screenInteractive, int hourOfDay, boolean watching) {
+        if (!screenInteractive) return true;
+        return hourOfDay >= 3 && hourOfDay < 5 && !watching;
     }
 
     static Release parse(String json) {
@@ -107,21 +122,37 @@ final class Updater {
     }
 
     /**
-     * Download `r.url`, verify SHA-256 against `r.sha256`, and trigger a detached `pm install -r`
-     * over LocalAdb. Call off the main thread.
+     * Download `r.url` into external cache and verify its SHA-256 against `r.sha256`.
+     * Reuses an already-downloaded file if its SHA-256 matches. Call off the main thread.
      */
-    static void downloadAndInstall(Context c, Release r) throws IOException {
+    static File download(Context c, Release r, ProgressListener onProgress, AtomicBoolean cancelled) throws IOException {
         File dir = c.getExternalCacheDir();
         if (dir == null) throw new IOException("External cache unavailable");
         File apk = new File(dir, "home-update.apk");
-        if (apk.exists()) apk.delete();
+        if (apk.isFile() && r.sha256.equalsIgnoreCase(sha256File(apk))) {
+            long len = apk.length();
+            if (onProgress != null) onProgress.onProgress(len, len);
+            return apk;
+        }
+        File part = new File(dir, "home-update.apk.part");
+        if (part.exists()) part.delete();
 
-        String gotSha = download(r.url, apk);
+        String gotSha = downloadStream(r.url, part, onProgress, cancelled);
         if (!r.sha256.equalsIgnoreCase(gotSha)) {
-            apk.delete();
+            part.delete();
             throw new IOException("Checksum mismatch (expected " + r.sha256.substring(0, 8) + "…)");
         }
+        if (apk.exists()) apk.delete();
+        if (!part.renameTo(apk)) {
+            part.delete();
+            throw new IOException("Could not save downloaded APK");
+        }
+        return apk;
+    }
 
+    /** Install a previously downloaded and verified APK via detached `pm install -r` over LocalAdb. */
+    static void installDownloaded(Context c, Release r, File apk) throws IOException {
+        if (apk == null || !apk.isFile()) throw new IOException("Downloaded APK missing");
         // Preserve household defaults, restore.sh, and any bundled custom scene in app data before overwriting the APK.
         new HomeConfig(c).freezeToPrefs();
         Restore.seedIfBundled(c);
@@ -139,7 +170,30 @@ final class Updater {
         LocalAdb.exec(c, cmd, 15_000);
     }
 
-    private static String download(String urlStr, File dest) throws IOException {
+    /** Convenience: download, verify, and install in one call. Call off the main thread. */
+    static void downloadAndInstall(Context c, Release r) throws IOException {
+        File apk = download(c, r, null, null);
+        installDownloaded(c, r, apk);
+    }
+
+    private static String sha256File(File f) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] buf = new byte[16 * 1024];
+            try (InputStream in = new FileInputStream(f)) {
+                int n;
+                while ((n = in.read(buf)) >= 0) {
+                    if (n > 0) md.update(buf, 0, n);
+                }
+            }
+            return toHex(md.digest());
+        } catch (IOException | NoSuchAlgorithmException e) {
+            return "";
+        }
+    }
+
+    private static String downloadStream(String urlStr, File dest, ProgressListener onProgress, AtomicBoolean cancelled)
+            throws IOException {
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         conn.setInstanceFollowRedirects(true);
         conn.setConnectTimeout(10_000);
@@ -148,23 +202,43 @@ final class Updater {
         try {
             int status = conn.getResponseCode();
             if (status != 200) throw new IOException("Download failed (HTTP " + status + ")");
+            long total = conn.getContentLengthLong();
+            long done = 0L;
+            long lastReport = 0L;
+            if (onProgress != null) onProgress.onProgress(0L, total);
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] buf = new byte[16 * 1024];
             try (InputStream in = conn.getInputStream(); FileOutputStream out = new FileOutputStream(dest)) {
                 int n;
                 while ((n = in.read(buf)) >= 0) {
+                    if (cancelled != null && cancelled.get()) {
+                        throw new IOException("Cancelled");
+                    }
                     if (n == 0) continue;
                     md.update(buf, 0, n);
                     out.write(buf, 0, n);
+                    done += n;
+                    if (onProgress != null && (done - lastReport >= 32 * 1024 || (total > 0 && done >= total))) {
+                        lastReport = done;
+                        onProgress.onProgress(done, total);
+                    }
                 }
+            } catch (IOException e) {
+                dest.delete();
+                throw e;
             }
-            StringBuilder hex = new StringBuilder(64);
-            for (byte b : md.digest()) hex.append(String.format(Locale.ROOT, "%02x", b & 0xff));
-            return hex.toString();
+            if (onProgress != null) onProgress.onProgress(done, total > 0 ? total : done);
+            return toHex(md.digest());
         } catch (NoSuchAlgorithmException e) {
             throw new IOException(e);
         } finally {
             conn.disconnect();
         }
+    }
+
+    private static String toHex(byte[] digest) {
+        StringBuilder hex = new StringBuilder(digest.length * 2);
+        for (byte b : digest) hex.append(String.format(Locale.ROOT, "%02x", b & 0xff));
+        return hex.toString();
     }
 }

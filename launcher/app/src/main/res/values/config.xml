@@ -17,6 +17,8 @@
     <string name="world_cams_url" translatable="false">https://raw.githubusercontent.com/george-edwards/TameTheTelly-DIY/main/streams.json</string>
     <!-- Self-updater manifest (Settings > Check for updates). Blank disables the menu item. -->
     <string name="update_url" translatable="false">https://raw.githubusercontent.com/george-edwards/TameTheTelly-DIY/main/latest.json</string>
+    <!-- (TV menu: Settings > Updates) Automatic background updates ("on") or manual only ("off"). -->
+    <string name="auto_update" translatable="false">on</string>
     <!-- SET FOR EACH HOUSEHOLD (AGENTS.md, "Make it theirs"): family name, weather place, bin night, timed apps,
          scene, grown-ups code. Most can also be set later on the TV in Config. -->
     <!-- (TV menu) Greeting: "Good morning, <family_name>" (blank: just "Good morning"). -->

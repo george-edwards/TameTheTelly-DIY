@@ -48,6 +48,7 @@ public final class ScreenTimeService extends Service {
     static final String ACTION_DEV = "au.internal.home.DEV";
     static final String ACTION_CAM_OVERLAY = "au.internal.home.CAM_OVERLAY";
     private static final long TICK_MS = 1_000, SILENT_GRACE_MS = 90_000, CLOSE_MS = 4_000;
+    private static final long UPDATE_CHECK_MS = 6 * 60 * 60_000L, UPDATE_FIRST_CHECK_MS = 2 * 60_000L;
     /** How long the window's density stays after the last timed app goes, so a quick switch doesn't flip it. */
     private static final long DENSITY_HOLD_MS = 3_000;
     private static final float VOLUME_FLOOR = 0.4f;   // fraction of her volume left at the very end
@@ -83,7 +84,11 @@ public final class ScreenTimeService extends Service {
     private final java.util.concurrent.atomic.AtomicBoolean framing = new java.util.concurrent.atomic.AtomicBoolean();
     private final java.util.concurrent.atomic.AtomicBoolean checkingKeys = new java.util.concurrent.atomic.AtomicBoolean();
     private final java.util.concurrent.atomic.AtomicBoolean checkingOps = new java.util.concurrent.atomic.AtomicBoolean();
-    private long lastFrame, lastKeyCheck = -60_000, lastOpsCheck = -60_000;
+    private final java.util.concurrent.atomic.AtomicBoolean checkingUpdate = new java.util.concurrent.atomic.AtomicBoolean();
+    private long lastFrame, lastKeyCheck = -60_000, lastOpsCheck = -60_000, lastUpdateCheck;
+    private volatile Updater.Release stagedUpdate;
+    private volatile java.io.File stagedUpdateApk;
+    private volatile int lastAutoInstallVer;
     private volatile long keyCheckWait = 10_000, opsCheckWait = 10_000;
     private boolean frameViaAdb;
 
@@ -158,6 +163,7 @@ public final class ScreenTimeService extends Service {
         // Left lowered (Home stopped while a timed app was up)? Then the first tick puts it back.
         densitySmall = getResources().getConfiguration().densityDpi != android.util.DisplayMetrics.DENSITY_DEVICE_STABLE;
         if (frameViaAdb) worker.execute(() -> framer.authorise(120_000));   // first time only: the TV asks to allow Home's adb key
+        lastUpdateCheck = SystemClock.elapsedRealtime() - UPDATE_CHECK_MS + UPDATE_FIRST_CHECK_MS;
 
         goForeground();
 
@@ -288,6 +294,48 @@ public final class ScreenTimeService extends Service {
                     checkingKeys.set(false);
                 }
             }, "remote-keys-heal").start();
+        }
+        // Automatic background updates: check & stage every 6 h, install silently when screen is off or 3–5 am idle.
+        Updater.Release staged = stagedUpdate;
+        java.io.File stagedFile = stagedUpdateApk;
+        if (staged != null && stagedFile != null && stagedFile.isFile() && staged.versionCode != lastAutoInstallVer) {
+            int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+            if (Updater.isSafeAutoInstallWindow(on, hour, watching || preview)
+                    && new HomeConfig(this).autoUpdate() && LocalAdb.isAdbEnabled(this)
+                    && checkingUpdate.compareAndSet(false, true)) {
+                lastAutoInstallVer = staged.versionCode;
+                Context app = getApplicationContext();
+                new Thread(() -> {
+                    try {
+                        Updater.installDownloaded(app, staged, stagedFile);
+                    } catch (java.io.IOException | RuntimeException e) {
+                        Log.w(TAG, "auto-update install failed: " + e.getMessage());
+                    } finally {
+                        checkingUpdate.set(false);
+                    }
+                }, "auto-update-install").start();
+            }
+        } else if (el - lastUpdateCheck >= UPDATE_CHECK_MS && checkingUpdate.compareAndSet(false, true)) {
+            lastUpdateCheck = el;
+            Context app = getApplicationContext();
+            new Thread(() -> {
+                try {
+                    HomeConfig hc = new HomeConfig(app);
+                    String url = hc.updateUrl();
+                    if (!hc.autoUpdate() || url.isEmpty() || !LocalAdb.isAdbEnabled(app)) return;
+                    Updater.Release r = Updater.fetch(url);
+                    if (r.versionCode <= Updater.currentVersionCode(app)) return;
+                    java.io.File apk = Updater.download(app, r, null, null);
+                    stagedUpdate = r;
+                    stagedUpdateApk = apk;
+                    lastAutoInstallVer = 0;
+                    Log.i(TAG, "staged auto-update v" + r.versionName + " (" + r.versionCode + ")");
+                } catch (java.io.IOException | RuntimeException e) {
+                    Log.w(TAG, "auto-update check failed: " + e.getMessage());
+                } finally {
+                    checkingUpdate.set(false);
+                }
+            }, "auto-update-check").start();
         }
         // Keep the timed app in its window (just opened, or resized/restarted by something else).
         // Every 4 s; every tick for a while after a timed app comes up (e.g. YouTube just after it starts, or after it

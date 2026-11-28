@@ -163,7 +163,14 @@ final class SettingsMenu {
                 })));
         rows.add(new MenuRow("Weather", cfg.place().isEmpty() ? "Off" : cfg.place(), () -> postcode(cfg.postcode())));
         rows.add(new MenuRow("Bin night", cfg.binsDay() >= 1 && cfg.binsDay() <= 7 ? DAYS[cfg.binsDay() - 1] : "Off", this::bins));
-        if (!cfg.updateUrl().isEmpty()) rows.add(new MenuRow("Check for updates", "v" + Updater.currentVersionName(a), this::checkUpdate));
+        if (!cfg.updateUrl().isEmpty()) {
+            rows.add(new MenuRow("Updates", cfg.autoUpdate() ? "Automatic" : "Manual", () -> {
+                boolean on = !cfg.autoUpdate();
+                cfg.set(HomeConfig.K_AUTO_UPDATE, on ? "on" : "off");
+                changed(on ? "Automatic updates on (installs when idle/overnight)" : "Manual updates only");
+            }));
+            rows.add(new MenuRow("Check for updates", "v" + Updater.currentVersionName(a), this::checkUpdate));
+        }
         rows.add(new MenuRow("About", "v" + Updater.currentVersionName(a), this::about));
         rows.add(new MenuRow(RESET, null, this::reset));
         rows.add(new MenuRow("Put the TV back", null, onRestore));
@@ -172,46 +179,100 @@ final class SettingsMenu {
 
     private void checkUpdate() {
         String url = cfg.updateUrl();
-        Toast.makeText(a, "Checking for updates…", Toast.LENGTH_SHORT).show();
         android.content.Context app = a.getApplicationContext();
         int curCode = Updater.currentVersionCode(a);
         String curName = Updater.currentVersionName(a);
+        java.util.concurrent.atomic.AtomicBoolean cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+
+        float dp = a.getResources().getDisplayMetrics().density;
+        int padH = Math.round(24 * dp), padV = Math.round(16 * dp);
+        android.widget.LinearLayout box = new android.widget.LinearLayout(a);
+        box.setOrientation(android.widget.LinearLayout.VERTICAL);
+        box.setPadding(padH, padV, padH, padV);
+
+        android.widget.ProgressBar bar = new android.widget.ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal);
+        bar.setIndeterminate(true);
+        bar.setMax(100);
+        TextView status = new TextView(a);
+        status.setText("Checking for updates…");
+        status.setTextSize(14f);
+        status.setTextColor(a.getColor(R.color.muted));
+        status.setPadding(0, Math.round(10 * dp), 0, 0);
+        box.addView(bar, new android.widget.LinearLayout.LayoutParams(-1, -2));
+        box.addView(status, new android.widget.LinearLayout.LayoutParams(-1, -2));
+
+        AlertDialog progressDlg = new AlertDialog.Builder(a)
+                .setTitle("Updates")
+                .setView(box)
+                .setNegativeButton("Cancel", (d, w) -> { cancelled.set(true); main(); })
+                .setOnCancelListener(d -> { cancelled.set(true); main(); })
+                .create();
+        MainActivity.showDialog(progressDlg);
+
         new Thread(() -> {
             try {
                 Updater.Release r = Updater.fetch(url);
-                a.runOnUiThread(() -> {
-                    if (r.versionCode <= curCode) {
+                if (cancelled.get()) return;
+                if (r.versionCode <= curCode) {
+                    a.runOnUiThread(() -> {
+                        if (cancelled.get()) return;
+                        progressDlg.dismiss();
                         show(dialog("Up to date", this::main)
                                 .setMessage("Home v" + curName + " is the latest version.")
                                 .setPositiveButton("OK", (d, w) -> main()));
-                        return;
+                    });
+                    return;
+                }
+                a.runOnUiThread(() -> {
+                    if (cancelled.get()) return;
+                    progressDlg.setTitle("Downloading v" + r.versionName);
+                    status.setText("Starting download…");
+                });
+                java.io.File apk = Updater.download(app, r, (done, total) -> a.runOnUiThread(() -> {
+                    if (cancelled.get()) return;
+                    if (total > 0) {
+                        int pct = (int) Math.min(100L, (done * 100L) / total);
+                        bar.setIndeterminate(false);
+                        bar.setProgress(pct);
+                        status.setText(String.format(Locale.ROOT, "%.1f / %.1f MB (%d%%)",
+                                done / 1048576.0, total / 1048576.0, pct));
+                    } else {
+                        bar.setIndeterminate(true);
+                        status.setText(String.format(Locale.ROOT, "%.1f MB downloaded…", done / 1048576.0));
                     }
-                    String msg = "Current: v" + curName + "\nLatest: v" + r.versionName
-                            + (r.notes.isEmpty() ? "" : "\n\n" + r.notes);
-                    show(dialog("Update available: v" + r.versionName, this::main)
+                }), cancelled);
+                if (cancelled.get()) return;
+                a.runOnUiThread(() -> {
+                    if (cancelled.get()) return;
+                    progressDlg.dismiss();
+                    String msg = "Home v" + r.versionName + " has been downloaded and verified."
+                            + (r.notes.isEmpty() ? "" : "\n\n" + r.notes)
+                            + "\n\nInstall now? Home will restart briefly.";
+                    show(dialog("Update ready: v" + r.versionName, this::main)
                             .setMessage(msg)
-                            .setPositiveButton("Install update", (d, w) -> installUpdate(app, r))
+                            .setPositiveButton("Install now", (d, w) -> installUpdate(app, r, apk))
                             .setNegativeButton("Later", (d, w) -> main()));
                 });
             } catch (Exception e) {
+                if (cancelled.get()) return;
                 a.runOnUiThread(() -> {
-                    Toast.makeText(a, "Couldn't check for updates: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    progressDlg.dismiss();
+                    Toast.makeText(a, "Update check failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     main();
                 });
             }
         }, "home-update-check").start();
     }
 
-    private void installUpdate(android.content.Context app, Updater.Release r) {
+    private void installUpdate(android.content.Context app, Updater.Release r, java.io.File apk) {
         if (!LocalAdb.isAdbEnabled(a)) {
             LocalAdb.showAdbRequiredDialog(a, "Installing Home updates needs USB debugging turned on temporarily.", null, this::main);
             return;
         }
-        Toast.makeText(a, "Downloading v" + r.versionName + "…", Toast.LENGTH_LONG).show();
+        Toast.makeText(a, "Installing v" + r.versionName + " — Home will restart", Toast.LENGTH_LONG).show();
         new Thread(() -> {
             try {
-                Updater.downloadAndInstall(app, r);
-                a.runOnUiThread(() -> Toast.makeText(a, "Installing v" + r.versionName + " — Home will restart", Toast.LENGTH_LONG).show());
+                Updater.installDownloaded(app, r, apk);
             } catch (Exception e) {
                 a.runOnUiThread(() -> {
                     Toast.makeText(a, "Update failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
