@@ -1,7 +1,7 @@
 {
-  "versionCode": 26112805,
-  "versionName": "26.11.28.5",
-  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.5/home-v26.11.28.5.apk",
-  "sha256": "67a088e16fd3522f7da4a30b189c3eb2e728b259aac88e8f0f47ee67c868cff9",
-  "notes": "Rename labelOffsetLines to labelOffsetY (with fallback) to pair with labelOffsetX"
+  "versionCode": 26112806,
+  "versionName": "26.11.28.6",
+  "url": "https://github.com/george-edwards/TameTheTelly-DIY/releases/download/v26.11.28.6/home-v26.11.28.6.apk",
+  "sha256": "3df05773ac1c53ca3ffc032f3f5c801c089517423442053848614d530a8f01e8",
+  "notes": "Add developer label-offset calibrator on fullscreen World Cams (Up, Up, Down, Down)"
 }

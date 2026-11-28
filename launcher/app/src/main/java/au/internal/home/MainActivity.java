@@ -14,11 +14,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     static final String EXTRA_LOCKED = "au.internal.home.LOCKED";
@@ -97,6 +100,15 @@ public class MainActivity extends Activity {
     private int[] camLabelTopPad, camLabelStartPad;
     private final Runnable[] camStarters = new Runnable[2];
     private View fullscreenCam;
+    private static final int[] DEV_LABEL_SEQ = {
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_UP,
+            KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_DPAD_DOWN
+    };
+    private int devSeqPos;
+    private long devSeqLastMs;
+    private int devLabelSlot = -1;
+    private float devOffsetX, devOffsetY;
+    private TextView devLabelHud;
     private boolean leftHome;
     private static final long RANDOM_PREFETCH_LEAD_MS = 10_000L;
     private TextView worldTimer;
@@ -477,8 +489,50 @@ public class MainActivity extends Activity {
         launch(pkg, label);
     }
 
+    @Override public boolean dispatchKeyEvent(KeyEvent ev) {
+        if (devLabelSlot >= 0) {
+            int code = ev.getKeyCode();
+            if (code == KeyEvent.KEYCODE_BACK) {
+                if (ev.getAction() == KeyEvent.ACTION_UP) exitDevLabelMode();
+                return true;
+            }
+            if (code == KeyEvent.KEYCODE_DPAD_UP || code == KeyEvent.KEYCODE_DPAD_DOWN
+                    || code == KeyEvent.KEYCODE_DPAD_LEFT || code == KeyEvent.KEYCODE_DPAD_RIGHT
+                    || code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER
+                    || code == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+                if (ev.getAction() == KeyEvent.ACTION_DOWN) handleDevLabelKey(code);
+                return true;
+            }
+        } else if (ev.getAction() == KeyEvent.ACTION_DOWN) {
+            int slot = fullWorldSlot();
+            if (slot >= 0) {
+                long now = android.os.SystemClock.uptimeMillis();
+                if (now - devSeqLastMs > 2_500L) devSeqPos = 0;
+                int code = ev.getKeyCode();
+                if (code == DEV_LABEL_SEQ[devSeqPos]) {
+                    devSeqLastMs = now;
+                    devSeqPos++;
+                    if (devSeqPos >= DEV_LABEL_SEQ.length) {
+                        devSeqPos = 0;
+                        enterDevLabelMode(slot);
+                        return true;
+                    }
+                } else if (code == DEV_LABEL_SEQ[0]) {
+                    devSeqLastMs = now;
+                    devSeqPos = 1;
+                } else {
+                    devSeqPos = 0;
+                }
+            } else {
+                devSeqPos = 0;
+            }
+        }
+        return super.dispatchKeyEvent(ev);
+    }
+
     @Override public void onBackPressed() {
-        if (fullscreenCam != null) toggleFullscreen(fullscreenCam);
+        if (devLabelSlot >= 0) exitDevLabelMode();
+        else if (fullscreenCam != null) toggleFullscreen(fullscreenCam);
         else if (movingPkg != null) endMove();
         else if (showHidden) { showHidden = false; rebuild(); }
         // otherwise: we're home, nowhere to go back to
@@ -564,6 +618,8 @@ public class MainActivity extends Activity {
     }
 
     private void toggleFullscreen(View cam) {
+        if (devLabelSlot >= 0) exitDevLabelMode();
+        devSeqPos = 0;
         boolean goFull = fullscreenCam == null;
         fullscreenCam = goFull ? cam : null;
         int vis = goFull ? View.GONE : View.VISIBLE;
@@ -658,6 +714,121 @@ public class MainActivity extends Activity {
                 }));
     }
 
+    private int fullWorldSlot() {
+        if (fullscreenCam == null || camViews == null || camIsWorld == null) return -1;
+        for (int i = 0; i < camViews.length; i++) {
+            if (camViews[i] == fullscreenCam && camIsWorld[i] && worldSlots[i] != null) return i;
+        }
+        return -1;
+    }
+
+    private void enterDevLabelMode(int slot) {
+        WorldCams.Stream s = worldSlots[slot];
+        if (s == null) return;
+        devLabelSlot = slot;
+        devOffsetX = s.labelOffsetX;
+        devOffsetY = s.labelOffsetY;
+        showLabel(camLabels[slot]);
+        applyLabelPadding(slot, devOffsetX, devOffsetY);
+        showDevLabelHud(slot);
+    }
+
+    private void handleDevLabelKey(int code) {
+        final float step = 0.25f;
+        switch (code) {
+            case KeyEvent.KEYCODE_DPAD_RIGHT: devOffsetX = roundQuarter(devOffsetX + step); break;
+            case KeyEvent.KEYCODE_DPAD_LEFT: devOffsetX = Math.max(0f, roundQuarter(devOffsetX - step)); break;
+            case KeyEvent.KEYCODE_DPAD_DOWN: devOffsetY = roundQuarter(devOffsetY + step); break;
+            case KeyEvent.KEYCODE_DPAD_UP: devOffsetY = Math.max(0f, roundQuarter(devOffsetY - step)); break;
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER: {
+                WorldCams.Stream s = worldSlots[devLabelSlot];
+                boolean atSaved = s != null
+                        && Math.abs(devOffsetX - s.labelOffsetX) < 0.001f
+                        && Math.abs(devOffsetY - s.labelOffsetY) < 0.001f;
+                devOffsetX = (atSaved || s == null) ? 0f : s.labelOffsetX;
+                devOffsetY = (atSaved || s == null) ? 0f : s.labelOffsetY;
+                break;
+            }
+            default: return;
+        }
+        showLabel(camLabels[devLabelSlot]);
+        applyLabelPadding(devLabelSlot, devOffsetX, devOffsetY);
+        updateDevLabelHud();
+    }
+
+    private void exitDevLabelMode() {
+        int slot = devLabelSlot;
+        devLabelSlot = -1;
+        if (devLabelHud != null) {
+            ViewGroup parent = (ViewGroup) devLabelHud.getParent();
+            if (parent != null) parent.removeView(devLabelHud);
+            devLabelHud = null;
+        }
+        if (slot >= 0 && slot < camLabels.length) {
+            updateWorldLabel(slot);
+            if (fullscreenCam == camViews[slot]) fadeLabel(camLabels[slot], 2_500);
+        }
+    }
+
+    private void showDevLabelHud(int slot) {
+        if (devLabelHud != null) {
+            ViewGroup p = (ViewGroup) devLabelHud.getParent();
+            if (p != null) p.removeView(devLabelHud);
+        }
+        float dp = getResources().getDisplayMetrics().density;
+        TextView tv = new TextView(this);
+        tv.setTextColor(0xFFFFF176);
+        tv.setTextSize(20f);
+        tv.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
+        tv.setGravity(Gravity.CENTER);
+        tv.setLineSpacing(Math.round(4 * dp), 1f);
+        int hPad = Math.round(24 * dp), vPad = Math.round(14 * dp);
+        tv.setPadding(hPad, vPad, hPad, vPad);
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setColor(0xEB000000);
+        bg.setCornerRadius(12 * dp);
+        bg.setStroke(Math.round(2 * dp), 0xFFFFD54F);
+        tv.setBackground(bg);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        lp.bottomMargin = Math.round(32 * dp);
+        ((ViewGroup) camViews[slot]).addView(tv, lp);
+        devLabelHud = tv;
+        updateDevLabelHud();
+    }
+
+    private void updateDevLabelHud() {
+        if (devLabelHud == null) return;
+        devLabelHud.setText(
+                "\"labelOffsetX\": " + formatQuarter(devOffsetX)
+                        + ",   \"labelOffsetY\": " + formatQuarter(devOffsetY)
+                        + "\n◀ ▶ ▲ ▼ nudge (±0.25)   ·   OK reset   ·   BACK exit");
+    }
+
+    private static float roundQuarter(float v) {
+        return Math.round(v * 4f) / 4f;
+    }
+
+    private static String formatQuarter(float v) {
+        float r = roundQuarter(v);
+        if (Math.abs(r - Math.round(r)) < 0.001f) return Integer.toString(Math.round(r));
+        String s = String.format(Locale.ROOT, "%.2f", r);
+        return s.endsWith("0") ? s.substring(0, s.length() - 1) : s;
+    }
+
+    private void applyLabelPadding(int slot, float offsetX, float offsetY) {
+        TextView nameTv = camViews[slot].findViewById(R.id.name);
+        View label = camLabels[slot];
+        float textPx = nameTv.getTextSize();
+        int extraTop = offsetY > 0f ? Math.round(offsetY * textPx) : 0;
+        int extraStart = offsetX > 0f ? Math.round(offsetX * textPx) : 0;
+        label.setPaddingRelative(camLabelStartPad[slot] + extraStart, camLabelTopPad[slot] + extraTop,
+                label.getPaddingEnd(), label.getPaddingBottom());
+    }
+
     private void updateWorldLabel(int slot) {
         WorldCams.Stream s = worldSlots[slot];
         if (s == null) return;
@@ -665,12 +836,7 @@ public class MainActivity extends Activity {
         String prefix = worldCams.isHearted(s) ? "♥ " : "";
         TextView nameTv = camViews[slot].findViewById(R.id.name);
         nameTv.setText(pin + prefix + s.displayName());
-        View label = camLabels[slot];
-        float textPx = nameTv.getTextSize();
-        int extraTop = s.labelOffsetY > 0f ? Math.round(s.labelOffsetY * textPx) : 0;
-        int extraStart = s.labelOffsetX > 0f ? Math.round(s.labelOffsetX * textPx) : 0;
-        label.setPaddingRelative(camLabelStartPad[slot] + extraStart, camLabelTopPad[slot] + extraTop,
-                label.getPaddingEnd(), label.getPaddingBottom());
+        applyLabelPadding(slot, s.labelOffsetX, s.labelOffsetY);
     }
 
     private void switchWorldSlot(int slot, WorldCams.Stream s) {

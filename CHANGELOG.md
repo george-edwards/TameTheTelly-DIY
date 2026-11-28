@@ -1,5 +1,8 @@
 # Changelog
 
+## v26.11.28.6 — 2026-11-28
+- Add developer label-offset calibrator on fullscreen World Cams: press Up, Up, Down, Down to nudge the label with the D-pad and read live `labelOffsetX` / `labelOffsetY` values in a high-contrast HUD (Back exits).
+
 ## v26.11.28.5 — 2026-11-28
 - Rename `labelOffsetLines` to `labelOffsetY` (keeping `labelOffsetLines` as a backwards-compatible fallback) to pair cleanly with `labelOffsetX`.
 
