@@ -215,7 +215,8 @@
       "channelId": "UC6qrG3W8SMK0jior2olka3g",
       "match": "Dublin",
       "lat": 53.35,
-      "lon": -6.26
+      "lon": -6.26,
+      "labelOffsetLines": 2.5
     },
     {
       "name": "UK: Abbey Road Crossing, London",
