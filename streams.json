@@ -894,7 +894,8 @@
       "lon": 170.73,
       "labelOffsetX": 1.25,
       "labelOffsetY": 3.5,
-      "labelOffsetSec": 10,
+      "labelOffsetSec": 6,
+      "labelOffsetAfterX": 0,
       "labelOffsetAfterY": 0.5
     },
     {
